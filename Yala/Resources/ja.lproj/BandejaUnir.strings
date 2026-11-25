@@ -15,3 +15,16 @@
 "bandejaUnir.source.web" = "Yala web";
 "bandejaUnir.source.ai" = "あなたのAI";
 "bandejaUnir.source.manual" = "手動";
+
+/* Lote 3: la fila con sus fuentes, «¿Es el mismo gasto?» y «Ya registrado». */
+"bandejaUnir.ask.title" = "同じ支出ですか？";
+"bandejaUnir.ask.same" = "同じ";
+"bandejaUnir.ask.same.hint" = "1つの保留項目にまとめます。あとで分けられます";
+"bandejaUnir.ask.distinct" = "別の支出";
+"bandejaUnir.ask.distinct.hint" = "2つの保留項目のままにし、もう確認しません";
+"bandejaUnir.recorded.title" = "%@に記録済み";
+"bandejaUnir.recorded.a11y" = "記録済み：%@";
+"bandejaUnir.recorded.discard" = "破棄";
+"bandejaUnir.recorded.saveAnyway" = "このまま保存";
+"bandejaUnir.recorded.saveAnyway.hint" = "すでに記録したものに似ていても保存します";
+"bandejaUnir.row.sources.a11y" = "%@から届きました";

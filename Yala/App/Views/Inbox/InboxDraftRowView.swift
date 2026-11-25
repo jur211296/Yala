@@ -14,6 +14,11 @@ struct InboxDraftRowView: View {
     let currencyCode: String
     var isSelectionMode: Bool = false
     var isSelected: Bool = false
+    /// «Ya registrado el 15 oct · Descartar / Guardar igual» (Bandeja sin duplicados, lote 3): solo en la lista de
+    /// pendientes y fuera del modo selección. Sin él, la fila de siempre.
+    var alreadyRecorded: InboxAlreadyRecorded?
+    var onDiscard: () -> Void = {}
+    var onSaveAnyway: () -> Void = {}
     let onTap: () -> Void
 
     @Environment(\.yalaTheme) private var theme
@@ -29,12 +34,61 @@ struct InboxDraftRowView: View {
         // salida, o borrado por otro camino): entonces no se lee nada de él, ni la etiqueta ni el identificador. Leerlo
         // aborta la app (crash de TestFlight 2.2 (2), card f8rj).
         if draft.isReadableInInbox {
-            row
+            if let alreadyRecorded {
+                recordedRow(alreadyRecorded)
+            } else {
+                row
+            }
         }
     }
 
     private var row: some View {
         Button(action: onTap) {
+            rowContent
+                .padding(.vertical, DS.ListRow.paddingV)
+                .padding(.horizontal, DS.ListRow.paddingH)
+                .background(cardBackground)
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
+                .shadow(
+                    color: Color.black.opacity(theme.shadowOpacity),
+                    radius: 6,
+                    x: 0,
+                    y: 3
+                )
+        }
+        .buttonStyle(.plain)
+        .modifier(rowIdentity)
+    }
+
+    /// La fila con «Ya registrado» debajo, en la misma tarjeta. Los dos botones van fuera del botón de la fila: dentro de
+    /// su etiqueta no existirían para VoiceOver ni para XCUITest. Cada uno con su estilo, o la fila entera tocaría.
+    private func recordedRow(_ recorded: InboxAlreadyRecorded) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Button(action: onTap) {
+                rowContent
+                    .padding(.top, DS.ListRow.paddingV)
+                    .padding(.bottom, DS.Spacing.sm)
+                    .padding(.horizontal, DS.ListRow.paddingH)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .modifier(rowIdentity)
+
+            InboxAlreadyRecordedFooter(recorded: recorded, onDiscard: onDiscard, onSaveAnyway: onSaveAnyway)
+                .padding(.horizontal, DS.ListRow.paddingH)
+                .padding(.bottom, DS.ListRow.paddingV)
+        }
+        .background(cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
+        .shadow(color: Color.black.opacity(theme.shadowOpacity), radius: 6, x: 0, y: 3)
+    }
+
+    private var rowIdentity: InboxDraftRowIdentity {
+        InboxDraftRowIdentity(label: accessibilityText, identifier: "inbox_draft_row_\(draft.note)",
+                              draft: draft, settlementName: $settlementName, modelContext: modelContext)
+    }
+
+    private var rowContent: some View {
             // A tamaños de accesibilidad el importe baja bajo el concepto (`AdaptiveRowStack`), como en
             // `RecordRowView`: en fila se cortaba («S/-…50»). Apilada, icono y texto quedan juntos en su propia fila.
             AdaptiveRowStack(spacing: DS.ListRow.spacing, stackedSpacing: DS.Spacing.sm) {
@@ -60,26 +114,6 @@ struct InboxDraftRowView: View {
                 // Amount column
                 amountColumn
             }
-            .padding(.vertical, DS.ListRow.paddingV)
-            .padding(.horizontal, DS.ListRow.paddingH)
-            .background(cardBackground)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
-            .shadow(
-                color: Color.black.opacity(theme.shadowOpacity),
-                radius: 6,
-                x: 0,
-                y: 3
-            )
-        }
-        .buttonStyle(.plain)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(accessibilityText)
-        .accessibilityIdentifier("inbox_draft_row_\(draft.note)")
-        .task(id: draft.persistentModelID) {
-            guard draft.sourceType == .groupSettlement, draft.note.isEmpty,
-                  !draft.isSettlementAmountChangeNotice else { return }
-            settlementName = GroupSettlementDraftNameResolver.name(for: draft, context: modelContext)
-        }
     }
 
     /// La descripción que se enseña: la del borrador, el nombre del pago de grupo (L13-12) o «Sin descripción».
@@ -90,7 +124,9 @@ struct InboxDraftRowView: View {
 
     /// La etiqueta de siempre y, en el aviso de importe cambiado, su segunda línea: sin ella VoiceOver no dice qué cambió.
     private var accessibilityText: String {
-        let base = L10n.Accessibility.draftRow(shownNote, draft.amount.map { appPreferences.currency($0, currencyCode: currencyCode) } ?? L10n.Inbox.noAmount, L10n.Inbox.status(draft.status)) + ", " + draft.sourceDisplayName
+        let origin = draft.joinedSources.map { L10n.BandejaUnir.llegoPor(fuentes: $0.map(\.name).joined(separator: ", ")) }
+            ?? draft.sourceDisplayName
+        let base = L10n.Accessibility.draftRow(shownNote, draft.amount.map { appPreferences.currency($0, currencyCode: currencyCode) } ?? L10n.Inbox.noAmount, L10n.Inbox.status(draft.status)) + ", " + origin
         guard let detail = settlementAmountChangeDetail(accountName: draft.displayAccountName ?? "") else { return base }
         return "\(base), \(detail)"
     }
@@ -144,12 +180,36 @@ struct InboxDraftRowView: View {
 
     /// De dónde llegó el borrador (UX 2.2 · L4-8): «¿de dónde salió esto?» es lo primero que se pregunta ante un gasto
     /// que no se apuntó a mano. Antes solo la fila incompleta enseñaba su origen, y solo con un icono.
+    ///
+    /// Un pendiente que la Bandeja unió (lote 3 de la Bandeja sin duplicados) enseña una cápsula por fuente, en el orden
+    /// en que llegaron: «Apple Pay · Aviso de BCP · Correo». Si no caben en una línea, una debajo de otra.
+    @ViewBuilder
     private var originLabel: some View {
+        if let sources = draft.joinedSources {
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: DS.Spacing.xs) {
+                    ForEach(Array(sources.enumerated()), id: \.offset) { _, source in
+                        originCapsule(name: source.name, icon: source.icon)
+                    }
+                }
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    ForEach(Array(sources.enumerated()), id: \.offset) { _, source in
+                        originCapsule(name: source.name, icon: source.icon)
+                    }
+                }
+            }
+            .accessibilityIdentifier("inbox_draft_sources")
+        } else {
+            originCapsule(name: draft.sourceDisplayName, icon: draft.sourceIcon)
+        }
+    }
+
+    private func originCapsule(name: String, icon: String) -> some View {
         HStack(spacing: DS.Spacing.xxs) {
-            Image(systemName: draft.sourceIcon)
+            Image(systemName: icon)
                 .font(DS.Typography.captionSmall)
                 .accessibilityHidden(true)
-            Text(draft.sourceDisplayName)
+            Text(name)
                 .font(DS.Typography.captionSmall)
                 .lineLimit(1)
         }
@@ -453,6 +513,162 @@ struct InboxDraftRowView: View {
         } else {
             return Self.mediumDateFormatter.string(from: date)
         }
+    }
+}
+
+// MARK: - La identidad de la fila
+
+/// Lo que la fila de siempre llevaba colgado de su botón: un elemento de accesibilidad con su etiqueta e identificador, y
+/// el nombre del pago de grupo sin descripción (L13-12). Igual en la fila sola y en la que lleva «Ya registrado».
+private struct InboxDraftRowIdentity: ViewModifier {
+    let label: String
+    let identifier: String
+    let draft: InboxDraft
+    @Binding var settlementName: String?
+    let modelContext: ModelContext
+
+    func body(content: Content) -> some View {
+        content
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(label)
+            .accessibilityIdentifier(identifier)
+            .task(id: draft.persistentModelID) {
+                guard draft.isReadableInInbox, draft.sourceType == .groupSettlement, draft.note.isEmpty,
+                      !draft.isSettlementAmountChangeNotice else { return }
+                settlementName = GroupSettlementDraftNameResolver.name(for: draft, context: modelContext)
+            }
+    }
+}
+
+// MARK: - «Ya registrado» (Bandeja sin duplicados, lote 3)
+
+/// «Ya registrado el 15 oct · Descartar / Guardar igual», bajo la fila de un pendiente que se parece a un registro ya
+/// guardado. Es lo mismo que frenaría «Guardar los listos», dicho antes de intentarlo.
+struct InboxAlreadyRecordedFooter: View {
+    let recorded: InboxAlreadyRecorded
+    let onDiscard: () -> Void
+    let onSaveAnyway: () -> Void
+
+    @Environment(\.yalaTheme) private var theme
+
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            // En una fila solo si el aviso cabe entero en una línea; si no, el aviso arriba y los botones debajo.
+            HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.md) {
+                notice(singleLine: true)
+                Spacer(minLength: 0)
+                buttons
+            }
+            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                notice(singleLine: false)
+                buttons
+            }
+        }
+    }
+
+    private func notice(singleLine: Bool) -> some View {
+        Label {
+            Text(L10n.BandejaUnir.yaRegistrado(fecha: recorded.dateText))
+                .fixedSize(horizontal: singleLine, vertical: true)
+        } icon: {
+            Image(systemName: "exclamationmark.circle.fill")
+                .foregroundStyle(DS.Semantic.warningForeground)
+        }
+        .font(DS.Typography.caption)
+        .foregroundStyle(.secondary)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(L10n.BandejaUnir.yaRegistradoDetalle(recorded.summary))
+        .accessibilityIdentifier("inbox_already_recorded")
+    }
+
+    private var buttons: some View {
+        HStack(spacing: DS.Spacing.md) {
+            Button(L10n.BandejaUnir.descartar, action: onDiscard)
+                .buttonStyle(.borderless)
+                .accessibilityIdentifier("inbox_already_recorded_discard")
+            Button(L10n.BandejaUnir.guardarIgual, action: onSaveAnyway)
+                .buttonStyle(.borderless)
+                .accessibilityHint(L10n.BandejaUnir.guardarIgualPista)
+                .accessibilityIdentifier("inbox_already_recorded_save_anyway")
+        }
+        .font(DS.Typography.subheadlineEmphasized)
+        .foregroundStyle(theme.accentText)
+    }
+}
+
+// MARK: - «¿Es el mismo gasto?» (Bandeja sin duplicados, lote 3)
+
+/// Dos pendientes que pueden ser el mismo consumo, juntos en una tarjeta: «¿Es el mismo gasto?» con «Es el mismo» y «Son
+/// distintos». Cada fila sigue abriendo su borrador.
+struct InboxSameExpensePairCard: View {
+    let pair: InboxSameExpensePair
+    let currencyCode: (InboxDraft) -> String
+    let onOpen: (InboxDraft) -> Void
+    let onSame: () -> Void
+    let onDistinct: () -> Void
+
+    @Environment(\.yalaTheme) private var theme
+
+    var body: some View {
+        if pair.holder.isReadableInInbox && pair.arriving.isReadableInInbox {
+            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                Label(L10n.BandejaUnir.preguntaTitulo, systemImage: "square.on.square")
+                    .font(DS.Typography.subheadlineEmphasized)
+                    .foregroundStyle(.primary)
+                    .accessibilityAddTraits(.isHeader)
+                    .accessibilityIdentifier("inbox_same_expense_title")
+
+                ForEach(pair.chronological, id: \.persistentModelID) { draft in
+                    InboxDraftRowView(draft: draft, currencyCode: currencyCode(draft)) { onOpen(draft) }
+                }
+
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: DS.Spacing.sm) { sameButton; distinctButton }
+                    VStack(spacing: DS.Spacing.sm) { sameButton; distinctButton }
+                }
+            }
+            .padding(DS.Spacing.md)
+            .background(
+                RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
+                    .fill(theme.accent.opacity(0.06))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
+                    .strokeBorder(theme.accent.opacity(0.35), lineWidth: 1)
+            )
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("inbox_same_expense_pair")
+        }
+    }
+
+    private var sameButton: some View {
+        Button(action: onSame) {
+            Text(L10n.BandejaUnir.esElMismo)
+                .font(DS.Typography.subheadlineEmphasized)
+                .foregroundStyle(theme.onAccent)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, DS.Spacing.md)
+                .background(Capsule().fill(theme.accent))
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint(L10n.BandejaUnir.esElMismoPista)
+        .accessibilityIdentifier("inbox_same_expense_same")
+    }
+
+    private var distinctButton: some View {
+        Button(action: onDistinct) {
+            Text(L10n.BandejaUnir.sonDistintos)
+                .font(DS.Typography.subheadlineEmphasized)
+                .foregroundStyle(theme.accentText)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, DS.Spacing.md)
+                .background(Capsule().fill(theme.accent.opacity(0.12)))
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint(L10n.BandejaUnir.sonDistintosPista)
+        .accessibilityIdentifier("inbox_same_expense_distinct")
     }
 }
 

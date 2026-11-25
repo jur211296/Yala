@@ -368,7 +368,10 @@ final class InboxDraft: Identifiable {
     }
 
     /// Icono SF Symbol según el tipo de fuente
-    var sourceIcon: String {
+    var sourceIcon: String { Self.sourceIcon(for: sourceType) }
+
+    /// Icono SF Symbol de un tipo de fuente (también el de lo que un borrador unido absorbió).
+    static func sourceIcon(for sourceType: DraftSourceType) -> String {
         switch sourceType {
         case .voice: return "mic.fill"
         case .receiptPhoto: return "camera.fill"

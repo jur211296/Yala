@@ -10,6 +10,12 @@ import Foundation
 
 extension InboxDraft {
     var sourceDisplayName: String {
+        Self.sourceDisplayName(sourceType: sourceType, evidence: evidence, hasAmount: amount != nil)
+    }
+
+    /// El nombre de una fuente, de un borrador o de lo que un borrador unido absorbió (lote 3 de la Bandeja sin
+    /// duplicados): el mismo texto que tendría en su propia fila.
+    static func sourceDisplayName(sourceType: DraftSourceType, evidence: String?, hasAmount: Bool) -> String {
         switch sourceType {
         case .voice: return L10n.Inbox.sourceVoice
         case .receiptPhoto: return L10n.Inbox.sourceReceipt
@@ -21,7 +27,7 @@ extension InboxDraft {
         case .applePay: return L10n.Inbox.sourceApplePay
         case .automation:
             // Atajo del banco (2.3, B1): «Aviso de BCP» / «No entendimos este aviso».
-            return BankNoticeOrigin.label(sourceType: sourceType, evidence: evidence, hasAmount: amount != nil)
+            return BankNoticeOrigin.label(sourceType: sourceType, evidence: evidence, hasAmount: hasAmount)
                 ?? L10n.Inbox.sourceAutomation
         case .siri: return L10n.Inbox.sourceSiri
         case .groupExpense: return L10n.Inbox.sourceGroupExpense
@@ -31,6 +37,40 @@ extension InboxDraft {
         // «Conecta tu IA» (decisión 6 de Jürgen, 23-nov): el nombre de la IA que lo apuntó («Claude»); «Tu IA» si no se sabe.
         case .aiConnector: return ConectaTuIALogic.aiName(evidence: evidence) ?? L10n.Inbox.sourceAIConnector
         }
+    }
+}
+
+// MARK: - Las fuentes de un pendiente unido (Bandeja sin duplicados, lote 3)
+
+/// Una fuente de un pendiente unido, como la enseña la fila: su nombre y su icono.
+struct InboxJoinedSource: Equatable {
+    let name: String
+    let icon: String
+}
+
+extension InboxDraft {
+    /// De dónde llegó un pendiente que la Bandeja unió: el suyo y el de cada fuente que absorbió, en el orden en que
+    /// llegaron. `nil` si no es un pendiente unido o su registro de unión no se entiende: entonces la fila enseña su
+    /// origen de siempre.
+    @MainActor
+    var joinedSources: [InboxJoinedSource]? {
+        guard status == .pending, case .record(let record) = InboxJoinRecord.read(joinRecordRaw),
+              !record.members.isEmpty else { return nil }
+        var sources = [InboxJoinedSource(name: sourceDisplayName, icon: sourceIcon)]
+        for member in record.members {
+            guard let type = DraftSourceType(rawValue: member.sourceTypeRaw) else {
+                // Un origen que este build no conoce: el nombre genérico de su fuente en el emparejador.
+                let name = InboxMatchLogic.Source(rawValue: member.facts.source).map(L10n.BandejaUnir.fuente)
+                    ?? L10n.Inbox.sourceAutomation
+                sources.append(InboxJoinedSource(name: name, icon: "tray"))
+                continue
+            }
+            sources.append(InboxJoinedSource(
+                name: Self.sourceDisplayName(sourceType: type, evidence: member.evidence,
+                                             hasAmount: member.fields.amount != nil),
+                icon: Self.sourceIcon(for: type)))
+        }
+        return sources
     }
 }
 

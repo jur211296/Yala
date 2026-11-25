@@ -903,8 +903,9 @@ struct InboxDraftEditSheet: View {
             }
 
             // Bandeja sin duplicados (lote 2): el mismo consumo unido de varias fuentes, con «Separar».
-            if initialStatus == .pending, let joinedSources = InboxJoinedSourcesSection.sources(of: draft) {
-                InboxJoinedSourcesSection(sources: joinedSources, onSeparate: separateJoinedSources)
+            if initialStatus == .pending, InboxJoinedSourcesSection.sources(of: draft) != nil,
+               let joinedNames = draft.joinedSources?.map(\.name) {
+                InboxJoinedSourcesSection(names: joinedNames, onSeparate: separateJoinedSources)
             }
 
             // Validation message when not ready
@@ -1296,12 +1297,15 @@ struct InboxDraftEditSheet: View {
     }
 
     /// «Separar» (Bandeja sin duplicados, lote 2): cada fuente unida vuelve como pendiente aparte y este borrador recupera
-    /// sus valores (`InboxArrivalJoin.separate`). Cierra la hoja: lo que enseña salió del borrador antes de separar.
+    /// sus valores (`InboxArrivalJoin.separate`), y quedan marcados como distintos entre sí. Cierra la hoja: lo que
+    /// enseña salió del borrador antes de separar.
     private func separateJoinedSources() {
-        guard InboxArrivalJoin.separate(draft, context: modelContext) != nil else {
+        guard let separated = InboxArrivalJoin.separate(draft, context: modelContext) else {
             DS.Haptic.error()
             return
         }
+        // Lo que la persona acaba de separar no vuelve a la lista como «¿Es el mismo gasto?» (lote 3, Paso 0 D4).
+        InboxSameExpenseDistinct.markDistinct([draft] + separated)
         DS.Haptic.success()
         sessionState.incrementDataVersion()
         dismiss()

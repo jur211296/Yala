@@ -107,6 +107,23 @@ struct DevSeedDrafts {
                 [InboxArrivalJoin.Arrival(draft: email, currencyCode: account.currencyCode, last4: "4821")],
                 context: context)
         }
+
+        // `-uitest-inbox-same-expense-pair`: el mismo delivery por Apple Pay ayer a las 23:50 y por el correo del banco hoy,
+        // con un importe un 2,8 % mayor (propina): coincidencia dudosa, así que no se une al llegar y la Bandeja pregunta.
+        if UITestHooks.seedInboxSameExpensePair {
+            let today = Calendar.current.startOfDay(for: Date.now)
+            let applePay = InboxDraft(
+                note: "Rappi", amount: -89.90, date: today.addingTimeInterval(-10 * 60), account: account,
+                sourceType: .applePay, rawText: "S/89.90", evidence: "Rappi", confidenceAmount: 1, confidenceDate: 1,
+                needsUserInput: [DraftInputRequirement.subcategory], status: .pending)
+            applePay.createdAt = today.addingTimeInterval(-9 * 60)
+            context.insert(applePay)
+            let email = InboxDraft(
+                note: "RAPPI*PE", amount: -92.40, date: today.addingTimeInterval(12 * 3600), account: account,
+                sourceType: .emailAlert, rawText: "BCP · ****4821", evidence: "BCP · ****4821", confidenceAmount: 0.9,
+                confidenceDate: 0.9, needsUserInput: [DraftInputRequirement.subcategory], status: .pending)
+            context.insert(email)
+        }
     }
 }
 #endif

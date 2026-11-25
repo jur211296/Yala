@@ -78,9 +78,6 @@ struct InboxView: View {
         viewModel.filteredDrafts(for: selectedFilter)
     }
 
-    private var groupedDrafts: [(date: Date, drafts: [InboxDraft])] {
-        viewModel.groupedDrafts(for: selectedFilter)
-    }
 
     // MARK: - Group Scheduled Expense (F4)
 
@@ -838,10 +835,10 @@ struct InboxView: View {
                         .listRowSeparator(.hidden)
                 }
             }
-            ForEach(groupedDrafts, id: \.date) { group in
+            ForEach(listSections, id: \.date) { group in
                 Section {
-                    ForEach(group.drafts, id: \.persistentModelID) { draft in
-                        draftRow(for: draft)
+                    ForEach(group.items) { item in
+                        listItem(item)
                     }
                 } header: {
                     Text(formattedDate(group.date))
@@ -853,6 +850,64 @@ struct InboxView: View {
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
+    }
+
+    /// La lista por días. En «Pendientes» y fuera del modo selección, las parejas «¿Es el mismo gasto?» van juntas
+    /// (Bandeja sin duplicados, lote 3).
+    private var listSections: [InboxListSection] {
+        viewModel.listSections(for: selectedFilter, pairsSameExpense: selectedFilter == .pending && !isSelectionMode)
+    }
+
+    @ViewBuilder
+    private func listItem(_ item: InboxListItem) -> some View {
+        switch item {
+        case .draft(let draft):
+            draftRow(for: draft)
+        case .pair(let pair):
+            sameExpensePairRow(pair)
+        }
+    }
+
+    private func sameExpensePairRow(_ pair: InboxSameExpensePair) -> some View {
+        InboxSameExpensePairCard(
+            pair: pair,
+            currencyCode: { viewModel.displayCurrencyCode(for: $0, fallback: appPreferences.defaultCurrencyCode.rawValue) },
+            onOpen: { handleDraftTap($0) },
+            onSame: { joinSameExpense(pair) },
+            onDistinct: { markDistinct(pair) }
+        )
+        .listRowBackground(Color.clear)
+        .listRowSeparator(.hidden)
+        .listRowInsets(EdgeInsets(top: DS.Spacing.xs, leading: DS.Spacing.lg, bottom: DS.Spacing.xs, trailing: DS.Spacing.lg))
+    }
+
+    /// «Es el mismo»: el más reciente se une al otro, con «Separar» en el borrador para deshacerlo.
+    private func joinSameExpense(_ pair: InboxSameExpensePair) {
+        guard InboxArrivalJoin.joinPending(pair.arriving, into: pair.holder, context: modelContext) else {
+            DS.Haptic.error()
+            viewModel.loadData()
+            return
+        }
+        DS.Haptic.success()
+        dsWithAnimation(reduceMotion) { viewModel.loadData() }
+        sessionState.incrementDataVersion()
+    }
+
+    /// «Son distintos»: quedan como dos pendientes y no se vuelve a preguntar en este teléfono.
+    private func markDistinct(_ pair: InboxSameExpensePair) {
+        InboxSameExpenseDistinct.markDistinct([pair.holder, pair.arriving], viewModel.distinctDefaults)
+        DS.Haptic.selection()
+        dsWithAnimation(reduceMotion) { viewModel.loadData() }
+    }
+
+    /// «Guardar igual» de «Ya registrado»: guarda sin la pregunta del posible duplicado si está completo; si le falta
+    /// algo, abre el borrador.
+    private func saveRecordedAnyway(_ draft: InboxDraft) {
+        guard draft.isReadyToApprove, !draft.requiresApprovalForm else {
+            selectedDraft = draft
+            return
+        }
+        approveDraft(draft, skipDuplicateCheck: true)
     }
 
     private static let sectionDateFormatter: DateFormatter = {
@@ -872,6 +927,9 @@ struct InboxView: View {
             currencyCode: viewModel.displayCurrencyCode(for: draft, fallback: appPreferences.defaultCurrencyCode.rawValue),
             isSelectionMode: isSelectionMode,
             isSelected: selectedDraftIDs.contains(draft.persistentModelID),
+            alreadyRecorded: selectedFilter.isPendingList && !isSelectionMode ? viewModel.alreadyRecorded(for: draft) : nil,
+            onDiscard: { rejectDraft(draft) },
+            onSaveAnyway: { saveRecordedAnyway(draft) },
             onTap: {
                 if isSelectionMode {
                     toggleSelection(draft)

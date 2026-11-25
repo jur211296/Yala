@@ -4,13 +4,14 @@
 //
 //  Bandeja sin duplicados, lote 2: en el editor de un borrador pendiente que la Bandeja unió al llegar, de qué fuentes
 //  viene y «Separar», que las devuelve como pendientes aparte (`InboxArrivalJoin.separate`). Solo sale con un registro de
-//  unión que se entiende (Paso 0, D7 y D8). La fila con las fuentes en la lista es el lote 3.
+//  unión que se entiende (Paso 0, D7 y D8). Los nombres son los de la fila de la lista (lote 3).
 //
 
 import SwiftUI
 
 struct InboxJoinedSourcesSection: View {
-    let sources: [InboxMatchLogic.Source]
+    /// El nombre de cada fuente, como en la fila de la Bandeja («Apple Pay», «Aviso de BCP», «Correo»; lote 3).
+    let names: [String]
     let onSeparate: () -> Void
 
     @Environment(\.yalaTheme) private var theme
@@ -26,7 +27,7 @@ struct InboxJoinedSourcesSection: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.md) {
             Label {
-                Text(L10n.BandejaUnir.resumen(fuentes: sources.map { L10n.BandejaUnir.fuente($0) }.joined(separator: " · ")))
+                Text(L10n.BandejaUnir.resumen(fuentes: names.joined(separator: " · ")))
                     .fixedSize(horizontal: false, vertical: true)
             } icon: {
                 Image(systemName: "square.on.square")

@@ -15,3 +15,16 @@
 "bandejaUnir.source.web" = "Yala web";
 "bandejaUnir.source.ai" = "Tu IA";
 "bandejaUnir.source.manual" = "A mano";
+
+/* Lote 3: la fila con sus fuentes, «¿Es el mismo gasto?» y «Ya registrado». */
+"bandejaUnir.ask.title" = "¿Es el mismo gasto?";
+"bandejaUnir.ask.same" = "Es el mismo";
+"bandejaUnir.ask.same.hint" = "Los juntamos en un solo pendiente; puedes separarlos después";
+"bandejaUnir.ask.distinct" = "Son distintos";
+"bandejaUnir.ask.distinct.hint" = "Quedan como dos pendientes y no volvemos a preguntar";
+"bandejaUnir.recorded.title" = "Ya registrado el %@";
+"bandejaUnir.recorded.a11y" = "Ya registrado: %@";
+"bandejaUnir.recorded.discard" = "Descartar";
+"bandejaUnir.recorded.saveAnyway" = "Guardar igual";
+"bandejaUnir.recorded.saveAnyway.hint" = "Lo guarda aunque se parezca a uno que ya registraste";
+"bandejaUnir.row.sources.a11y" = "Llegó por %@";

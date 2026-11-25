@@ -1240,6 +1240,7 @@ final class DataWipeService {
         defaults.removeObject(forKey: "hasExportedData")          // Señal de segmento (UserSegmentService)
         defaults.removeObject(forKey: "processedInboxDraftSignatures")  // Firmas de drafts ya borrados
         defaults.removeObject(forKey: InboxGroupDraftsHiddenHere.key)   // Gastos de grupo quitados de la Bandeja solo aquí
+        defaults.removeObject(forKey: InboxSameExpenseDistinct.key)     // «Son distintos» y «Separar» de la Bandeja (solo aquí)
         defaults.removeObject(forKey: "lastSplitType")            // Memoria del split del formulario de TX
         defaults.removeObject(forKey: "lastSplitPercentage")
         defaults.removeObject(forKey: DescriptionShortcutHintLogic.openingsKey) // Pista de los atajos del formulario (L2-8)
