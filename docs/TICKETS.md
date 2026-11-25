@@ -47,7 +47,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 
 | id | status | path |
 | 2026-11-25-ui-nocturna-cuelgues-cuarentena-ci | done | tickets/done/2026-11-25-ui-nocturna-cuelgues-cuarentena-ci.md |
-| 2026-11-25-bugs-cuenta-verde-pruebas-cableado | backlog | tickets/backlog/2026-11-25-bugs-cuenta-verde-pruebas-cableado.md |
+| 2026-11-25-bugs-cuenta-verde-pruebas-cableado | done | tickets/done/2026-11-25-bugs-cuenta-verde-pruebas-cableado.md |
 | 2026-11-25-ui-nocturna-rojos-reales | done | tickets/done/2026-11-25-ui-nocturna-rojos-reales.md |
 | 2026-11-25-bugs-cuenta-nube-vaciar-datos-y-eliminar-cuenta | done | tickets/done/2026-11-25-bugs-cuenta-nube-vaciar-datos-y-eliminar-cuenta.md |
 | 2026-11-25-gateway-d1-overloaded-vincular-suscripcion | done | tickets/done/2026-11-25-gateway-d1-overloaded-vincular-suscripcion.md |

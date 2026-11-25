@@ -1,6 +1,6 @@
 ---
 id: 2026-11-25-bugs-cuenta-verde-pruebas-cableado
-status: backlog
+status: done
 priority: high
 area: "cloud-sync, account-deletion, bienvenida-2-3"
 created: 2026-11-25
@@ -46,4 +46,11 @@ tanda 2 de unit, en dos pruebas que comparan el texto del código:
 
 ## Verificación
 
-Ver el cuerpo del PR y el cierre de la sesión.
+- Build de `Yala` y `Yala Dev` en verde (Max, Xcode 27.2, iPhone 17 Pro 27.2).
+- Unit: 35 pruebas en 9 suites en verde — las dos suites arregladas y las siete de `YalaTests/BugsCuentaNube/`, sin
+  tocar estas últimas.
+- Mutantes, con la app tocada a mano y restaurada después: quitar `CloudSessionRevision.shared.track()` del getter de
+  «Eliminar mi cuenta» y quitar `|| waitsForSignIn` del desarme ponen rojas las tres pruebas (`readerTracksTheSession`,
+  `wiring` y el caso nuevo): 10 pruebas, 3 fallos.
+- Interfaz: ninguna clase de `YalaUITests` pasa por lo tocado (solo pruebas unitarias).
+- Índice del CI (`gate-ci-checks.sh`): 29 de 29 pasos en verde.
