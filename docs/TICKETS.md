@@ -46,6 +46,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 ## Index (147)
 
 | id | status | path |
+| 2026-11-24-bandeja-emparejador-entre-fuentes | done | tickets/done/2026-11-24-bandeja-emparejador-entre-fuentes.md |
 | 2026-11-24-conector-ia-ver-bandeja-y-referencia | done | tickets/done/2026-11-24-conector-ia-ver-bandeja-y-referencia.md |
 | 2026-11-24-gmail-buscar-codigo-sin-respuesta | done | tickets/done/2026-11-24-gmail-buscar-codigo-sin-respuesta.md |
 | 2026-11-24-subir-testflight-2-3-build-8 | done | tickets/done/2026-11-24-subir-testflight-2-3-build-8.md |

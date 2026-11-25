@@ -2,11 +2,12 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (145 entradas)
+## Índice (146 entradas)
 
 > **No hace falta leer este fichero entero** — son 357 KB. Localiza la entrada
 > aquí y salta a ella.
 
+- `2026-11-24` [Lote del 24-nov (17:58-17:59): el arreglo del paso 3 de Gmail a producción con Dan, y la web a Cloud](#2026-11-24-lote-del-24-nov-1758-1759-el-arreglo-del-paso-3-de-gmail-a-produccin-con-dan-y-la-web-a-cloudflare-pasa-a-24)
 - `2026-11-24` [Lote del 24-nov (08:47-14:33): la build 8 espera todo lo de 2.3, la Bandeja sin duplicados después d](#2026-11-24-lote-del-24-nov-0847-1433-la-build-8-espera-todo-lo-de-23-la-bandeja-sin-duplicados-despus-de-la-build-y-marketing-en-lenguaje-simple)
 - `2026-11-23` [Lote del 23-nov (15:02-15:51): la build 7 espera todo lo de 2.3, y la web a Cloudflare sin desplegar](#2026-11-23-lote-del-23-nov-1502-1551-la-build-7-espera-todo-lo-de-23-y-la-web-a-cloudflare-sin-desplegar)
 - `2026-11-23` [Lote del 23-nov (10:31-11:13): barrido de QA antes de la build 7, en el iPhone 14 real](#2026-11-23-lote-del-23-nov-1031-1113-barrido-de-qa-antes-de-la-build-7-en-el-iphone-14-real)
@@ -171,6 +172,13 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-11-24] Lote del 24-nov (17:58-17:59): el arreglo del paso 3 de Gmail a producción con Dan, y la web a Cloudflare pasa a 2.4
+**Contexto:** Decisiones de Jürgen en el chat del 24-nov (17:58 y 17:59, Lima), capturadas por el bot dueño (ADR-082 de casa). Las registra la sesión del emparejador entre fuentes de la Bandeja.
+**Decisión:** (1) Se aprueba desplegar en producción el arreglo del paso 3 de Gmail del correo del banco (la migración 0006 y el Worker del gateway) cuando su PR esté mergeado; lo despliega Dan. (2) La mudanza de la web yala-app.pe de Vercel a Cloudflare Workers, con la configuración ya en 2.3 y sin desplegar, **no se hace ahora**: es la primera tarea de 2.4, apenas se despliegue 2.3. La configuración de Cloudflare se queda guardada en 2.3.
+**Razones:** No las dio. (2) es coherente con que 2.3 se cierre sin cambiar dónde vive la web publicada.
+**Consecuencias:** (1) es un permiso de despliegue para Dan, no cambia el código. (2) Nadie despliega la web a Cloudflare ni toca el DNS antes de publicar 2.3.
+**Estado:** Activa
 
 ### [2026-11-24] Lote del 24-nov (08:47-14:33): la build 8 espera todo lo de 2.3, la Bandeja sin duplicados después de la build y marketing en lenguaje simple
 **Contexto:** Decisiones de Jürgen en el chat del 24-nov (08:47 a 14:33, Lima), capturadas por el bot dueño (ADR-082 de casa). Las registra la sesión que subió la build 8.

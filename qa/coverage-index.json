@@ -4358,6 +4358,17 @@
       "lastVerified": "2026-11-16"
     },
     {
+      "area": "inbox-cross-source-matcher",
+      "codeGlobs": [
+        "Yala/App/Logic/InboxMatchLogic.swift"
+      ],
+      "scenarioIDs": [],
+      "classification": "manual",
+      "coverage": "unit:YalaTests/InboxMatchScenarioTests,YalaTests/InboxMatchRuleTests | 2026-11-24 (Bandeja sin duplicados, lote 1): el emparejador entre fuentes, lógica pura y aún sin cablear. Fija la regla fuerte/dudosa de la propuesta (tipo, cuenta, importe, tiempo, comercio, fuentes), que dos de la misma fuente nunca se unen, uno de cada fuente por consumo, qué fuente manda campo a campo y E1-E10 del informe más los casos difíciles. Tres mutantes (misma fuente, cruce de medianoche, importe del banco) caen. La interfaz llega con los lotes 2 y 3.",
+      "owner": "frank",
+      "lastVerified": "2026-11-24"
+    },
+    {
       "area": "account-card-design",
       "codeGlobs": [
         "Yala/App/Logic/DisenoTarjeta/**",
