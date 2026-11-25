@@ -1,6 +1,6 @@
 ---
 id: 2026-11-25-build-9-migracion-bandeja-22
-status: backlog
+status: done
 priority: high
 area: "tests, migracion, bandeja, release"
 created: 2026-11-25
@@ -46,3 +46,11 @@ Es la prueba, no la migración.
 
 - `BandejaUnirMigracion22Tests`, `PersonalCloudKitSchemaParityTests` y la medición: 9 pruebas en 3 suites, verde.
 - `PersonalCloudKitSchemaParityTests` sin editar.
+- Gate completo sobre la rama del PR con `2.3` mergeada: build `Yala` y `Yala Dev`, `YalaTests` entero (16.321 pruebas en
+  1.965 suites, verde), ninguna clase de interfaz pasa por lo tocado, revisor de checklist no aplica, 29/29 pasos del job
+  `coverage-index`.
+
+## Cierre (25-nov)
+
+Arreglo commiteado en la rama del PR de la build 9 (https://github.com/jur211296/Yala/pull/1171), que queda en
+auto-merge. No hace falta retirar la build 9 ni subir otra: la migración desde 2.2 conserva los borradores.
