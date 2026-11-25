@@ -133,3 +133,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de correr tests, el gate o
 - [Medir el cambio de chip con sample](reference_medir_cambio_de_chip_con_sample.md) — semilla pesado + axe; descuenta mshMIGPerform (AX del conductor); el scroll se mide en el teléfono.
 - [Simular un aviso de banco con un recordatorio](reference_simular_un_aviso_de_banco_con_un_recordatorio.md) — sin app de banco: Recordatorios dispara; texto con PEN; elegir la acción por la app.
 - [Gate apilado sobre otra rama](reference_gate_apilado_sobre_otra_rama.md) — `depende:` en cola: reset --keep a esa rama; interfaz con --base de ella; el revisor, su diff.
+- [Campo de iCloud pendiente frena la subida](reference_campo_de_icloud_pendiente_frena_la_subida.md) — pendingProductionDeploy + cktool de Producción en el Paso 0 de cada subida; desplegar es de Dan.
