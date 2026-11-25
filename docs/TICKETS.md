@@ -50,6 +50,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | 2026-11-24-bandeja-emparejador-entre-fuentes | done | tickets/done/2026-11-24-bandeja-emparejador-entre-fuentes.md |
 | 2026-11-24-bandeja-unir-al-llegar | done | tickets/done/2026-11-24-bandeja-unir-al-llegar.md |
 | 2026-11-24-bandeja-fila-con-fuentes | done | tickets/done/2026-11-24-bandeja-fila-con-fuentes.md |
+| 2026-11-24-bandeja-casar-con-planificados | done | tickets/done/2026-11-24-bandeja-casar-con-planificados.md |
 | 2026-11-24-conector-ia-ver-bandeja-y-referencia | done | tickets/done/2026-11-24-conector-ia-ver-bandeja-y-referencia.md |
 | 2026-11-24-gmail-buscar-codigo-sin-respuesta | done | tickets/done/2026-11-24-gmail-buscar-codigo-sin-respuesta.md |
 | 2026-11-24-subir-testflight-2-3-build-8 | done | tickets/done/2026-11-24-subir-testflight-2-3-build-8.md |
@@ -81,6 +82,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | conecta-tu-ia-maqueta-visual-y-pantallas-web | done | tickets/done/conecta-tu-ia-maqueta-visual-y-pantallas-web.md |
 | 2026-11-22-conecta-tu-ia-diseno | qa | tickets/qa/2026-11-22-conecta-tu-ia-diseno.md |
 | 2026-11-22-importar-registros-lote-1 | done | tickets/done/2026-11-22-importar-registros-lote-1.md |
+| 2026-11-25-recurrente-desde-registro-uitest-rojo-de-madrugada | backlog | tickets/backlog/2026-11-25-recurrente-desde-registro-uitest-rojo-de-madrugada.md |
 | cloud-upload-of-thousands-of-rows-takes-minutes | backlog | tickets/backlog/cloud-upload-of-thousands-of-rows-takes-minutes.md |
 | deleting-thousands-of-records-saves-slower-than-linear | backlog | tickets/backlog/deleting-thousands-of-records-saves-slower-than-linear.md |
 | import-of-ten-thousand-rows-still-blocks-the-main-thread | backlog | tickets/backlog/import-of-ten-thousand-rows-still-blocks-the-main-thread.md |
