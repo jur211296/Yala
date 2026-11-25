@@ -92,10 +92,10 @@ struct PersonalCloudKitSchemaParityTests {
     /// **`CD_InboxDraft.CD_joinRecordRaw`** (lo que la Bandeja unió al llegar, lote 2 de la Bandeja sin duplicados,
     /// decisión de Jürgen del 24-nov-2026): como el anterior, solo los esquemas de desarrollo; Production lo despliega Dan
     /// antes de publicar un build que lo escriba. Ticket `2026-11-24-bandeja-unir-al-llegar`.
-    static let pendingProductionDeploy: [String: Set<String>] = [
-        "yala-production.ckdb": ["CD_InboxDraft: falta CD_joinRecordRaw STRING"],
-        "yala_dev-production.ckdb": ["CD_InboxDraft: falta CD_joinRecordRaw STRING"],
-    ]
+    ///
+    /// Los dos ya están en Production (`CD_creditLimit` el 23-nov y `CD_joinRecordRaw` el 25-nov-2026, desplegados por
+    /// Dan y re-exportados con `cktool`): la lista queda vacía.
+    static let pendingProductionDeploy: [String: Set<String>] = [:]
 
     private static var schemasDir: URL {
         URL(fileURLWithPath: #filePath)
