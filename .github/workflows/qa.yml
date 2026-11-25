@@ -161,6 +161,12 @@ jobs:
       # rota, la lista quedaría vacía para todos los PR. Valida la del árbol y el lector.
       - name: Cuarentena de pruebas inestables (cuarentena-test.sh)
         run: bash qa/scripts/cuarentena-test.sh
+      # El veredicto de las tandas de UI (cuarentena y cuelgues, 2026-11-25) y las fechas de los
+      # ficheros del job `build`. Los dos con xcrun/xcodebuild de mentira o sin ellos: Linux basta.
+      - name: Veredicto de las tandas de UI (ci-ui-veredicto-test.sh)
+        run: bash qa/scripts/ci-ui-veredicto-test.sh
+      - name: Fechas desde la caché (ci-fechas-desde-cache-test.sh)
+        run: bash qa/scripts/ci-fechas-desde-cache-test.sh
       # La línea `Verificado:` que el hook `prepare-commit-msg` añade a cada commit a partir del
       # sello del `/gate` (2026-11-17, P3). Añade y no bloquea, así que si se rompe no da error:
       # los commits dejarían de decir cómo se probaron sin que nadie lo notara.
@@ -702,6 +708,11 @@ jobs:
       # llenarían los 10 GB del repo y echarían la de 2.3, que es la que sirve a los demás). Un PR lee
       # las cachés de su rama base.
       #
+      # CLAVE `ddp-v2` (2026-11-25): la v1 se guardó con la caché de compilación de Xcode encendida y las
+      # fechas del checkout; la v2 no la lleva y sus fechas salen del paso «Fechas de los ficheros desde
+      # la caché». Mezclarlas recompilaría entero, así que se empieza de cero: el primer push a 2.3 tras
+      # el cambio compila completo y guarda.
+      #
       # UNA CACHÉ ROTA NUNCA ROMPE EL RUN: restaurar y guardar llevan `continue-on-error` y, sin
       # caché, el build compila desde cero como antes.
       - name: Clave de la caché de compilación
@@ -711,9 +722,9 @@ jobs:
         run: |
           xcode=$(xcodebuild -version | tr -s ' \n' '-' | sed 's/-$//')
           {
-            echo "prefijo=ddp-v1-$xcode-"
-            echo "paquetes=ddp-v1-$xcode-$PAQUETES-"
-            echo "clave=ddp-v1-$xcode-$PAQUETES-$GITHUB_SHA"
+            echo "prefijo=ddp-v2-$xcode-"
+            echo "paquetes=ddp-v2-$xcode-$PAQUETES-"
+            echo "clave=ddp-v2-$xcode-$PAQUETES-$GITHUB_SHA"
           } >> "$GITHUB_OUTPUT"
       - name: Restaurar la caché de compilación
         id: cache
@@ -728,6 +739,18 @@ jobs:
           restore-keys: |
             ${{ steps.clave.outputs.paquetes }}
             ${{ steps.clave.outputs.prefijo }}
+      # FECHAS DESDE LA CACHÉ (2026-11-25, encargo «UI nocturna y CI»). `actions/checkout` deja todos
+      # los ficheros con la fecha del checkout, más nueva que el build guardado, y el build los daba
+      # todos por cambiados: con la caché restaurada recompilaba entero (~29 min de mediana en 63 PR
+      # con código del 19 al 25-nov). Este paso da una fecha fija y vieja a todo lo que no cambió
+      # desde el commit de la caché (el SHA del final de su clave) y la de ahora a lo que sí. Nunca al
+      # revés: el build compara «más nuevo que», y un fichero cambiado con fecha vieja salía sin
+      # recompilar (medido; ver la cabecera del script). Va en TODOS los runs del job, también en los
+      # que guardan la caché. Si no puede comparar, todo con la fecha de ahora: build completo.
+      - name: Fechas de los ficheros desde la caché
+        env:
+          CLAVE: ${{ steps.cache.outputs.cache-matched-key }}
+        run: python3 qa/scripts/ci-fechas-desde-cache.py --clave "$CLAVE" Secrets.xcconfig
       # Tope de 25, el mismo que tenía el paso cuando corría en primer plano.
       - name: Simulador del runner
         id: sim
@@ -740,6 +763,14 @@ jobs:
         # pensado para un build en frío (caché caducada o un Xcode nuevo).
         timeout-minutes: 50
         # `COMPILER_INDEX_STORE_ENABLE=NO`: el índice solo sirve al editor; ni se cachea ni se usa.
+        # `COMPILATION_CACHE_ENABLE_CACHING=NO` desde el 2026-11-25 (era YES). Medido en la Mini: con la
+        # caché de compilación encendida, cambiar UNA línea dentro de una función recompilaba casi todo
+        # (~220-240 s, como el build entero), dieran igual las fechas de los ficheros; apagada y con las
+        # fechas del paso «Fechas de los ficheros desde la caché», ~1 min. Solo ganaba con el contenido
+        # idéntico al de la caché, que en un PR no pasa. Límite medido: un PR que cambia declaraciones
+        # del módulo de la app (tipos o pruebas nuevas) recompila YalaTests entero igual (518 s, como
+        # un build completo); el recorte es para los cambios internos. Ver «CACHÉ DE COMPILACIÓN» y
+        # «FECHAS DESDE LA CACHÉ».
         run: |
           xcodebuild build-for-testing \
             -scheme "Yala Dev" \
@@ -747,7 +778,7 @@ jobs:
             -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
             -derivedDataPath .ddp \
             -quiet \
-            COMPILATION_CACHE_ENABLE_CACHING=YES \
+            COMPILATION_CACHE_ENABLE_CACHING=NO \
             COMPILER_INDEX_STORE_ENABLE=NO
       # En tar: el zip del artefacto no conserva los permisos de ejecución de los binarios (como
       # `ui-build`). Lo bajan las tres tandas de `unit`.
@@ -1160,6 +1191,16 @@ jobs:
   # lento mide ~6 min. Un caso que pase de 10 min lo corta XCTest (sale rojo y `-retry-tests-on-failure`
   # lo repite), y la tanda sigue con el resto.
   #
+  # CUARENTENA Y CUELGUES (2026-11-25, encargo «UI nocturna y CI»). Del 22 al 25-nov cinco tandas
+  # salieron rojas por un caso que agoto los 10 min: la app deja de avisar que esta quieta («App
+  # animations complete notification not received»), cada toque espera 60 s y el caso se come el tope.
+  # Pasa en ~3 casos por noche, siempre distintos, y ninguno se repite. `-retry-tests-on-failure` NO
+  # reintenta un caso cortado por tiempo: xcodebuild reinicia el runner, sigue con el resto y el caso
+  # queda rojo. El paso «Veredicto de la tanda» (`ci-ui-veredicto.py`) relanza una vez, solo, cada
+  # caso cortado (como mucho 3), y lee `qa/cuarentena.json` de 2.3: un rojo en la lista o un cuelgue
+  # verde al repetirlo no pinta la tanda y sale aparte en el aviso (salidas `uiq_N`). Bajar el tope
+  # no lo arreglaba: el caso verde mas lento sin esas esperas mide 444 s, y el rojo seguiria ahi.
+  #
   # CALENTAR EL RUNNER (2026-11-19). El paso «Calentar el simulador» abre la app, pero no el runner de
   # XCUITest ni su sesion de accesibilidad, y eso es lo que paga el primer caso de cada tanda: en los tres
   # runs fue casi siempre el lento o el rescatado (4-10 min, «App event loop idle notification not
@@ -1234,7 +1275,9 @@ jobs:
     needs: ui-build
     if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
     runs-on: xcode-27
-    timeout-minutes: 165
+    # 180 desde el 2026-11-25 (era 165): suma el paso «Veredicto de la tanda», que puede repetir
+    # hasta tres cuelgues (tope 25). Ver «CUARENTENA Y CUELGUES».
+    timeout-minutes: 180
     strategy:
       # Una tanda que falla no puede cancelar a las otras: perderiamos su parte de la suite.
       fail-fast: false
@@ -1263,6 +1306,21 @@ jobs:
       ui_12: ${{ steps.salida.outputs.ui_12 }}
       ui_13: ${{ steps.salida.outputs.ui_13 }}
       ui_14: ${{ steps.salida.outputs.ui_14 }}
+      # Lo que el veredicto separó (cuarentena y cuelgues rescatados), una línea por tanda.
+      uiq_1: ${{ steps.salida.outputs.uiq_1 }}
+      uiq_2: ${{ steps.salida.outputs.uiq_2 }}
+      uiq_3: ${{ steps.salida.outputs.uiq_3 }}
+      uiq_4: ${{ steps.salida.outputs.uiq_4 }}
+      uiq_5: ${{ steps.salida.outputs.uiq_5 }}
+      uiq_6: ${{ steps.salida.outputs.uiq_6 }}
+      uiq_7: ${{ steps.salida.outputs.uiq_7 }}
+      uiq_8: ${{ steps.salida.outputs.uiq_8 }}
+      uiq_9: ${{ steps.salida.outputs.uiq_9 }}
+      uiq_10: ${{ steps.salida.outputs.uiq_10 }}
+      uiq_11: ${{ steps.salida.outputs.uiq_11 }}
+      uiq_12: ${{ steps.salida.outputs.uiq_12 }}
+      uiq_13: ${{ steps.salida.outputs.uiq_13 }}
+      uiq_14: ${{ steps.salida.outputs.uiq_14 }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # Mismo paso y mismo porque que en el job `tests`.
@@ -1287,6 +1345,20 @@ jobs:
       - name: Desempaquetar el build
         timeout-minutes: 10
         run: mkdir -p .ddp/Build && tar -C .ddp/Build -xf ui-build.tar && rm ui-build.tar
+      # La misma cuarentena que los unit, leída de 2.3 y nunca de la rama del run (ver el paso
+      # gemelo del job `unit`). Ver «CUARENTENA Y CUELGUES». No falla nunca.
+      - name: Cuarentena de pruebas inestables (leída de 2.3)
+        run: |
+          dest="$RUNNER_TEMP/cuarentena-2.3.json"
+          rm -f "$dest"
+          if git fetch --no-tags --depth=1 origin 2.3; then
+            if git cat-file -e FETCH_HEAD:qa/cuarentena.json 2>/dev/null; then
+              git show FETCH_HEAD:qa/cuarentena.json > "$dest"
+            fi
+          else
+            printf 'ILEGIBLE: git fetch origin 2.3 falló\n' > "$dest"
+          fi
+          bash qa/scripts/ci-reintentar-rojos.sh --informe-cuarentena "$dest" || true
       # Ver «CALENTAR EL SIMULADOR». Advisory como la UI: si falla, los tests arrancan el simulador
       # ellos mismos, como hasta ahora.
       - name: Calentar el simulador
@@ -1350,17 +1422,43 @@ jobs:
         env:
           TANDA: ${{ matrix.tanda }}
         run: bash qa/scripts/ci-ui-conteo.sh "$RUNNER_TEMP/tanda.xcresult" "$RUNNER_TEMP/tanda.log"
+      # Ver «CUARENTENA Y CUELGUES». Solo corre si el paso de UI salio en rojo. Advisory: si el
+      # script falla o agota su tope, `veredicto` llega vacio y manda el resultado del paso de UI.
+      - name: Veredicto de la tanda (cuarentena y cuelgues)
+        id: veredicto
+        if: ${{ always() && steps.ui.outcome == 'failure' }}
+        continue-on-error: true
+        timeout-minutes: 25
+        env:
+          TANDA: ${{ matrix.tanda }}
+        run: |
+          python3 qa/scripts/ci-ui-veredicto.py --resultado failure \
+            --xcresult "$RUNNER_TEMP/tanda.xcresult" --log "$RUNNER_TEMP/tanda.log" \
+            --cuarentena "$RUNNER_TEMP/cuarentena-2.3.json" --dir "$RUNNER_TEMP/cuelgues" -- \
+            -scheme "Yala Dev" \
+            -project Yala.xcodeproj \
+            -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
+            -derivedDataPath .ddp \
+            -parallel-testing-enabled NO \
+            -test-timeouts-enabled YES \
+            -default-test-execution-time-allowance 600 \
+            -collect-test-diagnostics never
       # `sin_tests` cubre los dos estados en rojo del conteo (`no_cargo` y `sin_tests`): para el
-      # aviso es lo mismo, una tanda que no probo nada.
+      # aviso es lo mismo, una tanda que no probo nada. El veredicto solo puede cambiar un
+      # `failure` (a `success` si todos sus rojos estaban en cuarentena o eran cuelgues rescatados).
       - name: Resultado de la tanda
         id: salida
         if: ${{ always() }}
         env:
           RESULTADO: ${{ steps.ui.outcome }}
+          VEREDICTO: ${{ steps.veredicto.outputs.veredicto }}
+          DETALLE: ${{ steps.veredicto.outputs.detalle }}
           CONTEO: ${{ steps.conteo.outputs.estado }}
         run: |
+          [ "$RESULTADO" != "failure" ] || [ "$VEREDICTO" != "success" ] || RESULTADO=success
           case "$CONTEO" in no_cargo|sin_tests) RESULTADO=sin_tests ;; esac
           echo "ui_${{ matrix.tanda }}=$RESULTADO" >> "$GITHUB_OUTPUT"
+          echo "uiq_${{ matrix.tanda }}=${DETALLE//$'\n'/ }" >> "$GITHUB_OUTPUT"
 
   # --------------------------------------------------------------------------------
   # EL AVISO, EN SU PROPIO CHECK  (2026-09-09, decision del owner)
@@ -1443,6 +1541,20 @@ jobs:
           R_UI_12: ${{ needs.ui.outputs.ui_12 }}
           R_UI_13: ${{ needs.ui.outputs.ui_13 }}
           R_UI_14: ${{ needs.ui.outputs.ui_14 }}
+          R_UIQ_1: ${{ needs.ui.outputs.uiq_1 }}
+          R_UIQ_2: ${{ needs.ui.outputs.uiq_2 }}
+          R_UIQ_3: ${{ needs.ui.outputs.uiq_3 }}
+          R_UIQ_4: ${{ needs.ui.outputs.uiq_4 }}
+          R_UIQ_5: ${{ needs.ui.outputs.uiq_5 }}
+          R_UIQ_6: ${{ needs.ui.outputs.uiq_6 }}
+          R_UIQ_7: ${{ needs.ui.outputs.uiq_7 }}
+          R_UIQ_8: ${{ needs.ui.outputs.uiq_8 }}
+          R_UIQ_9: ${{ needs.ui.outputs.uiq_9 }}
+          R_UIQ_10: ${{ needs.ui.outputs.uiq_10 }}
+          R_UIQ_11: ${{ needs.ui.outputs.uiq_11 }}
+          R_UIQ_12: ${{ needs.ui.outputs.uiq_12 }}
+          R_UIQ_13: ${{ needs.ui.outputs.uiq_13 }}
+          R_UIQ_14: ${{ needs.ui.outputs.uiq_14 }}
           UI_TOCABA: ${{ needs.tests.outputs.ui_tocaba }}
           RESULTADO_JOB: ${{ needs.tests.result }}
           RESULTADO_UI: ${{ needs.ui.result }}
@@ -1489,6 +1601,16 @@ jobs:
             [ "$r" != "failure" ] || fallidos="$fallidos\n- UI tests (YalaUITests, tanda $k)"
             [ "$r" != "sin_tests" ] || ui_cero="$ui_cero${ui_cero:+, }$k"
           done
+          # Lo que el veredicto de cada tanda separo (2026-11-25): rojos en cuarentena y cuelgues
+          # rescatados. No pinta la tanda; va aparte, al final del aviso o en la nota del verde.
+          ui_aparte=""
+          for k in $UI_TANDAS; do
+            v="R_UIQ_$k"
+            q="${!v:-}"
+            [ -z "$q" ] || ui_aparte="$ui_aparte\n- Tanda $k: $q"
+          done
+          nota_aparte=""
+          [ -z "$ui_aparte" ] || nota_aparte=$(printf '\nAparte, sin pintar su tanda (cuarentena de qa/cuarentena.json y cuelgues de 10 min rescatados al repetirlos):%b' "$ui_aparte")
           nota_cero=""
           if [ -n "$ui_cero" ]; then
             nota_cero=$(printf '%s\n' \
@@ -1545,7 +1667,8 @@ jobs:
               "resultado — casi siempre, su tope de tiempo." \
               "Esto NO es un verde: es un run que no probo nada." \
               "La causa esta en un paso ANTERIOR del job — mira el log." \
-              "$nota_cero")
+              "$nota_cero" \
+              "$nota_aparte")
           elif [ -n "$unit_rojo" ]; then
             asunto="hay unit tests en rojo"
             detalle=$(printf '%s\n' \
@@ -1555,7 +1678,8 @@ jobs:
               "Si es un push a 2.3 o 1.0, ya entro: la rama esta en rojo." \
               "" \
               "Pasos en rojo:$(printf '%b' "$fallidos")" \
-              "$nota_cero")
+              "$nota_cero" \
+              "$nota_aparte")
           elif [ -n "$ui_cero" ]; then
             asunto="la UI no ejecuto ningun test"
             detalle=$(printf '%s\n' \
@@ -1565,7 +1689,8 @@ jobs:
               "en rojo ni un verde: esas tandas no probaron nada, y su job sale en rojo por eso." \
               "Cada tanda lo explica en su anotacion «Tanda N sin tests» (runtime, conteo y causa de dyld)." \
               "La primera vez fue del 5 al 7-nov de 2026: runtime iOS 27.2 con Xcode 27.1 (ci-simulador.sh)." \
-              "$( [ -z "$fallidos" ] || printf 'Ademas, tandas con tests en rojo:%b' "$fallidos" )")
+              "$( [ -z "$fallidos" ] || printf 'Ademas, tandas con tests en rojo:%b' "$fallidos" )" \
+              "$nota_aparte")
           elif [ -n "$fallidos" ]; then
             asunto="hay tests de UI en rojo"
             detalle=$(printf '%s\n' \
@@ -1574,10 +1699,18 @@ jobs:
               "La UI es advisory a proposito (continue-on-error), asi que el run NO se pone en rojo." \
               "Este aviso existe para que el rojo no pase inadvertido." \
               "" \
-              "Pasos en rojo:$(printf '%b' "$fallidos")")
+              "Pasos en rojo:$(printf '%b' "$fallidos")" \
+              "$nota_aparte")
           else
             if [ "$UI_TOCABA" = "true" ]; then
               echo "::notice title=Suite en verde::Los unit y todas las tandas de UI corrieron y ninguno fallo."
+              if [ -n "$nota_aparte" ]; then
+                aparte=$(printf '%b' "$ui_aparte")
+                aparte="${aparte#$'\n'}"
+                aparte="${aparte//'%'/%25}"
+                echo "::notice title=UI aparte (cuarentena y cuelgues)::${aparte//$'\n'/%0A}"
+                printf '### UI aparte\n%b\n' "$ui_aparte" >> "$GITHUB_STEP_SUMMARY"
+              fi
             else
               echo "::notice title=Suite en verde::Los dos pasos de unit corrieron y ninguno fallo. La UI corre en la nocturna."
             fi
