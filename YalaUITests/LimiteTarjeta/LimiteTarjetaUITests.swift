@@ -82,12 +82,17 @@ final class LimiteTarjetaUITests: XCTestCase {
         // El número va alineado a la derecha: un toque en el centro deja el cursor a mitad del número y el borrado no lo
         // vacía (medido: «2000» entró en medio de «8,000.00»). Se toca el final.
         field.coordinate(withNormalizedOffset: CGVector(dx: 0.98, dy: 0.5)).tap()
+        // Una tecla de borrar por llamada, no una ráfaga: el campo reagrupa el número a cada cambio («8,00» → «800») y
+        // reescribe el texto, y en una ráfaga las teclas que llegaban entre tanto se perdían contra esa reescritura. En el
+        // CI quedaban «8», «80» u «800» (nocturnas del 23 al 25-nov); en una Mac rápida pasaba. Entre una llamada y la
+        // siguiente XCUITest espera a que la app quede quieta. El tope cubre el número entero con sus separadores.
         let current = (field.value as? String) ?? ""
-        if !current.isEmpty && current != field.placeholderValue {
-            field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: current.count + 2))
+        var presses = 0
+        while presses < current.count + 4 && !isEmpty(field) {
+            field.typeText(XCUIKeyboardKey.delete.rawValue)
+            presses += 1
         }
-        XCTAssertTrue(((field.value as? String) ?? "").isEmpty || field.value as? String == field.placeholderValue,
-                      "El campo no quedó vacío antes de escribir: «\(field.value as? String ?? "")».")
+        XCTAssertTrue(isEmpty(field), "El campo no quedó vacío antes de escribir: «\(field.value as? String ?? "")».")
         if !text.isEmpty { field.typeText(text) }
         app.buttons["toolbar_save_button"].tap()
         // La hoja de la tarjeta sigue en el árbol debajo del formulario: lo que prueba que Guardar llegó es que el
@@ -96,6 +101,12 @@ final class LimiteTarjetaUITests: XCTestCase {
                       "Guardar no cerró el formulario.")
         XCTAssertTrue(app.descendants(matching: .any)["hoja_cuenta_estado"].firstMatch.waitForExistence(timeout: 8),
                       "Guardar no volvió a la hoja de la tarjeta.")
+    }
+
+    /// Vacío, o con el «Opcional» del marcador a la vista.
+    private func isEmpty(_ field: XCUIElement) -> Bool {
+        let value = (field.value as? String) ?? ""
+        return value.isEmpty || value == field.placeholderValue
     }
 
     private var lineUsageID: String { "hoja_cuenta_uso_de_linea" }
