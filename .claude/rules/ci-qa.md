@@ -36,6 +36,17 @@ Auditoría de tiempos del CI (`docs/auditorias/2026-11-21-ci-tiempos.md`). Un PR
   compilación de Xcode sola, sin el resto del DerivedData, no gana nada (218 s).
   Guarda el push a 2.3/1.0 y la nocturna; un PR solo si no encontró nada. Un fallo de caché nunca
   rompe el run (`continue-on-error`): compila desde cero.
+  **Desde el 2026-11-25 la caché sí recorta** (clave `ddp-v2`): medido sobre 63 PR del 19 al 25-nov, se
+  restauraba y el build tardaba igual (~29 min), porque el checkout deja todas las fechas nuevas y el
+  build lo recompilaba todo. Ahora el paso «Fechas de los ficheros desde la caché»
+  (`qa/scripts/ci-fechas-desde-cache.py`) da una fecha fija vieja a lo que no cambió desde el commit de la
+  caché y la de ahora a lo que sí, y la caché de compilación de Xcode va apagada (con ella encendida, una
+  línea cambiada recompilaba casi todo). **Nunca des a un fichero cambiado una fecha más vieja que la del
+  build anterior**: el build compara «más nuevo que» y lo da por al día; medido, el binario salió con el
+  código de antes y el build en verde. Por eso no valen fechas derivadas del contenido. Límite: un PR que
+  cambia declaraciones del módulo de la app recompila `YalaTests` entero igual (medido, 518 s como un build
+  completo); el recorte es para los cambios internos (~1 min frente a ~4-8). Lo que queda, en la card
+  «el build recompila todas las pruebas unitarias».
   **Nada escribe en `.ddp` mientras se restaura**: el simulador en segundo plano valida con su propio
   DerivedData (`SIM_DERIVED`). Con `.ddp`, su `-showdestinations` resolvía paquetes en
   `.ddp/SourcePackages` a la vez que `tar` extraía ahí, y la caché salía «no encontrada» (run 44924790889).
@@ -138,6 +149,11 @@ mergeaba en verde y nadie se enteraba.
   `ci-reintentar-rojos-test.sh`, casos 21-28. Los dos en `coverage-index`.
 - Solo la LISTA se lee de 2.3; el script que la aplica sigue siendo el del PR. Leer también las
   reglas del gate de la rama base es la propuesta P4.
+- **Vale también para la UI de la nocturna (2026-11-25).** Se apunta como `YalaUITests/Suite/test_caso()`
+  (o `YalaUITests/Suite`). La prueba corre igual; si su rojo final está en la lista, el paso «Veredicto de
+  la tanda» (`qa/scripts/ci-ui-veredicto.py`) no pinta la tanda y la lista aparte en el aviso, con dueño,
+  ticket y días. Sin modo bloquear para la UI (es advisory); la caducidad de 14 días, igual. Banco:
+  `ci-ui-veredicto-test.sh`.
 
 ## Revisor con checklist: en el gate, en observar, leído de 2.3
 
@@ -214,6 +230,11 @@ aparecen en ningún sitio**. Pasó del 23 al 29-oct de 2026: las tres tandas se 
   la suite al triple. Ese día la suite sumaba ~872 min y las tandas pasaron de 9 a 14.
 - **Cada caso tiene tope de 10 min** (`-default-test-execution-time-allowance 600` en el paso de UI, 2026-11-19). El
   más lento legítimo mide ~6. Si una suite nueva necesita más, se parte el caso; no se sube el tope a ciegas.
+- **Un caso cortado por el tope no lo reintenta xcodebuild** (2026-11-25): reinicia el runner y sigue, y el caso
+  queda rojo aunque `-retry-tests-on-failure` esté puesto. Del 22 al 25-nov pasó en ~3 casos por noche, siempre
+  distintos: la app deja de avisar que está quieta y cada toque espera 60 s. El veredicto de la tanda relanza una
+  vez, solo, cada caso cortado (como mucho 3); si pasa, no pinta la tanda y sale aparte en el aviso. Si un mismo
+  caso se cuelga dos noches, ya no es el runner: se mira el caso.
 - **El runner de XCUITest se calienta aparte** («Calentar el runner de XCUITest», un caso corto del Panel que no
   cuenta). Calentar el simulador solo abre la app, y el primer caso de cada tanda seguía pagando el arranque del
   runner y de la accesibilidad. Si cambias el caso de calentamiento, que siga siendo corto y verde cada noche.
