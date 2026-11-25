@@ -558,6 +558,11 @@ struct InsightsTabView: View {
 
             if showComparison {
                 ComparisonModeSelector(period: period, customRange: sessionState.customDateRange)
+                    // Medido en XCUITest el 2026-11-25 (iOS 27.2, en local y en la nocturna, 3 de 3): al tocar «Con
+                    // noviembre de 2025» la frase pasaba al año anterior y el chip elegido seguía siendo «el mes
+                    // anterior», también para VoiceOver; con el consejo fuera de los chips se invertía (chip al día, frase
+                    // vieja). Atado al modo, el selector se rehace con cada cambio, como en Tendencias. Causa sin aislar.
+                    .id(sessionState.comparisonMode)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

@@ -56,23 +56,28 @@ final class PanelSectionsConfigResetUITests: XCTestCase {
         movePlanningAboveTrends(app, reorder: reorder)
         XCTAssertEqual(planningIsAboveTrends(app), true, "Tras ordenar con ↕, Planificación tenía que ir arriba.")
 
-        // ↻ pregunta, y «Cancelar» no cambia nada.
+        // ↻ pregunta, y «Cancelar» no cambia nada. La alerta se busca por su TÍTULO, que es su identificador en el árbol
+        // (los botones de una `.alert` no llevan el suyo), y se toca el botón cuando ya existe: `app.alerts.firstMatch`
+        // casa con cualquier alerta y el toque podía salir con la alerta aún entrando (testing.md, «espera el TEXTO del
+        // aviso»). 10 s: en el runner frío cada lectura cuesta 1-3 s.
         reset.tap()
-        let alert = app.alerts.firstMatch
-        XCTAssertTrue(alert.waitForExistence(timeout: 5), "↻ restableció sin preguntar.")
+        let alert = app.alerts["¿Restablecer el orden original?"]
+        let cancel = alert.buttons["Cancelar"].firstMatch
+        let confirm = alert.buttons["Restablecer"].firstMatch
+        XCTAssertTrue(cancel.waitForExistence(timeout: 10), "↻ restableció sin preguntar.")
         let askShot = XCTAttachment(screenshot: app.screenshot())
         askShot.name = "configurar-panel-pregunta"
         askShot.lifetime = .keepAlways
         add(askShot)
-        alert.buttons["Cancelar"].firstMatch.tap()
-        XCTAssertTrue(alert.waitForNonExistence(timeout: 5), "La pregunta no se cerró con «Cancelar».")
+        cancel.tap()
+        XCTAssertTrue(alert.waitForNonExistence(timeout: 10), "La pregunta no se cerró con «Cancelar».")
         XCTAssertEqual(planningIsAboveTrends(app), true, "«Cancelar» restableció el orden igualmente.")
 
         // ↻ y «Restablecer»: el orden original vuelve (Tendencias arriba).
         reset.tap()
-        XCTAssertTrue(alert.waitForExistence(timeout: 5), "La segunda vez ↻ no preguntó.")
-        alert.buttons["Restablecer"].firstMatch.tap()
-        XCTAssertTrue(alert.waitForNonExistence(timeout: 5), "La pregunta no se cerró con «Restablecer».")
+        XCTAssertTrue(confirm.waitForExistence(timeout: 10), "La segunda vez ↻ no preguntó.")
+        confirm.tap()
+        XCTAssertTrue(alert.waitForNonExistence(timeout: 10), "La pregunta no se cerró con «Restablecer».")
         let restored = NSPredicate { _, _ in self.planningIsAboveTrends(app) == false }
         // 15 s y no 5: en el runner frío del CI cada lectura de las dos filas cuesta 1-3 s, y con 5 s cabía una sola,
         // hecha con la lista todavía reordenándose (nocturna del 22-nov, iOS 27.0).

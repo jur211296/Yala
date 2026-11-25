@@ -32,6 +32,14 @@ final class RecordsLote8UITests: XCTestCase {
         app.buttons.matching(identifier: "record_row").firstMatch
     }
 
+    /// El primer gasto de la lista. La etiqueta empieza por el tipo si el registro no tiene nota («Gasto, S/ 20.00, …») y
+    /// lo lleva en segundo lugar si la tiene («Bus, Gasto, …»).
+    private func firstExpenseRow(_ app: XCUIApplication) -> XCUIElement {
+        app.buttons.matching(NSPredicate(
+            format: "identifier == 'record_row' AND (label BEGINSWITH 'Gasto, ' OR label CONTAINS ', Gasto, ')"))
+            .firstMatch
+    }
+
     // MARK: - L8-1
 
     func test_more_recordsCardSitsRightUnderPanel() throws {
@@ -130,17 +138,23 @@ final class RecordsLote8UITests: XCTestCase {
         // El aviso dura 5 s y entre que sale y se toca «Deshacer» se espera a que la hoja se cierre: en un runner frío del
         // CI no cabía (rojo 3 de 3 en las nocturnas del 23, 25 y 26-oct). Molde: `UXAudit22Lote08UITests`.
         let app = launchInRecords(extraArguments: ["-uitest-undo-notice-seconds", "30"])
-        firstRow(app).press(forDuration: 1.2)
+        // El primer GASTO, no la primera fila: la semilla `minimal` siembra una transferencia los días 10 y 25 y esos días
+        // encabeza la lista. A una transferencia el menú no le ofrece «Cambiar categoría» (su subcategoría es de
+        // sistema), y el caso caía 3 de 3 esos días (nocturnas del 10 y del 25-nov). Molde: `RecordsLote8BUITests`.
+        let expense = firstExpenseRow(app)
+        XCTAssertTrue(expense.waitForExistence(timeout: 10), "No hay ningún gasto en Registros.")
+        expense.press(forDuration: 1.2)
 
         let change = app.buttons["Cambiar categoría"].firstMatch
         XCTAssertTrue(change.waitForExistence(timeout: 5), "El menú no ofrece cambiar la categoría.")
         change.tap()
 
         // La hoja se titula «Cambiar categoría» desde el lote decidido 2.2 · 02 (`records.l8.changeSubcategoryTitle`),
-        // igual que la entrada del menú.
+        // igual que la entrada del menú. 10 s y no 5: en el runner frío la hoja tarda en subir tras cerrarse el menú
+        // (nocturna del 13-nov, día sin transferencia).
         let sheetTitle = app.navigationBars["Cambiar categoría"]
         let sheet = app.otherElements["record_subcategory_change_sheet"].firstMatch
-        XCTAssertTrue(sheetTitle.waitForExistence(timeout: 5), "La hoja no se titula «Cambiar categoría».")
+        XCTAssertTrue(sheetTitle.waitForExistence(timeout: 10), "La hoja no se titula «Cambiar categoría».")
         XCTAssertTrue(app.descendants(matching: .any)["record_subcategory_change_record"].exists || sheet.exists,
                       "La hoja no dice qué registro cambia.")
 

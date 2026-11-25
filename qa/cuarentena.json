@@ -59,6 +59,20 @@
       "ticket": "2026-11-17-verificacion-p1-divisas-inestables",
       "entrada": "2026-11-17",
       "motivo": "1 rescate del 10 al 17-nov, misma causa."
+    },
+    {
+      "prueba": "YalaUITests/PersonalToGroupConversionUITests/test_convertingTheBus_toAGroup()",
+      "dueno": "frank",
+      "ticket": "2026-11-25-ui-nocturna-intermitentes",
+      "entrada": "2026-11-25",
+      "motivo": "Rojo 3/3 en la nocturna el 16, 22 y 24-nov («El detalle no ofrece «Editar»»): los toques a la fila no abrían el detalle. En local pasa antes y después del arreglo (10/10), así que el arreglo (fila a la franja central antes de tocar) no se pudo comprobar contra el fallo. Sale el 2026-12-09, o antes si tres nocturnas seguidas la dan verde."
+    },
+    {
+      "prueba": "YalaUITests/PersonalToGroupConversionUITests/test_cancellingTheReview_changesNothing()",
+      "dueno": "frank",
+      "ticket": "2026-11-25-ui-nocturna-intermitentes",
+      "entrada": "2026-11-25",
+      "motivo": "Rojo 3/3 en la nocturna el 22 y 23-nov y rescatada el 24-nov, mismo mensaje y misma causa probable que test_convertingTheBus_toAGroup. Sale el 2026-12-09, o antes si tres nocturnas seguidas la dan verde."
     }
   ]
 }
