@@ -71,17 +71,27 @@ struct MultiDraftReviewLogicTests {
         #expect(range.map { calendar.isDate($0.lowerBound, inSameDayAs: items[0].date) } == true)
     }
 
-    @Test("Guardar se enciende solo si todo lo marcado está completo; desmarcar lo incompleto lo enciende")
-    func incompleteMarkedBlocksSave() {
+    @Test("Lo incompleto nunca cuenta como marcado: Guardar aprueba lo completo y lo incompleto se queda en la Bandeja")
+    func incompleteIsNeverMarked() {
         let items = [item(1, -10), item(2, -5, category: nil, complete: false)]
         var selection = selection(items)
-        #expect(!Logic.canSave(items, selection))
-        #expect(Logic.incompleteMarked(items, selection) == 1)
-        selection.toggle(2)
+        #expect(Logic.marked(items, selection).map(\.id) == [1], "Con el check puesto parecía listo (Jürgen, 25-nov).")
         #expect(Logic.canSave(items, selection))
-        #expect(Logic.leavesUnmarkedInInbox(items, selection))
+        #expect(Logic.incompletePending(items) == 1)
+        #expect(Logic.leavesUnmarkedInInbox(items, selection), "El incompleto se queda en la Bandeja.")
         selection.setAll(false, pending: [1, 2])
         #expect(!Logic.canSave(items, selection), "Sin nada marcado no hay nada que guardar.")
+    }
+
+    @Test("Al completarlo vuelve a contar como marcado, salvo que la persona lo hubiera quitado")
+    func completingMarksItAgain() {
+        var items = [item(1, -10), item(2, -5, category: nil, complete: false), item(3, -7, category: nil, complete: false)]
+        var selection = selection(items)
+        selection.toggle(3)
+        items[1].isComplete = true
+        items[2].isComplete = true
+        #expect(Logic.marked(items, selection).map(\.id) == [1, 2])
+        #expect(Logic.isMarkable(items[2]))
     }
 
     @Test("Tras guardar lo marcado la hoja termina, aunque queden desmarcados en la Bandeja")
@@ -98,7 +108,7 @@ struct MultiDraftReviewLogicTests {
         #expect(!Logic.isFinished(items, selection), "Si vuelve a marcar el que quedaba, aún hay qué guardar.")
     }
 
-    @Test("La barra junta lo que no tiene categoría y la leyenda solo nombra categorías")
+    @Test("La barra cuenta solo lo marcado, que siempre tiene categoría; la leyenda nombra cada una")
     func slicesAndLegend() {
         let items = [
             item(1, -80, category: "food"), item(2, -20, category: nil, complete: false),
@@ -106,8 +116,8 @@ struct MultiDraftReviewLogicTests {
         ]
         let selection = selection(items)
         let slices = Logic.slices(items, selection)
-        #expect(slices.map(\.key) == ["food", "car", nil])
-        #expect(slices.last?.value == 25)
+        #expect(slices.map(\.key) == ["food", "car"], "Lo incompleto no está marcado, así que no entra en la barra.")
+        #expect(slices.first?.value == 90)
         #expect(Logic.legend(slices).map(\.key) == ["food", "car"])
     }
 

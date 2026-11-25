@@ -47,18 +47,18 @@ final class MultiDraftReviewUITests: XCTestCase {
         }
     }
 
-    /// Siete leídos, dos sin categoría: todo marcado y Guardar apagado con el aviso; desmarcando esos dos, guarda los
-    /// otros cinco, la hoja termina y avisa de que los otros siguen en la Bandeja.
+    /// Siete leídos, dos sin categoría: los cinco completos salen marcados y los dos incompletos con el check vacío y sin
+    /// poder marcarse (Jürgen, 25-nov-2026: con el check puesto parecía listo). Guardar aprueba los cinco, la hoja termina
+    /// y avisa de que los otros siguen en la Bandeja.
     func test_photo_savesOnlyTheMarked_andLeavesTheRestInTheInbox() {
         let app = openPhotoReview()
 
         let count = app.staticTexts["multi_review_count"]
         XCTAssertTrue(count.waitForExistence(timeout: 5), "Falta el resumen de arriba (multi_review_count).")
-        XCTAssertTrue(count.label.hasPrefix("7 de 7"), "Todo tiene que salir marcado: \(count.label)")
+        XCTAssertTrue(count.label.hasPrefix("5 de 7"), "Solo lo completo sale marcado: \(count.label)")
         XCTAssertEqual(app.otherElements.matching(identifier: "multi_review_day").count, 4, "Un bloque por día.")
 
         let save = app.buttons["image_save"]
-        XCTAssertFalse(save.isEnabled, "Con dos marcados sin categoría no se puede guardar.")
         // Opción A (2026-11-22): el recuento dice cuántos faltan y la primera incompleta sale desplegada con «Ver todo».
         XCTAssertTrue(count.label.contains("2 por completar"), "El recuento tiene que decir cuántos faltan: \(count.label)")
         XCTAssertTrue(app.buttons["esto_lei_ver_todo"].firstMatch.exists, "La primera incompleta sale desplegada.")
@@ -68,17 +68,16 @@ final class MultiDraftReviewUITests: XCTestCase {
         XCTAssertTrue(count.label.hasPrefix("0 de 7"), "«Quitar todos» tenía que desmarcarlos: \(count.label)")
         XCTAssertFalse(save.isEnabled, "Sin nada marcado no hay nada que guardar.")
         toggleAll.tap()
-        XCTAssertTrue(count.label.hasPrefix("7 de 7"), "«Marcar todos» tenía que marcarlos: \(count.label)")
+        XCTAssertTrue(count.label.hasPrefix("5 de 7"), "«Marcar todos» marca solo lo completo: \(count.label)")
 
         for name in ["Uber", "Ladislao Bal"] {
             let mark = check(app, name)
             reveal(mark, in: app)
-            XCTAssertTrue(mark.isSelected, "\(name) tenía que salir marcado.")
-            mark.tap()
-            XCTAssertFalse(mark.isSelected, "Tocar la marca de \(name) tenía que desmarcarlo.")
+            XCTAssertFalse(mark.isSelected, "\(name) está incompleto: su check sale vacío.")
+            XCTAssertFalse(mark.isEnabled, "\(name) está incompleto: no se puede marcar.")
         }
 
-        XCTAssertTrue(save.isEnabled, "Con los incompletos desmarcados, el resto se tiene que poder guardar.")
+        XCTAssertTrue(save.isEnabled, "Lo completo se puede guardar aunque haya incompletos.")
         XCTAssertTrue(save.label.hasPrefix("Guardar 5 · "), "El botón dice cuántos y cuánto: \(save.label)")
         XCTAssertTrue(save.label.contains("224.81"), "El total del botón es el de los cinco marcados: \(save.label)")
         XCTAssertTrue(
@@ -89,7 +88,10 @@ final class MultiDraftReviewUITests: XCTestCase {
 
         let saved = app.descendants(matching: .any).matching(identifier: "voice_draft_saved")
         XCTAssertTrue(saved.firstMatch.waitForExistence(timeout: 10), "Tras Guardar, las filas no se marcaron.")
-        XCTAssertEqual(saved.count, 5, "Solo se guardan los cinco marcados.")
+        // Los guardados llegan uno tras otro: se espera a los cinco, no se cuenta al ver el primero.
+        let allFive = XCTNSPredicateExpectation(predicate: NSPredicate(format: "count == 5"), object: saved)
+        XCTAssertEqual(XCTWaiter().wait(for: [allFive], timeout: 10), .completed,
+                       "Solo se guardan los cinco marcados; salieron \(saved.count).")
         XCTAssertEqual(app.buttons.matching(identifier: "voice_draft_row").count, 2, "Los desmarcados siguen pendientes.")
         let finish = app.buttons["image_finish"]
         XCTAssertTrue(finish.waitForExistence(timeout: 5), "Con lo marcado guardado, la hoja ofrece Listo.")

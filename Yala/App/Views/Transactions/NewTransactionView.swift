@@ -1295,7 +1295,8 @@ struct NewTransactionView: View {
     }
 
     private var amountDisplayRow: some View {
-        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+        // La cápsula centrada en vertical con el monto: por la línea de base quedaba muy abajo (Jürgen, 25-nov-2026).
+        HStack(alignment: .center, spacing: DS.Spacing.sm) {
             AmountCurrencyCapsule(
                 label: currencySymbol ?? displayCurrencyCode,
                 options: currencyCapsuleOptions,

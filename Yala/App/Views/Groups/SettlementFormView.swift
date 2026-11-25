@@ -398,7 +398,8 @@ struct SettlementFormView: View {
 
     private var amountSection: some View {
         VStack(spacing: DS.Spacing.xs) {
-            HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+            // La cápsula centrada en vertical con el monto, como en Nuevo registro (Jürgen, 25-nov-2026).
+            HStack(alignment: .center, spacing: DS.Spacing.sm) {
                 // La cápsula de moneda de la hoja B1, sin menú: la moneda la eligen el saldo y el segmentado de arriba.
                 // Lote 13: respeta la preferencia «S/» / «PEN», como el formulario de gasto.
                 AmountCurrencyCapsule(
