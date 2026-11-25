@@ -13,6 +13,7 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de correr tests, el gate o
 - [XcodeBuildMCP: la configuración pisa el scheme](feedback_xcodebuildmcp_configuration_pisa_el_scheme.md) — Yala Dev = Debug-Dev; con Debug la nube sale apagada bajo -uitest.
 - [Sentry vacío no descarta un «crash»](feedback_sentry_vacio_no_descarta_un_crash.md) — pantalla muerta o exit(0) primero; .ips en «Necesita de ti».
 - [Gate con globs anchos: subconjunto declarado](feedback_gate_globs_ancho_subconjunto.md) — ContentView/PanelView piden ~90 suites; corre las que ejercen y dilo.
+- [Un flag en UITestHooks infla la interfaz del gate](feedback_un_flag_en_uitesthooks_infla_la_interfaz_del_gate.md) — ~9 clases ajenas; el área se queda fuera por el techo: cámbialas y dilo.
 - [Upload OK no es build aceptado](feedback_upload_ok_no_es_build_aceptado.md) — mira `asc builds uploads list`; altool validate no vio 23 ITMS-90626.
 - [Agentes en paralelo: textos por JSON](feedback_agentes_en_paralelo_merge_de_textos.md) — textos como JSON + script, no `union`; el barrido cazó 6 defectos que no ven.
 - [Línea de tiempo de una activación](reference_linea_de_tiempo_de_una_activacion.md) — AE por instalación + `cloudMigrationStep`; el `gt_30s` del export no es duración.
