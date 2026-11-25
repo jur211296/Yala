@@ -1,0 +1,1324 @@
+{
+ "antes": {
+  "dias": 14.0,
+  "prs": 256,
+  "prs_dia": 18.3,
+  "con_automerge": 237,
+  "solo_docs": 55,
+  "automerge_a_merge_mediana": 52.1,
+  "p75": 65.5,
+  "p90": 773.1,
+  "codigo_mediana": 57.6,
+  "codigo_p90": 1564.2,
+  "ci_verde_mediana_codigo": 55.5,
+  "espera_min_total": 8174,
+  "espera_min_dia": 584,
+  "espera_horas_semana": 68.1,
+  "espera_media_por_pr": 34.5,
+  "mas_de_45": 153,
+  "mas_de_3h": 30,
+  "no_mergeados": 6,
+  "prs_con_ci_rojo": 17,
+  "rojo_arreglado_con_commit": 13,
+  "rojo_verde_al_relanzar": 0,
+  "sin_automerge": 17,
+  "lista_rojos": [
+   [
+    "1031",
+    "Revisor con la checklist de confiabilidad en el gate, leído ",
+    "1",
+    "True",
+    "2904.2"
+   ],
+   [
+    "1018",
+    "Yala IA: guiados de Grupos — crear un grupo, anotar una deud",
+    "1",
+    "True",
+    "207.3"
+   ],
+   [
+    "1017",
+    "Yala IA: guiados para crear una cuenta, una categoría (o sub",
+    "1",
+    "False",
+    "313.3"
+   ],
+   [
+    "999",
+    "Grupos: voz, foto y Yala IA como en personal, y el «+» solo ",
+    "1",
+    "True",
+    "1101.2"
+   ],
+   [
+    "997",
+    "Registros: filtros rápidos con icono, en la línea de Lista/C",
+    "2",
+    "False",
+    "1166.0"
+   ],
+   [
+    "993",
+    "CI: el simulador del runner se valida contra los destinos qu",
+    "2",
+    "True",
+    "351.8"
+   ],
+   [
+    "972",
+    "Yala web, lote 2: estadísticas, pagos planificados y entrar ",
+    "1",
+    "True",
+    "134.5"
+   ],
+   [
+    "956",
+    "Bienvenida 2.3: ajustes visuales, tres botones de entrada ig",
+    "1",
+    "True",
+    "1564.2"
+   ],
+   [
+    "909",
+    "docs: propuestas de la nota de salud como página visual para",
+    "1",
+    "False",
+    "69.2"
+   ],
+   [
+    "908",
+    "Registros: borrar y editar varios se puede deshacer, y la se",
+    "1",
+    "True",
+    "1271.9"
+   ],
+   [
+    "901",
+    "Grupos: saldos que no se contradicen y lectura con VoiceOver",
+    "1",
+    "True",
+    "177.5"
+   ],
+   [
+    "899",
+    "Cuentas: archivar saca la cuenta del saldo y conserva su his",
+    "1",
+    "True",
+    "6411.1"
+   ],
+   [
+    "879",
+    "Llevar a 2.3 todo lo de 2.2 (merge con historial)",
+    "1",
+    "True",
+    ""
+   ],
+   [
+    "869",
+    "Grupos: convertir un gasto personal a gasto compartido desde",
+    "1",
+    "False",
+    "55.0"
+   ],
+   [
+    "863",
+    "Grupos: limpia el borrador «Elige cuenta» y el «Préstamo a g",
+    "1",
+    "True",
+    "1764.5"
+   ],
+   [
+    "833",
+    "Gastos hormiga con IA para Pro, y la regla de la IA en la nu",
+    "1",
+    "True",
+    "349.9"
+   ],
+   [
+    "832",
+    "Lote UI 2.3: VoiceOver del dictado, selector de etiquetas en",
+    "1",
+    "True",
+    "306.9"
+   ]
+  ],
+  "lista_mas_45": [
+   [
+    "1065",
+    "Flujo de caja: aislados fuera del promedio, límites móviles,",
+    "119.8"
+   ],
+   [
+    "1063",
+    "Yala 2.3 (4) a TestFlight: número de build",
+    "62.6"
+   ],
+   [
+    "1062",
+    "Flujo de caja: proyección inteligente con ingresos fijos y s",
+    "64.0"
+   ],
+   [
+    "1060",
+    "Flujo de caja: Panel, Tendencias y widget de Saldo proyectan",
+    "66.1"
+   ],
+   [
+    "1059",
+    "Flujo de caja: crear el plan parte del saldo de tus cuentas,",
+    "56.5"
+   ],
+   [
+    "1058",
+    "Flujo de caja: el detalle de una línea pone el límite arriba",
+    "54.4"
+   ],
+   [
+    "1057",
+    "Flujo de caja: cambiar el límite de una línea en una hoja qu",
+    "62.3"
+   ],
+   [
+    "1056",
+    "Flujo de caja: el detalle del mes cuenta una sola historia y",
+    "105.4"
+   ],
+   [
+    "1054",
+    "Pagos planificados: el logo del comercio con un criterio en ",
+    "70.5"
+   ],
+   [
+    "1053",
+    "Flujo de caja: un solo motor del mes, real con signo más lo ",
+    "69.2"
+   ],
+   [
+    "1052",
+    "La hoja de una cuenta abre con su tarjeta personalizada arri",
+    "75.4"
+   ],
+   [
+    "1051",
+    "El hero del Panel y la foto de los widgets ya no dejan la ap",
+    "1542.1"
+   ],
+   [
+    "1050",
+    "Perfil como tarjeta personalizable: avatar con símbolo, emoj",
+    "67.5"
+   ],
+   [
+    "1049",
+    "La hoja de Salud financiera, visual y con un toque a cada co",
+    "56.6"
+   ],
+   [
+    "1048",
+    "«Nuevo favorito» por pasos, con «Usar formulario»",
+    "1690.2"
+   ],
+   [
+    "1047",
+    "«Nueva cuenta» por pasos, con «Usar formulario»",
+    "69.6"
+   ],
+   [
+    "1046",
+    "«Nuevo grupo» por pasos, con «Usar formulario»",
+    "1745.3"
+   ],
+   [
+    "1045",
+    "«Nuevo pago planificado» por pasos, con «Usar formulario»",
+    "73.1"
+   ],
+   [
+    "1044",
+    "«Nuevo presupuesto» por pasos, con «Usar formulario» y el pa",
+    "54.1"
+   ],
+   [
+    "1043",
+    "Comparativa más simple: % de variación y marca de color por ",
+    "60.5"
+   ],
+   [
+    "1041",
+    "Nuevo registro: sin categorías sugeridas debajo del monto",
+    "2106.9"
+   ],
+   [
+    "1040",
+    "Hoja de foto: X del sistema, cabecera en una fila, descripci",
+    "67.6"
+   ],
+   [
+    "1039",
+    "Pagos planificados: botón «Reusar» y hoja de registros con l",
+    "65.4"
+   ],
+   [
+    "1037",
+    "Pagos planificados: logos reales y un banco de 666 comercios",
+    "65.1"
+   ],
+   [
+    "1036",
+    "Estadísticas › Registros, idéntica a la pestaña Registros",
+    "58.6"
+   ],
+   [
+    "1035",
+    "Pagos que se repiten: banner, hoja grande y formulario compl",
+    "2625.4"
+   ],
+   [
+    "1034",
+    "Yala IA: inicio limpio con tres botones y respuestas que se ",
+    "58.1"
+   ],
+   [
+    "1033",
+    "Resumen con IA de Estadísticas: muestra a qué hora se escrib",
+    "63.5"
+   ],
+   [
+    "1032",
+    "«Origen:» en los arreglos, primera revisión de escapes y pod",
+    "2844.9"
+   ],
+   [
+    "1031",
+    "Revisor con la checklist de confiabilidad en el gate, leído ",
+    "2904.2"
+   ],
+   [
+    "1030",
+    "Checklist de confiabilidad: 30 lecciones caras con su dispar",
+    "155.8"
+   ],
+   [
+    "1028",
+    "Interfaz de lo tocado: el gate elige las pruebas con un scri",
+    "85.3"
+   ],
+   [
+    "1027",
+    "Cuarentena de pruebas inestables con dueño, y línea «Verific",
+    "76.9"
+   ],
+   [
+    "1026",
+    "Las pruebas de la caché de divisas ya no caen por el eco de ",
+    "65.7"
+   ],
+   [
+    "1019",
+    "Nube: «Volver a tu iCloud» ya no deja el teléfono sin datos",
+    "71.3"
+   ],
+   [
+    "1018",
+    "Yala IA: guiados de Grupos — crear un grupo, anotar una deud",
+    "207.3"
+   ],
+   [
+    "1017",
+    "Yala IA: guiados para crear una cuenta, una categoría (o sub",
+    "313.3"
+   ],
+   [
+    "1016",
+    "Yala IA: guiados con subcategorías, opciones avanzadas, una ",
+    "75.7"
+   ],
+   [
+    "1013",
+    "El hero claro del Panel en Estadísticas, Registros y Flujo d",
+    "64.1"
+   ],
+   [
+    "1009",
+    "Nuevo registro: la guía ya no señala un botón tapado en iPho",
+    "66.0"
+   ],
+   [
+    "1008",
+    "Nube 2.3: volver a la nube con la misma cuenta, «Cerrar sesi",
+    "479.8"
+   ],
+   [
+    "1006",
+    "Yala IA: guiados para crear un presupuesto y un pago planifi",
+    "57.4"
+   ],
+   [
+    "1004",
+    "chore(release): Yala 2.3 (2) a TestFlight",
+    "74.3"
+   ],
+   [
+    "1003",
+    "Grupos: traer un grupo de Splitwise o Tricount con los mismo",
+    "67.2"
+   ],
+   [
+    "1002",
+    "Panel: tarjetas de cuentas personalizables con 27 plantillas",
+    "86.5"
+   ],
+   [
+    "999",
+    "Grupos: voz, foto y Yala IA como en personal, y el «+» solo ",
+    "1101.2"
+   ],
+   [
+    "997",
+    "Registros: filtros rápidos con icono, en la línea de Lista/C",
+    "1166.0"
+   ],
+   [
+    "996",
+    "La ficha de una cuenta, con las gráficas de los widgets del ",
+    "61.1"
+   ],
+   [
+    "994",
+    "Panel: el saldo en grande, «Tu dinero hoy» en chico y un «?»",
+    "60.1"
+   ],
+   [
+    "993",
+    "CI: el simulador del runner se valida contra los destinos qu",
+    "351.8"
+   ],
+   [
+    "992",
+    "Bugs del barrido final de 2.3: Panel tras entrar, cancelar l",
+    "62.2"
+   ],
+   [
+    "990",
+    "Hacer recurrente un registro desde el menú, el detalle, la B",
+    "52.1"
+   ],
+   [
+    "988",
+    "Yala web: Grupos reconoce a los mismos miembros que la app, ",
+    "63.6"
+   ],
+   [
+    "987",
+    "chore(release): Yala 2.3 (1) a TestFlight",
+    "62.9"
+   ],
+   [
+    "983",
+    "Pagos que se repiten: Yala propone en Planificación las susc",
+    "59.9"
+   ],
+   [
+    "981",
+    "Bugs de entrada, lote 1: entrar con la cuenta en 16 s, un so",
+    "107.2"
+   ],
+   [
+    "980",
+    "Bugs de interfaz 2.3, lote 1: Panel con texto al máximo, hue",
+    "54.7"
+   ],
+   [
+    "978",
+    "Pruebas de interfaz: las seis tandas rojas de la nocturna de",
+    "45.3"
+   ],
+   [
+    "977",
+    "Presupuesto pasado: dice cuánto y ofrece ajustar el límite",
+    "45.4"
+   ],
+   [
+    "976",
+    "Yala web, lote 2b: Presupuestos, buscar con ⌘K, exportar a C",
+    "63.3"
+   ],
+   [
+    "974",
+    "Yala web, lote 3: Grupos (leer y escribir), cuentas «solo Gr",
+    "56.6"
+   ],
+   [
+    "973",
+    "iCloud y cerrar sesión: cerrar sesión sin reabrir, «Volver a",
+    "773.1"
+   ],
+   [
+    "972",
+    "Yala web, lote 2: estadísticas, pagos planificados y entrar ",
+    "134.5"
+   ],
+   [
+    "971",
+    "Entrar a la cuenta: «Empezar» entra en la app y «Cancelar la",
+    "49.3"
+   ],
+   [
+    "970",
+    "Yala web beta: Panel, Registros, Bandeja, Apuntar y «Navegad",
+    "55.2"
+   ],
+   [
+    "969",
+    "Grupos: Nuevo gasto, Voz, Foto y Yala IA como en personal, c",
+    "49.6"
+   ],
+   [
+    "965",
+    "Bienvenida: puerta de Grupos sin iCloud, tres preguntas ente",
+    "51.7"
+   ],
+   [
+    "964",
+    "Cerrar sesión con pantalla propia, Apple y Google con el mis",
+    "60.8"
+   ],
+   [
+    "960",
+    "Tres cuelgues de producción: aplicar la nube, recalcular el ",
+    "62.3"
+   ],
+   [
+    "959",
+    "Yala web, lote 0: entrar con Apple y Google, sesión segura y",
+    "55.8"
+   ],
+   [
+    "957",
+    "Entrar con la cuenta a medias: siempre hay salida, se retoma",
+    "54.4"
+   ],
+   [
+    "956",
+    "Bienvenida 2.3: ajustes visuales, tres botones de entrada ig",
+    "1564.2"
+   ],
+   [
+    "955",
+    "Grupos: la deuda avisa que hay un pago por confirmar y «Sí, ",
+    "60.3"
+   ],
+   [
+    "953",
+    "Bienvenida: «Usar otra cuenta» abre otra cuenta y entrar con",
+    "76.4"
+   ],
+   [
+    "952",
+    "Entrar en una cuenta con grupos ya no se queda 15 min en «Co",
+    "57.6"
+   ],
+   [
+    "950",
+    "Grupos y Ajustes: «Menos pagos» por defecto, cabecera que cu",
+    "49.7"
+   ],
+   [
+    "949",
+    "Telemetría del usuario nuevo después del alta: reinicio, pri",
+    "47.8"
+   ],
+   [
+    "948",
+    "Fallos altos 2.3: hoja de éxito al deslizar, reimport de Gru",
+    "64.7"
+   ],
+   [
+    "947",
+    "Grupos: saldar como en Splitwise y la moneda del grupo que n",
+    "65.5"
+   ],
+   [
+    "945",
+    "Correo del banco: la dirección pasa a auto+<código>@yalainbo",
+    "51.4"
+   ],
+   [
+    "944",
+    "Importar y exportar sin perder datos: comillas, Excel de Win",
+    "63.6"
+   ],
+   [
+    "943",
+    "VoiceOver: los cinco selectores sin nombre (filtros, reparto",
+    "4148.1"
+   ],
+   [
+    "939",
+    "Bienvenida 2.3 · pasos 3, 4 y 5: primer presupuesto y primer",
+    "63.5"
+   ],
+   [
+    "938",
+    "Bienvenida 2.3 · pasos 1 y 2: primera cuenta preguntando y a",
+    "58.6"
+   ],
+   [
+    "937",
+    "Bienvenida 2.3 · alta: vitrina, acceso único con Google o Ap",
+    "58.5"
+   ],
+   [
+    "933",
+    "Bienvenida 2.3 · base: pestañas por defecto, mazo de Primero",
+    "52.2"
+   ],
+   [
+    "932",
+    "Flujo de caja: el mes de los no considerados, sin «vs», un v",
+    "52.1"
+   ],
+   [
+    "931",
+    "Memoria: las fotos entran reducidas y Sentry trae memoria y ",
+    "45.6"
+   ],
+   [
+    "930",
+    "Nube 2.3 · al activar, el cifrado, las fotos y exportar se v",
+    "4382.2"
+   ],
+   [
+    "929",
+    "Yala IA dice «sin conexión» al abrir y el muro de Pro deja s",
+    "53.1"
+   ],
+   [
+    "928",
+    "Nube 2.3 · dos nombres fijos: «En tu iCloud» y «En tu cuenta",
+    "58.0"
+   ],
+   [
+    "927",
+    "Nuevo registro 2.3 · voz y foto avisan a VoiceOver y pregunt",
+    "52.5"
+   ],
+   [
+    "926",
+    "Registros 2.3: VoiceOver con fecha, carga y error, selector ",
+    "51.4"
+   ],
+   [
+    "924",
+    "Estadísticas: Tendencias dice contra qué compara y VoiceOver",
+    "5329.4"
+   ],
+   [
+    "923",
+    "Registros: saltar de mes, el año en la cabecera y «Período» ",
+    "54.5"
+   ],
+   [
+    "922",
+    "Registros: el calendario se pliega a la semana del día y no ",
+    "5759.5"
+   ],
+   [
+    "920",
+    "Nuevo registro: categorías a un toque y un buscador que enti",
+    "5628.2"
+   ],
+   [
+    "919",
+    "Registros: chips rápidos y la banda del filtro a la vista (d",
+    "46.0"
+   ],
+   [
+    "918",
+    "Nuevo registro: barra sobre el teclado con lo que falta y «G",
+    "48.2"
+   ],
+   [
+    "917",
+    "Registros: «Buscar en Registros», también por importe (decis",
+    "49.1"
+   ],
+   [
+    "916",
+    "Nube 2.3 · «Cambiar de cuenta» en una fila, y la hoja de sol",
+    "5330.1"
+   ],
+   [
+    "915",
+    "Estadísticas: tocar una categoría abre su detalle (decisión ",
+    "48.3"
+   ],
+   [
+    "913",
+    "Grupos: no tirar el gasto a medias, y «Saldar» y «Reflejar e",
+    "63.0"
+   ],
+   [
+    "912",
+    "Nota de salud honesta sin desanimar (lote 1)",
+    "6140.1"
+   ],
+   [
+    "911",
+    "Traer a 2.3 lo último de 2.2: los borradores repetidos de Gr",
+    "52.1"
+   ],
+   [
+    "910",
+    "Nube 2.3: volver a tu iCloud y activar con un borrado pendie",
+    "5438.3"
+   ],
+   [
+    "909",
+    "docs: propuestas de la nota de salud como página visual para",
+    "69.2"
+   ],
+   [
+    "908",
+    "Registros: borrar y editar varios se puede deshacer, y la se",
+    "1271.9"
+   ],
+   [
+    "907",
+    "Planificación: un estado por presupuesto y el cupo del día e",
+    "52.3"
+   ],
+   [
+    "906",
+    "Flujo de caja: «Al 30 tendrías», real frente a estimado y el",
+    "56.1"
+   ],
+   [
+    "905",
+    "Estadísticas con diez años: responde al toque, gráficas larg",
+    "53.1"
+   ],
+   [
+    "904",
+    "Panel: la nota de salud espera dos de tres partes y dice lo ",
+    "56.8"
+   ],
+   [
+    "903",
+    "Comparativa con el tramo exacto y la primera semana sin «Te ",
+    "58.0"
+   ],
+   [
+    "902",
+    "Panel: el día 1 sin porcentajes, la gráfica de saldo dice co",
+    "50.6"
+   ],
+   [
+    "901",
+    "Grupos: saldos que no se contradicen y lectura con VoiceOver",
+    "177.5"
+   ],
+   [
+    "900",
+    "Panel, Estadísticas y widgets: «Tienes hoy» y «Te queda» (de",
+    "53.6"
+   ],
+   [
+    "899",
+    "Cuentas: archivar saca la cuenta del saldo y conserva su his",
+    "6411.1"
+   ],
+   [
+    "898",
+    "Dónde viven tus datos: texto grande, cifras en un formato y ",
+    "48.7"
+   ],
+   [
+    "897",
+    "Ajustes y Pro: la prueba dice dónde se cancela, Resumen con ",
+    "45.5"
+   ],
+   [
+    "896",
+    "Ajustes: cuentas, categorías, etiquetas y divisas sin lo que",
+    "50.7"
+   ],
+   [
+    "895",
+    "Estadísticas: los textos dicen lo que es (lote 07 de mejoras",
+    "56.5"
+   ],
+   [
+    "894",
+    "fix(grupos): pagos que no se duplican, reparto que no pierde",
+    "7061.2"
+   ],
+   [
+    "892",
+    "fix(planificacion): saltar no es pagar, «Te sobró» en mes ce",
+    "50.8"
+   ],
+   [
+    "889",
+    "iPad: ancho legible en Distribución, Reportes, el detalle de",
+    "48.2"
+   ],
+   [
+    "888",
+    "Bandeja 2.3: el lote y deslizar no guardan dos veces el mism",
+    "69.2"
+   ],
+   [
+    "887",
+    "Cifras que no cuadran: ritmo del flujo proyectado, desglose ",
+    "55.1"
+   ],
+   [
+    "886",
+    "TestFlight 2.2 (8): build final candidata para el App Store",
+    "54.7"
+   ],
+   [
+    "885",
+    "Build 8 también en 2.3 (tras TestFlight 2.2 (8))",
+    "53.4"
+   ],
+   [
+    "878",
+    "Entrar con Google o Apple dejando tu iCloud privado aparte (",
+    "45.1"
+   ],
+   [
+    "876",
+    "test(onboarding): la calculadora del saldo se reabre cerrand",
+    "60.2"
+   ],
+   [
+    "869",
+    "Grupos: convertir un gasto personal a gasto compartido desde",
+    "55.0"
+   ],
+   [
+    "863",
+    "Grupos: limpia el borrador «Elige cuenta» y el «Préstamo a g",
+    "1764.5"
+   ],
+   [
+    "861",
+    "Bienvenida 2.3: encargo y decisiones del prototipo elegido",
+    "48.8"
+   ],
+   [
+    "855",
+    "feat(nuevo registro): monedas claras y «Apuntarlo a mano» en",
+    "146.6"
+   ],
+   [
+    "844",
+    "test: lote 2.3 de tests y rastros (celda C fijada, seam de a",
+    "53.2"
+   ],
+   [
+    "841",
+    "Grupos, voz y Estadísticas: línea resumen de «Partir», taxi ",
+    "50.7"
+   ],
+   [
+    "839",
+    "Flujo de caja y widgets: un cero sin signo ni flecha; los XC",
+    "46.3"
+   ],
+   [
+    "833",
+    "Gastos hormiga con IA para Pro, y la regla de la IA en la nu",
+    "349.9"
+   ],
+   [
+    "832",
+    "Lote UI 2.3: VoiceOver del dictado, selector de etiquetas en",
+    "306.9"
+   ],
+   [
+    "831",
+    "fix(nube): reactivación a medias, borrado tardío de iCloud, ",
+    "46.3"
+   ],
+   [
+    "829",
+    "Selección de cuentas: cada fila de una tarjeta de doble líne",
+    "49.5"
+   ],
+   [
+    "828",
+    "Telemetría propia: panel por secciones con frases, uso de fu",
+    "61.8"
+   ],
+   [
+    "827",
+    "Foto de perfil sin disparar la memoria, widget sin crash tra",
+    "51.0"
+   ],
+   [
+    "826",
+    "Panel: ojo para ocultar los montos",
+    "50.6"
+   ],
+   [
+    "824",
+    "2.3 · Gastos hormiga, logos de suscripción y sugerencias de ",
+    "51.0"
+   ],
+   [
+    "823",
+    "Grupos: tras «Vaciar datos» los gastos vuelven sin reabrir; ",
+    "45.6"
+   ],
+   [
+    "822",
+    "fix(2.3): widget de pagos con «de», mover entre divisas conv",
+    "48.3"
+   ],
+   [
+    "818",
+    "Tu IA registra en Yala: Claude, ChatGPT y Grok dejan borrado",
+    "14715.7"
+   ],
+   [
+    "817",
+    "Grupos: repartir un recibo con IA desde Nuevo gasto (foto o ",
+    "46.4"
+   ],
+   [
+    "816",
+    "Con el texto al máximo: cifras enteras y «Guardar» sin pisar",
+    "52.4"
+   ],
+   [
+    "814",
+    "test(iphone): lote T3 — XCUITest intermitentes en iPhone SE ",
+    "47.2"
+   ],
+   [
+    "812",
+    "Presupuestos: «En el límite» junto a la barra naranja (80–99",
+    "74.3"
+   ],
+   [
+    "811",
+    "Lote T8: tests de divisa que ejecutan el servicio, eje 4b co",
+    "95.7"
+   ]
+  ]
+ },
+ "despues": {
+  "dias": 5.73,
+  "prs": 106,
+  "prs_dia": 18.5,
+  "con_automerge": 103,
+  "solo_docs": 27,
+  "automerge_a_merge_mediana": 62.3,
+  "p75": 105.1,
+  "p90": 180.8,
+  "codigo_mediana": 70.8,
+  "codigo_p90": 252.5,
+  "ci_verde_mediana_codigo": 67.0,
+  "espera_min_total": 3505,
+  "espera_min_dia": 612,
+  "espera_horas_semana": 71.4,
+  "espera_media_por_pr": 34.0,
+  "mas_de_45": 75,
+  "mas_de_3h": 11,
+  "no_mergeados": 1,
+  "prs_con_ci_rojo": 1,
+  "rojo_arreglado_con_commit": 1,
+  "rojo_verde_al_relanzar": 0,
+  "sin_automerge": 3,
+  "lista_rojos": [
+   [
+    "1137",
+    "CloudKit: reexportar esquemas de producción (límite de la ta",
+    "1",
+    "True",
+    ""
+   ]
+  ],
+  "lista_mas_45": [
+   [
+    "1170",
+    "Bandeja: lo que casa con un pago planificado completa su bor",
+    "86.8"
+   ],
+   [
+    "1169",
+    "Bandeja: la fila dice sus fuentes, «¿Es el mismo gasto?» y «",
+    "105.1"
+   ],
+   [
+    "1168",
+    "Bandeja: unir al llegar el mismo consumo, con «Separar» (lot",
+    "45.5"
+   ],
+   [
+    "1167",
+    "Bugs del barrido de la build 8: guía de Atajos de iOS 27, «V",
+    "70.8"
+   ],
+   [
+    "1166",
+    "Bandeja: emparejador entre fuentes (lote 1, lógica pura y pr",
+    "81.6"
+   ],
+   [
+    "1165",
+    "Bandeja: el aviso de duplicado mira ±1 día y nombra el gemel",
+    "65.5"
+   ],
+   [
+    "1163",
+    "Correo del banco: el paso 3 de Gmail busca solo, dice qué pa",
+    "111.5"
+   ],
+   [
+    "1162",
+    "Yala 2.3 (8) a TestFlight: número de build, notas de prueba ",
+    "80.9"
+   ],
+   [
+    "1159",
+    "Avisos y Correos del banco: ejemplo según la región, textos ",
+    "118.5"
+   ],
+   [
+    "1158",
+    "Grupos y Bandeja: la pantalla de éxito, con el diseño minima",
+    "170.3"
+   ],
+   [
+    "1157",
+    "Pagos planificados: ícono sin logo, el enlace del pie pegado",
+    "364.2"
+   ],
+   [
+    "1156",
+    "Reportes: la parte de arriba ya no rebota en el umbral del t",
+    "190.6"
+   ],
+   [
+    "1155",
+    "Estadísticas › Resumen: opción B · Decidir (salud en franja,",
+    "606.4"
+   ],
+   [
+    "1153",
+    "Registros: el filtro de categoría sube a pantalla completa y",
+    "311.4"
+   ],
+   [
+    "1152",
+    "Nuevo presupuesto: «¿Cuáles?» muestra las subcategorías deba",
+    "160.2"
+   ],
+   [
+    "1151",
+    "Estadísticas: volver a Tendencias o Distribución ya no recal",
+    "180.8"
+   ],
+   [
+    "1150",
+    "Hacer recurrente: hoja rediseñada con fondo sólido y copia c",
+    "548.1"
+   ],
+   [
+    "1149",
+    "Correos del banco: guía para principiantes y volver a un pas",
+    "126.0"
+   ],
+   [
+    "1148",
+    "Avisos del banco: guía para principiantes, bancos según el p",
+    "228.8"
+   ],
+   [
+    "1147",
+    "Sankey de Distribución: «Ver subcategorías» despliega la col",
+    "123.6"
+   ],
+   [
+    "1146",
+    "Esto leí: aire y borde visibles en la primera tarjeta",
+    "67.7"
+   ],
+   [
+    "1144",
+    "El selector de cuenta enseña solo las cuentas de la moneda d",
+    "56.1"
+   ],
+   [
+    "1143",
+    "Yala 2.3 (7) a TestFlight: número de build, notas de prueba ",
+    "49.8"
+   ],
+   [
+    "1141",
+    "«Hacer recurrente» enseña la pantalla de éxito al guardar",
+    "129.7"
+   ],
+   [
+    "1140",
+    "Barrido de QA de la 2.3 antes de la build 7 y «Te falta paga",
+    "47.4"
+   ],
+   [
+    "1139",
+    "Conecta tu IA: Ajustes › Tu IA, desconectar desde la app, el",
+    "70.5"
+   ],
+   [
+    "1138",
+    "Salud financiera: la hoja con el estilo del Panel, un presup",
+    "63.6"
+   ],
+   [
+    "1135",
+    "Nuevo registro: la pantalla de éxito sale siempre al guardar",
+    "103.9"
+   ],
+   [
+    "1134",
+    "Lo que exporta Yala se vuelve a importar: tipo de movimiento",
+    "62.8"
+   ],
+   [
+    "1133",
+    "Marca «≈» en Informes, saldo de un período cerrado y total d",
+    "110.3"
+   ],
+   [
+    "1132",
+    "Tasas de cambio: una tasa por día, claves gregorianas, tasas",
+    "117.0"
+   ],
+   [
+    "1131",
+    "«Lo que te falta pagar» y Compromisos: una cuenta para Estad",
+    "118.0"
+   ],
+   [
+    "1130",
+    "Pruebas de interfaz rojas de 2.3: ocho tickets cerrados con ",
+    "252.5"
+   ],
+   [
+    "1129",
+    "Importar registros: sin duplicar al reimportar, deshacer un ",
+    "122.0"
+   ],
+   [
+    "1128",
+    "Comercios en común: lista anónima comercio → tipo (opciones ",
+    "55.4"
+   ],
+   [
+    "1127",
+    "Bienvenida: la prueba de que tras «¡Tu cuenta está lista!» Y",
+    "51.1"
+   ],
+   [
+    "1126",
+    "Bandeja: «Aprobar y hacer recurrente» con posible duplicado,",
+    "70.1"
+   ],
+   [
+    "1125",
+    "El uso de línea también en tarjetas con dos monedas",
+    "145.8"
+   ],
+   [
+    "1124",
+    "«Esto leí» con la tarjeta B1 (opción A)",
+    "66.3"
+   ],
+   [
+    "1123",
+    "Grupos: un guardado que falla no duplica gastos, no deja pag",
+    "62.5"
+   ],
+   [
+    "1122",
+    "Bandeja: chip de grupo y recurrente en «…»; texto de la barr",
+    "50.7"
+   ],
+   [
+    "1121",
+    "Límite de la tarjeta como campo sincronizado y «uso de línea",
+    "60.3"
+   ],
+   [
+    "1120",
+    "fix(uitests): las tandas 5 y 6 de pruebas de interfaz en roj",
+    "53.8"
+   ],
+   [
+    "1115",
+    "Reglas de captura por cuenta: la regla elige la cuenta al le",
+    "48.6"
+   ],
+   [
+    "1113",
+    "Yala IA ampliada al 100 % en producción, conector en mcp.yal",
+    "76.5"
+   ],
+   [
+    "1112",
+    "Captura por foto con el comercio y su categoría, avisos del ",
+    "77.5"
+   ],
+   [
+    "1111",
+    "Novedades 2.3 con el iPhone Duo, Panel que llega solo con Pr",
+    "62.7"
+   ],
+   [
+    "1110",
+    "Guardar con la nube ya no recalcula la app dos veces (YALA-I",
+    "62.3"
+   ],
+   [
+    "1107",
+    "Pago planificado compartido completo: «Reusar» con gastos de",
+    "55.8"
+   ],
+   [
+    "1106",
+    "Flujo de caja: los pagos sin logo muestran el ícono de su su",
+    "61.8"
+   ],
+   [
+    "1104",
+    "«Ajusta el límite a lo real» abre el editor con el límite pr",
+    "68.0"
+   ],
+   [
+    "1103",
+    "Nuevo registro: «Ver todos» junto al rótulo y favoritos comp",
+    "59.3"
+   ],
+   [
+    "1098",
+    "Yala 2.3 (6) a TestFlight: número de build y notas de prueba",
+    "61.7"
+   ],
+   [
+    "1097",
+    "Sentry: segundos visibles, cuelgues agrupados, usuario anóni",
+    "51.6"
+   ],
+   [
+    "1096",
+    "La hoja B1 de Nuevo registro en la Bandeja, Grupos, pagos y ",
+    "58.1"
+   ],
+   [
+    "1095",
+    "Flujo de caja: límites con varios pagos planificados y en ot",
+    "59.7"
+   ],
+   [
+    "1094",
+    "La hoja de Salud financiera en tres secciones y en tono de c",
+    "53.0"
+   ],
+   [
+    "1093",
+    "La cuenta se elige sola al leer una captura, con Yala IA com",
+    "54.1"
+   ],
+   [
+    "1092",
+    "Estadísticas: hero limpio con «Tu dinero hoy» en las cuatro ",
+    "87.6"
+   ],
+   [
+    "1091",
+    "Foto a gasto compartido: queda marcado como guardado",
+    "61.9"
+   ],
+   [
+    "1090",
+    "Flujo de caja y Comparativa sin rebote, más rápidos y con la",
+    "411.4"
+   ],
+   [
+    "1089",
+    "Sin congelamientos al aplicar cambios de la nube (YALA-IOS-1",
+    "60.7"
+   ],
+   [
+    "1086",
+    "Oferta Pro de Primeros pasos: los ocho beneficios y «Qué inc",
+    "73.3"
+   ],
+   [
+    "1083",
+    "Flujo de caja sin trabas (YALA-IOS-12, -Q, -P) y Registros s",
+    "70.4"
+   ],
+   [
+    "1081",
+    "Nuevo registro: hoja B1 con la fila en una línea, éxito mini",
+    "847.4"
+   ],
+   [
+    "1080",
+    "Primeros pasos: paso 7 como historias, progreso en el mazo, ",
+    "71.0"
+   ],
+   [
+    "1079",
+    "Primeros pasos: intros como historias, campos legibles, «No ",
+    "74.6"
+   ],
+   [
+    "1078",
+    "«Solo gastos» con Primeros pasos y Panel progresivo sin guía",
+    "69.5"
+   ],
+   [
+    "1077",
+    "Pagos planificados: logo propio con una foto, sincronizado e",
+    "71.3"
+   ],
+   [
+    "1076",
+    "Welcome: la vitrina avanza como historias y se toca para ava",
+    "69.1"
+   ],
+   [
+    "1074",
+    "Cerrar sesión en una cuenta vacía sin «cambios por subir» y ",
+    "521.2"
+   ],
+   [
+    "1073",
+    "Temas: la hoja abierta se repinta al cambiar de tema, y cont",
+    "56.1"
+   ],
+   [
+    "1071",
+    "Yala 2.3 (5) a TestFlight: número de build",
+    "62.0"
+   ],
+   [
+    "1070",
+    "Flujo de caja: «Considerar a futuro» entre teléfonos, sin «C",
+    "128.1"
+   ],
+   [
+    "1068",
+    "Modo claro: fondo gris y contorno en botones y campos blanco",
+    "173.2"
+   ]
+  ]
+ }
+}
