@@ -34,6 +34,7 @@ import {
   type AccountEntitlementRow,
 } from "../db";
 import { requireUser } from "./account";
+import { conReintentoD1 } from "../d1-reintento";
 
 type Ctx = Context<{ Bindings: Env }>;
 
@@ -46,6 +47,57 @@ function entitlementBody(row: AccountEntitlementRow | null): Record<string, unkn
     // fecha sin regalar nada (es el mismo horizonte que StoreKit aplicaría en local).
     expires_at_ms: row?.entitlement_expires_at ?? null,
   };
+}
+
+/**
+ * Estado actual de la cuenta, con reintento ante D1 saturada (2026-11-25: el POST de YALA-GATEWAY-3 cayó justo en
+ * esta lectura, en la rama sandbox, y el GET de YALA-GATEWAY-4 también).
+ */
+function leerDerecho(env: Env, sub: string): Promise<AccountEntitlementRow | null> {
+  return conReintentoD1(() => getAccountEntitlement(env, sub), { etiqueta: "entitlement-read" });
+}
+
+type ResultadoVinculo = { tipo: "estado"; row: AccountEntitlementRow | null } | { tipo: "dueno_distinto" };
+
+/**
+ * La parte D1 del bind, ENTERA: leer quién tiene la suscripción → decidir → escribir → leer el estado final.
+ * Se reintenta como una unidad para que cada intento vuelva a leer: si entre dos intentos el webhook revocó la
+ * suscripción o la vinculó otra cuenta, el siguiente intento lo ve antes de escribir. Repetirla no cambia el
+ * resultado: el batch es «DELETE de otras cuentas + upsert por user_id», así que la vinculación queda una sola vez.
+ */
+async function vincular(
+  env: Env,
+  sub: string,
+  ent: NonNullable<Awaited<ReturnType<typeof verifyStoreKitJWS>>>,
+): Promise<ResultadoVinculo> {
+  const existing = await getAccountEntitlementByOriginalTxn(env, ent.originalTransactionId);
+
+  // Un JWS es un string que el dueño del device puede guardar y reenviar. Si el webhook YA revocó
+  // esa suscripción (reembolso/cancelación ⇒ `expires_at = 0`), un re-bind con el JWS viejo la
+  // resucitaría hasta su `expiresDate` original — Pro gratis a cambio de un reembolso. La
+  // revocación es terminal: solo una notificación de Apple puede levantarla.
+  if (existing && existing.entitlement_expires_at === 0) {
+    console.log("[entitlement-bind] suscripción revocada — bind ignorado");
+    return { tipo: "estado", row: await getAccountEntitlement(env, sub) };
+  }
+
+  // La compra declaró OTRA cuenta: el token firmado gana sobre el JWT... pero SOLO mientras esa
+  // cuenta siga siendo la dueña viva de la suscripción. Sin la segunda condición, quien borra su
+  // cuenta de Yala y crea otra queda bloqueado para siempre (Apple no permite cambiar el
+  // `appAccountToken` de una suscripción ya comprada), contra la decisión «última vinculación gana».
+  if (ent.appAccountToken && ent.appAccountToken !== sub && existing && existing.user_id !== sub) {
+    console.log("[entitlement-bind] appAccountToken de otra cuenta viva — rechazado");
+    return { tipo: "dueno_distinto" };
+  }
+
+  await bindAccountEntitlement(env, sub, {
+    product: ent.productId,
+    expiresAtMs: ent.expiresAtMs,
+    originalTransactionId: ent.originalTransactionId,
+    boundVia: ent.appAccountToken ? "app_account_token" : "jwt",
+  });
+
+  return { tipo: "estado", row: await getAccountEntitlement(env, sub) };
 }
 
 // ------------------------------------------------------------------- POST /account/entitlement
@@ -73,7 +125,7 @@ export async function handleEntitlementBind(c: Ctx): Promise<Response> {
   if (!ent) {
     // JWS inválido, de otro bundle, revocado o expirado: NO es un error del usuario que merezca
     // ruido — devolver el estado real de la cuenta (probablemente Free) sin tocar nada.
-    return c.json(entitlementBody(await getAccountEntitlement(c.env, auth.sub)));
+    return c.json(entitlementBody(await leerDerecho(c.env, auth.sub)));
   }
 
   // `verifyStoreKitJWS` acepta Sandbox en producción a propósito (TestFlight usa StoreKit sandbox
@@ -84,37 +136,15 @@ export async function handleEntitlementBind(c: Ctx): Promise<Response> {
   // local (`currentEntitlements` ya se lo da); lo único que no se propaga es el derecho de cuenta.
   if (c.env.ENVIRONMENT === "production" && ent.environment === "Sandbox") {
     console.log("[entitlement-bind] sandbox en producción — no otorga derecho de cuenta");
-    return c.json(entitlementBody(await getAccountEntitlement(c.env, auth.sub)));
+    return c.json(entitlementBody(await leerDerecho(c.env, auth.sub)));
   }
 
-  const existing = await getAccountEntitlementByOriginalTxn(c.env, ent.originalTransactionId);
-
-  // Un JWS es un string que el dueño del device puede guardar y reenviar. Si el webhook YA revocó
-  // esa suscripción (reembolso/cancelación ⇒ `expires_at = 0`), un re-bind con el JWS viejo la
-  // resucitaría hasta su `expiresDate` original — Pro gratis a cambio de un reembolso. La
-  // revocación es terminal: solo una notificación de Apple puede levantarla.
-  if (existing && existing.entitlement_expires_at === 0) {
-    console.log("[entitlement-bind] suscripción revocada — bind ignorado");
-    return c.json(entitlementBody(await getAccountEntitlement(c.env, auth.sub)));
-  }
-
-  // La compra declaró OTRA cuenta: el token firmado gana sobre el JWT... pero SOLO mientras esa
-  // cuenta siga siendo la dueña viva de la suscripción. Sin la segunda condición, quien borra su
-  // cuenta de Yala y crea otra queda bloqueado para siempre (Apple no permite cambiar el
-  // `appAccountToken` de una suscripción ya comprada), contra la decisión «última vinculación gana».
-  if (ent.appAccountToken && ent.appAccountToken !== auth.sub && existing && existing.user_id !== auth.sub) {
-    console.log("[entitlement-bind] appAccountToken de otra cuenta viva — rechazado");
+  // Si D1 sigue saturada tras los intentos, el error sube a `app.onError`, que responde 503 con Retry-After.
+  const resultado = await conReintentoD1(() => vincular(c.env, auth.sub, ent), { etiqueta: "entitlement-bind" });
+  if (resultado.tipo === "dueno_distinto") {
     return jsonError("yala_entitlement_owner_mismatch", "La suscripción pertenece a otra cuenta de Yala.", 409);
   }
-
-  await bindAccountEntitlement(c.env, auth.sub, {
-    product: ent.productId,
-    expiresAtMs: ent.expiresAtMs,
-    originalTransactionId: ent.originalTransactionId,
-    boundVia: ent.appAccountToken ? "app_account_token" : "jwt",
-  });
-
-  return c.json(entitlementBody(await getAccountEntitlement(c.env, auth.sub)));
+  return c.json(entitlementBody(resultado.row));
 }
 
 // -------------------------------------------------------------------- GET /account/entitlement
@@ -122,5 +152,5 @@ export async function handleEntitlementBind(c: Ctx): Promise<Response> {
 export async function handleEntitlementGet(c: Ctx): Promise<Response> {
   const auth = await requireUser(c);
   if (auth instanceof Response) return auth;
-  return c.json(entitlementBody(await getAccountEntitlement(c.env, auth.sub)));
+  return c.json(entitlementBody(await leerDerecho(c.env, auth.sub)));
 }
