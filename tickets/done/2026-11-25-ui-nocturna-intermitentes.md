@@ -1,6 +1,6 @@
 ---
 id: 2026-11-25-ui-nocturna-intermitentes
-status: backlog
+status: done
 priority: high
 area: "qa, ci, estadisticas, registros, panel, grupos"
 created: 2026-11-25
