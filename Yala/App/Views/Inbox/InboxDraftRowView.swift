@@ -126,7 +126,8 @@ struct InboxDraftRowView: View {
     private var accessibilityText: String {
         let origin = draft.joinedSources.map { L10n.BandejaUnir.llegoPor(fuentes: $0.map(\.name).joined(separator: ", ")) }
             ?? draft.sourceDisplayName
-        let base = L10n.Accessibility.draftRow(shownNote, draft.amount.map { appPreferences.currency($0, currencyCode: currencyCode) } ?? L10n.Inbox.noAmount, L10n.Inbox.status(draft.status)) + ", " + origin
+        var base = L10n.Accessibility.draftRow(shownNote, draft.amount.map { appPreferences.currency($0, currencyCode: currencyCode) } ?? L10n.Inbox.noAmount, L10n.Inbox.status(draft.status)) + ", " + origin
+        if let before = draft.plannedEstimateBeforeText { base += ", " + L10n.BandejaUnir.antesEstimado(before) }
         guard let detail = settlementAmountChangeDetail(accountName: draft.displayAccountName ?? "") else { return base }
         return "\(base), \(detail)"
     }
@@ -185,6 +186,14 @@ struct InboxDraftRowView: View {
     /// en que llegaron: «Apple Pay · Aviso de BCP · Correo». Si no caben en una línea, una debajo de otra.
     @ViewBuilder
     private var originLabel: some View {
+        // Lote 4: el estimado de un pago planificado que tomó el cargo real («Antes S/ 120.00 estimado»).
+        if let before = draft.plannedEstimateBeforeText {
+            Text(L10n.BandejaUnir.antesEstimado(before))
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .accessibilityIdentifier("inbox_draft_estimated_before")
+        }
         if let sources = draft.joinedSources {
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: DS.Spacing.xs) {

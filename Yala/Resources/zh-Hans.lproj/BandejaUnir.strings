@@ -28,3 +28,13 @@
 "bandejaUnir.recorded.saveAnyway" = "仍然保存";
 "bandejaUnir.recorded.saveAnyway.hint" = "即使与已记录的相似也会保存";
 "bandejaUnir.row.sources.a11y" = "来自%@";
+
+/* Lote 4: casar con un pago planificado. */
+"bandejaUnir.planned.ask.title" = "这是你的“%@”付款吗？";
+"bandejaUnir.planned.ask.yes" = "是的，就是这笔";
+"bandejaUnir.planned.ask.yes.hint" = "我们会把它与你的计划付款合并，下次自动处理";
+"bandejaUnir.planned.ask.no" = "不是这笔付款";
+"bandejaUnir.planned.ask.no.hint" = "它会作为单独的待处理项保留，我们不会再问";
+"bandejaUnir.planned.ask.detail" = "计划：%1$@ · %2$@ 到期";
+"bandejaUnir.planned.amount.estimate" = "预计 %@";
+"bandejaUnir.planned.before.estimate" = "原为预计 %@";

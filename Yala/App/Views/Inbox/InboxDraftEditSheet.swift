@@ -1298,14 +1298,17 @@ struct InboxDraftEditSheet: View {
 
     /// «Separar» (Bandeja sin duplicados, lote 2): cada fuente unida vuelve como pendiente aparte y este borrador recupera
     /// sus valores (`InboxArrivalJoin.separate`), y quedan marcados como distintos entre sí. Cierra la hoja: lo que
-    /// enseña salió del borrador antes de separar.
+    /// enseña salió del borrador antes de separar. Si sostenía un pago planificado (lote 4, `plannedID`, leído antes: el
+    /// borrador puede irse al separar), lo separado tampoco vuelve como «¿Es tu pago X?».
     private func separateJoinedSources() {
+        let plannedID = draft.sourceScheduledPaymentID.flatMap(UUID.init(uuidString:))
         guard let separated = InboxArrivalJoin.separate(draft, context: modelContext) else {
             DS.Haptic.error()
             return
         }
         // Lo que la persona acaba de separar no vuelve a la lista como «¿Es el mismo gasto?» (lote 3, Paso 0 D4).
         InboxSameExpenseDistinct.markDistinct([draft] + separated)
+        if let plannedID { InboxPlannedDistinct.markDistinct(separated, paymentID: plannedID) }
         DS.Haptic.success()
         sessionState.incrementDataVersion()
         dismiss()

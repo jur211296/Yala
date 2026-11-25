@@ -17,6 +17,9 @@
 //  - `holderSource`: la fuente del que sostiene, con lo que el emparejador necesita y el borrador no guarda (moneda que
 //    dijo la fuente, últimos 4, si trae hora).
 //  - `members`: lo absorbido, en orden de llegada, con todo lo que hace falta para volver a crear su borrador.
+//  - `holderCreatedByJoin` y `holderIsEstimate` (lote 4, opcionales: un registro sin ellos se lee igual): el borrador de
+//    un pago planificado que la unión creó para casar un cargo («Separar» lo borra), y si su importe era un estimado (la
+//    fila dice «Antes S/ 120.00 estimado»).
 //
 
 import Foundation
@@ -31,6 +34,24 @@ nonisolated struct InboxJoinRecord: Codable, Equatable, Sendable {
     var holderBefore: Fields
     var holderAfter: Fields
     var members: [Member]
+    /// Lote 4: el borrador del planificado lo creó la unión (aún no había vencido o no se había sacado). «Separar» lo borra.
+    var holderCreatedByJoin: Bool?
+    /// Lote 4: el importe del planificado era un estimado; `holderBefore.amount` es ese estimado.
+    var holderIsEstimate: Bool?
+
+    /// Si el que sostiene es el borrador de un pago planificado (lote 4).
+    var holderIsPlanned: Bool { holderSource.source == InboxMatchLogic.Source.planned.rawValue }
+
+    init(version: Int, holderSource: SourceFacts, holderBefore: Fields, holderAfter: Fields, members: [Member],
+         holderCreatedByJoin: Bool? = nil, holderIsEstimate: Bool? = nil) {
+        self.version = version
+        self.holderSource = holderSource
+        self.holderBefore = holderBefore
+        self.holderAfter = holderAfter
+        self.members = members
+        self.holderCreatedByJoin = holderCreatedByJoin
+        self.holderIsEstimate = holderIsEstimate
+    }
 
     /// Los campos del borrador que una unión puede cambiar.
     nonisolated struct Fields: Codable, Equatable, Sendable {
@@ -124,7 +145,9 @@ nonisolated enum InboxJoinLogic {
 
     /// Los campos del que sostiene tras unir, según lo que manda en el consumo (`InboxMatchLogic.Resolved`): importe del
     /// banco, hora de Apple Pay o del aviso, comercio por su prioridad. Cuenta y subcategoría solo se rellenan si faltaban
-    /// (en una unión fuerte las cuentas coinciden o una falta: nunca se pisa una elegida). Paso 0, D5.
+    /// (en una unión fuerte las cuentas coinciden o una falta: nunca se pisa una elegida). Paso 0, D5. El borrador de un
+    /// pago planificado conserva su nota («Luz del Sur», no «LUZ DEL SUR SAA PAGO»): es el nombre que la persona le puso
+    /// (lote 4, D4).
     static func mergedFields(
         holder current: InboxJoinRecord.Fields,
         arriving: InboxJoinRecord.Fields,
@@ -134,7 +157,8 @@ nonisolated enum InboxJoinLogic {
         merged.amount = resolved.money.amount
         merged.date = resolved.date
         let resolvedMerchant = resolved.merchant?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        if !resolvedMerchant.isEmpty { merged.note = resolvedMerchant }
+        let holderIsPlanned = resolved.sources.first == .planned
+        if !resolvedMerchant.isEmpty && !holderIsPlanned { merged.note = resolvedMerchant }
         if merged.accountShortcutID == nil { merged.accountShortcutID = arriving.accountShortcutID }
         if merged.subcategoryShortcutID == nil { merged.subcategoryShortcutID = arriving.subcategoryShortcutID }
         if merged.accountShortcutID == nil {

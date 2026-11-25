@@ -64,6 +64,31 @@ extension L10n {
         static var guardarIgual: String { s("recorded.saveAnyway") }
         static var guardarIgualPista: String { s("recorded.saveAnyway.hint") }
 
+        // MARK: Lote 4: casar con un pago planificado
+
+        /// «¿Es tu pago «Luz del Sur»?».
+        static func planificadoTitulo(_ nombre: String) -> String {
+            String(format: s("planned.ask.title"), locale: LanguageManager.resolved.locale, nombre)
+        }
+        /// «Sí, es ese pago».
+        static var planificadoSi: String { s("planned.ask.yes") }
+        static var planificadoSiPista: String { s("planned.ask.yes.hint") }
+        /// «No es ese pago».
+        static var planificadoNo: String { s("planned.ask.no") }
+        static var planificadoNoPista: String { s("planned.ask.no.hint") }
+        /// «Planificado: S/ 120.00 estimado · vence el 15 nov».
+        static func planificadoDetalle(importe: String, fecha: String) -> String {
+            String(format: s("planned.ask.detail"), locale: LanguageManager.resolved.locale, importe, fecha)
+        }
+        /// «S/ 120.00 estimado».
+        static func importeEstimado(_ importe: String) -> String {
+            String(format: s("planned.amount.estimate"), locale: LanguageManager.resolved.locale, importe)
+        }
+        /// «Antes S/ 120.00 estimado».
+        static func antesEstimado(_ importe: String) -> String {
+            String(format: s("planned.before.estimate"), locale: LanguageManager.resolved.locale, importe)
+        }
+
         /// El nombre de cada fuente en el resumen.
         static func fuente(_ source: InboxMatchLogic.Source) -> String {
             switch source {
@@ -73,6 +98,7 @@ extension L10n {
             case .web: s("source.web")
             case .aiConnector: s("source.ai")
             case .manual: s("source.manual")
+            case .planned: L10n.Inbox.sourceScheduledPayment
             }
         }
     }

@@ -77,7 +77,10 @@ final class InboxViewModel {
     /// «Ya registrado» (lote 3): por pendiente, el registro ya guardado que se le parece, con el criterio que frena al
     /// guardar (`InboxDuplicateCheck`).
     private(set) var alreadyRecorded: [PersistentIdentifier: InboxAlreadyRecorded] = [:]
-    /// Dónde vive lo marcado como «Son distintos» (`InboxSameExpenseDistinct`). Las pruebas pasan uno aislado.
+    /// «¿Es tu pago X?» (lote 4): los pendientes que pueden ser un pago planificado y no se unieron solos al llegar.
+    private(set) var plannedQuestions: [InboxPlannedQuestion] = []
+    /// Dónde vive lo marcado como «Son distintos» (`InboxSameExpenseDistinct`) y «No es ese pago»
+    /// (`InboxPlannedDistinct`). Las pruebas pasan uno aislado.
     @ObservationIgnored var distinctDefaults: UserDefaults = .standard
 
     // MARK: - Setup
@@ -98,6 +101,7 @@ final class InboxViewModel {
         loadGroupExpenseCurrencies()
         loadGroupLeftovers()
         loadSameExpensePairs()
+        loadPlannedQuestions()
         loadAlreadyRecorded()
         LoadTimeMarks.ready(.inbox)
     }
@@ -122,6 +126,44 @@ final class InboxViewModel {
             entries, distinct: InboxSameExpenseDistinct.pairs(distinctDefaults), calendar: calendar
         ).map { InboxSameExpensePair(holder: drafts[$0.holder], arriving: drafts[$0.arriving]) }
         if pairs != sameExpensePairs { sameExpensePairs = pairs }
+    }
+
+    /// «¿Es tu pago X?» (lote 4): cada pendiente de una fuente que avisa de un cargo, solo o con lo que ya tiene unido, frente
+    /// a los pagos planificados. Lo que casa fuerte se unió al llegar; aquí queda lo dudoso (la primera vez que un comercio
+    /// casa, un fijo con otro importe) y lo fuerte de antes de esta función. Uno a uno, sin lo que ya va en «¿Es el mismo
+    /// gasto?» ni lo contestado con «No». Una lectura que falla no pregunta nada.
+    private func loadPlannedQuestions(calendar: Calendar = .current) {
+        guard let context = modelContext else { return }
+        let paired = Set(sameExpensePairs.flatMap { [$0.holder.persistentModelID, $0.arriving.persistentModelID] })
+        let readable = pendingDrafts.filter(\.isReadableInInbox)
+        var drafts: [InboxDraft] = []
+        var arrivals: [BandejaPlanificadoMatchLogic.Arrival] = []
+        for draft in readable where !paired.contains(draft.persistentModelID) {
+            guard InboxArrivalJoin.matchSource(of: draft) != nil,
+                  let consumption = InboxArrivalJoin.consumption(of: draft) else { continue }
+            drafts.append(draft)
+            arrivals.append(BandejaPlanificadoMatchLogic.Arrival(consumption))
+        }
+        var found: [InboxPlannedQuestion] = []
+        if !arrivals.isEmpty {
+            var targets = InboxPlannedTargets(pending: readable, context: context, calendar: calendar)
+            let all = targets.all()
+            let answered = InboxPlannedDistinct.pairs(distinctDefaults)
+            let questions = BandejaPlanificadoMatchLogic.questions(
+                arrivals: arrivals, planned: all.map(\.planned),
+                excluded: { index, paymentID in
+                    answered.contains(InboxPlannedDistinct.pairKey(
+                        draftKey: InboxSameExpenseDistinct.draftKey(of: drafts[index]), paymentID: paymentID))
+                },
+                calendar: calendar)
+            for question in questions {
+                guard let target = all.first(where: { $0.planned.paymentID == question.paymentID }) else { continue }
+                let plannedDraft = target.draft.flatMap { paired.contains($0.persistentModelID) ? nil : $0 }
+                found.append(InboxPlannedQuestion(arriving: drafts[question.arrival], target: target,
+                                                  plannedDraft: plannedDraft))
+            }
+        }
+        if found != plannedQuestions { plannedQuestions = found }
     }
 
     /// «Ya registrado»: lo que «Guardar los listos» dejaría pendiente por posible duplicado, dicho en la fila. Una lectura
@@ -163,6 +205,23 @@ final class InboxViewModel {
                 paired.insert(pair.holder.persistentModelID)
                 paired.insert(pair.arriving.persistentModelID)
                 items.append(.pair(pair))
+            }
+        }
+        if pairsSameExpense {
+            for question in plannedQuestions where question.arriving.isReadableInInbox
+                && present.contains(question.arriving.persistentModelID)
+                && !paired.contains(question.arriving.persistentModelID) {
+                paired.insert(question.arriving.persistentModelID)
+                var shown = question
+                if let planned = question.plannedDraft {
+                    if planned.isReadableInInbox, present.contains(planned.persistentModelID),
+                       !paired.contains(planned.persistentModelID) {
+                        paired.insert(planned.persistentModelID)
+                    } else {
+                        shown = question.withoutPlannedDraft
+                    }
+                }
+                items.append(.planned(shown))
             }
         }
         items += filtered.filter { !paired.contains($0.persistentModelID) }.map(InboxListItem.draft)
@@ -478,16 +537,20 @@ struct InboxAlreadyRecorded: Equatable {
 enum InboxListItem: Identifiable {
     case draft(InboxDraft)
     case pair(InboxSameExpensePair)
+    /// Lote 4: «¿Es tu pago X?».
+    case planned(InboxPlannedQuestion)
 
     enum ID: Hashable {
         case draft(PersistentIdentifier)
         case pair(InboxSameExpensePair.ID)
+        case planned(InboxPlannedQuestion.ID)
     }
 
     var id: ID {
         switch self {
         case .draft(let draft): .draft(draft.persistentModelID)
         case .pair(let pair): .pair(pair.id)
+        case .planned(let question): .planned(question.id)
         }
     }
 
@@ -496,6 +559,7 @@ enum InboxListItem: Identifiable {
         switch self {
         case .draft(let draft): draft.effectiveDate
         case .pair(let pair): max(pair.holder.effectiveDate, pair.arriving.effectiveDate)
+        case .planned(let question): question.drafts.map(\.effectiveDate).max() ?? question.arriving.effectiveDate
         }
     }
 
@@ -503,6 +567,7 @@ enum InboxListItem: Identifiable {
         switch self {
         case .draft(let draft): draft.createdAt
         case .pair(let pair): max(pair.holder.createdAt, pair.arriving.createdAt)
+        case .planned(let question): question.drafts.map(\.createdAt).max() ?? question.arriving.createdAt
         }
     }
 }
@@ -630,6 +695,94 @@ enum InboxSameExpenseDistinct {
                 stored.removeAll { $0 == pair }
                 stored.append(pair)
             }
+        }
+        defaults.set(Array(stored.suffix(limit)), forKey: key)
+    }
+}
+
+// MARK: - Bandeja sin duplicados, lote 4: «¿Es tu pago X?»
+
+/// Un pendiente que puede ser un pago planificado: «¿Es tu pago «Luz del Sur»?» con «Sí, es ese pago» y «No es ese pago».
+/// Los textos del planificado se leen al cargar (el planificado puede cambiar con la lista abierta).
+struct InboxPlannedQuestion: Identifiable, Equatable {
+    struct ID: Hashable {
+        let arriving: PersistentIdentifier
+        let paymentID: UUID
+    }
+
+    let arriving: InboxDraft
+    /// El borrador pendiente del planificado, si ya lo tiene y no va en otra tarjeta: se enseña junto al que llega.
+    let plannedDraft: InboxDraft?
+    let paymentID: UUID
+    let paymentName: String
+    /// «S/ 120.00 estimado · vence el 15 nov», para cuando el planificado aún no tiene borrador.
+    let plannedDetail: String
+
+    var id: ID { ID(arriving: arriving.persistentModelID, paymentID: paymentID) }
+
+    /// Los borradores de la tarjeta, del más antiguo al más reciente por su fecha.
+    var drafts: [InboxDraft] {
+        [arriving, plannedDraft].compactMap { $0 }.sorted { $0.effectiveDate <= $1.effectiveDate }
+    }
+
+    var withoutPlannedDraft: InboxPlannedQuestion {
+        InboxPlannedQuestion(arriving: arriving, plannedDraft: nil, paymentID: paymentID, paymentName: paymentName,
+                             plannedDetail: plannedDetail)
+    }
+
+    init(arriving: InboxDraft, plannedDraft: InboxDraft?, paymentID: UUID, paymentName: String, plannedDetail: String) {
+        self.arriving = arriving
+        self.plannedDraft = plannedDraft
+        self.paymentID = paymentID
+        self.paymentName = paymentName
+        self.plannedDetail = plannedDetail
+    }
+
+    @MainActor
+    init(arriving: InboxDraft, target: InboxPlannedTargets.Target, plannedDraft: InboxDraft?) {
+        let planned = target.planned
+        let amount = YalaFormatterStatic.currency(
+            value: abs(planned.amount), currencyCode: planned.currencyCode ?? target.payment.currencyCode,
+            forceFullPrecision: true)
+        self.init(
+            arriving: arriving, plannedDraft: plannedDraft, paymentID: planned.paymentID, paymentName: target.payment.name,
+            plannedDetail: L10n.BandejaUnir.planificadoDetalle(
+                importe: planned.isEstimate ? L10n.BandejaUnir.importeEstimado(amount) : amount,
+                fecha: InboxDuplicateCheck.twinDateText(planned.occurrence)))
+    }
+
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.id == rhs.id && lhs.plannedDraft?.persistentModelID == rhs.plannedDraft?.persistentModelID
+            && lhs.plannedDetail == rhs.plannedDetail && lhs.paymentName == rhs.paymentName
+    }
+}
+
+/// «No es ese pago» y «Separar» de un planificado: qué pendiente ya se dijo que no es qué pago, para no volver a preguntar.
+///
+/// **Solo en este teléfono, como «Son distintos»** (`InboxSameExpenseDistinct`, lote 3): un campo sincronizado pediría
+/// otra migración. Lo retira el borrado de datos (`DataWipeService.removeRowDerivedKeys`).
+@MainActor
+enum InboxPlannedDistinct {
+    nonisolated static let key = "inbox.plannedDistinctPairs"
+    nonisolated static let limit = 300
+
+    nonisolated static func pairKey(draftKey: String, paymentID: UUID) -> String {
+        "\(draftKey)|planned:\(paymentID.uuidString)"
+    }
+
+    static func pairs(_ defaults: UserDefaults = .standard) -> Set<String> {
+        Set(defaults.stringArray(forKey: key) ?? [])
+    }
+
+    static func markDistinct(_ drafts: [InboxDraft], paymentID: UUID, _ defaults: UserDefaults = .standard) {
+        let keys = drafts.filter(\.isReadableInInbox).map {
+            pairKey(draftKey: InboxSameExpenseDistinct.draftKey(of: $0), paymentID: paymentID)
+        }
+        guard !keys.isEmpty else { return }
+        var stored = defaults.stringArray(forKey: key) ?? []
+        for pair in keys {
+            stored.removeAll { $0 == pair }
+            stored.append(pair)
         }
         defaults.set(Array(stored.suffix(limit)), forKey: key)
     }

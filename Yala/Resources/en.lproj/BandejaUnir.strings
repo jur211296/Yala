@@ -28,3 +28,13 @@
 "bandejaUnir.recorded.saveAnyway" = "Save anyway";
 "bandejaUnir.recorded.saveAnyway.hint" = "Saves it even though it looks like one you already recorded";
 "bandejaUnir.row.sources.a11y" = "Came in through %@";
+
+/* Lote 4: casar con un pago planificado. */
+"bandejaUnir.planned.ask.title" = "Is this your “%@” payment?";
+"bandejaUnir.planned.ask.yes" = "Yes, it’s that payment";
+"bandejaUnir.planned.ask.yes.hint" = "We’ll combine it with your planned payment and do it for you next time";
+"bandejaUnir.planned.ask.no" = "Not that payment";
+"bandejaUnir.planned.ask.no.hint" = "It stays as a separate pending item and we won’t ask again";
+"bandejaUnir.planned.ask.detail" = "Planned: %1$@ · due %2$@";
+"bandejaUnir.planned.amount.estimate" = "%@ estimated";
+"bandejaUnir.planned.before.estimate" = "Was %@ estimated";

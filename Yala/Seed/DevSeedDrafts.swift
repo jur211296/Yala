@@ -124,6 +124,83 @@ struct DevSeedDrafts {
                 confidenceDate: 0.9, needsUserInput: [DraftInputRequirement.subcategory], status: .pending)
             context.insert(email)
         }
+
+        if UITestHooks.seedInboxPlannedMatch {
+            seedPlannedMatch(account: account, subcategory: subcategory, in: context)
+        }
+    }
+
+    /// `-uitest-inbox-planned-match` (lote 4 de la Bandeja sin duplicados). Los cargos entran por la unión de producción.
+    @MainActor
+    private static func seedPlannedMatch(account: Account, subcategory: Subcategory, in context: ModelContext) {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date.now)
+        func planned(_ name: String, _ amount: Double, estimate: Bool, dueIn days: Int) -> ScheduledPayment {
+            let due = calendar.date(byAdding: .day, value: days, to: today) ?? today
+            let payment = ScheduledPayment(
+                name: name, amount: amount, currencyCode: account.currencyCode, account: account, subcategory: subcategory,
+                nextDueDate: due, dayOfMonth: calendar.component(.day, from: due), isVariableAmount: estimate)
+            context.insert(payment)
+            return payment
+        }
+        // Lo aprendido de un mes anterior: un borrador aprobado del planificado con un cargo de ese comercio unido.
+        func learn(_ alias: String, for payment: ScheduledPayment) {
+            let past = calendar.date(byAdding: .month, value: -1, to: today) ?? today
+            let fields = InboxJoinRecord.Fields(note: payment.name, amount: -payment.amount, date: past,
+                                                accountShortcutID: nil, subcategoryShortcutID: nil,
+                                                cachedCurrencyCode: account.currencyCode)
+            var member = fields
+            member.note = alias
+            let record = InboxJoinRecord(
+                version: InboxJoinRecord.currentVersion,
+                holderSource: InboxJoinRecord.SourceFacts(source: "planned", currencyCode: account.currencyCode,
+                                                          last4: nil, hasExactTime: false),
+                holderBefore: fields, holderAfter: fields,
+                members: [InboxJoinRecord.Member(
+                    facts: InboxJoinRecord.SourceFacts(source: "bankEmail", currencyCode: account.currencyCode,
+                                                       last4: "4821", hasExactTime: false),
+                    fields: member, sourceTypeRaw: DraftSourceType.emailAlert.rawValue, createdAt: past, rawText: nil,
+                    evidence: nil, confidenceAmount: nil, confidenceDate: nil, confidenceMerchant: nil,
+                    confidenceSubcategory: nil, joinedAt: past)])
+            let approved = InboxDraft(note: payment.name, amount: -payment.amount, date: past, account: account,
+                                      subcategory: subcategory, sourceType: .scheduledPayment, status: .approved)
+            approved.sourceScheduledPaymentID = payment.id.uuidString
+            approved.joinRecordRaw = record.encoded()
+            context.insert(approved)
+        }
+        func emailDraft(_ note: String, _ amount: Double) -> InboxDraft {
+            let draft = InboxDraft(
+                note: note, amount: amount, date: today.addingTimeInterval(12 * 3600), account: account,
+                sourceType: .emailAlert, rawText: "BCP · ****4821", evidence: "BCP · ****4821", confidenceAmount: 0.9,
+                confidenceDate: 0.9, needsUserInput: [DraftInputRequirement.subcategory], status: .pending)
+            context.insert(draft)
+            return draft
+        }
+
+        // Luz del Sur: estimado, vence hoy, la primera vez que llega su correo: la Bandeja pregunta.
+        let luz = planned("Luz del Sur", 120, estimate: true, dueIn: 0)
+        _ = ScheduledPaymentDraftService.createDraftForOccurrence(from: luz, date: luz.nextDueDate, context: context)
+        _ = emailDraft("LUZ DEL SUR SAA", -134.80)
+
+        // Sedapal: estimado, vence en dos días, ya aprendido: el correo adelanta su borrador con el monto real.
+        let sedapal = planned("Sedapal", 60, estimate: true, dueIn: 2)
+        learn("SEDAPAL", for: sedapal)
+        let water = emailDraft("SEDAPAL", -72.40)
+        _ = InboxArrivalJoin.joinBeforeSave(
+            [InboxArrivalJoin.Arrival(draft: water, currencyCode: account.currencyCode, last4: "4821")], context: context)
+
+        // Netflix: fijo, vence hoy, ya aprendido: su Apple Pay completa el borrador del planificado.
+        let netflix = planned("Netflix", 44.90, estimate: false, dueIn: 0)
+        learn("NETFLIX.COM", for: netflix)
+        _ = ScheduledPaymentDraftService.createDraftForOccurrence(from: netflix, date: netflix.nextDueDate,
+                                                                  context: context)
+        let applePay = InboxDraft(
+            note: "Netflix.com", amount: -44.90, date: today.addingTimeInterval(8 * 3600 + 40 * 60), account: account,
+            sourceType: .applePay, rawText: "S/44.90", evidence: "Netflix.com", confidenceAmount: 1, confidenceDate: 1,
+            needsUserInput: [DraftInputRequirement.subcategory], status: .pending)
+        context.insert(applePay)
+        _ = InboxArrivalJoin.joinBeforeSave(
+            [InboxArrivalJoin.Arrival(draft: applePay, currencyCode: account.currencyCode)], context: context)
     }
 }
 #endif
