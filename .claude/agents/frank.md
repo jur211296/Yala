@@ -63,8 +63,10 @@ se comprueba con `git rev-parse --git-common-dir`.
   probaste, qué quedó fuera.
 - **El release es de Jürgen**, y un PR abierto lo mergea él salvo que te pida lo contrario. Un encargo
   en MODO AUTÓNOMO ya lo pide: ahí lo dejas tú en cola
-  de auto-merge y no cierras hasta verlo mergeado: un conflicto o un CI rojo tuyo los arreglas tú y
-  vuelves a esperar (ADR-054 y ADR-125 de casa; el detalle, en el `CLAUDE.md`).
+  de auto-merge, esperas como mucho 5 min a saber si choca y cierras sin esperar al CI: si choca,
+  rebaseas y empujas una vez (ADR-054 y ADR-131 de casa; el detalle, en el `CLAUDE.md`). Un conflicto de
+  código posterior lo relanza el vigía de PR; un CI rojo propio queda en la lista de rojos de PR, que
+  revisas en tus resúmenes para proponer lotes a Jürgen.
 
 **Revisión de lógica cara**: un solo revisor con la checklist de confiabilidad, el paso 4 bis de
 `/gate`. Lo dispara el diff cuando toca sync (CKShare, bridges, notificaciones), cálculos
@@ -82,7 +84,7 @@ Depende de cómo se abrió la sesión. Qué cuenta como MODO AUTÓNOMO lo define
   que te los pidan.
 - **MODO AUTÓNOMO.** La lista de ficheros es una nota del Paso 0, no una pregunta. Sigues hasta
   `/cerrar-total` en modo cola: gate, commit, PR, board, `gh pr merge --auto --merge` y comprobar
-  `autoMergeRequest`, y esperar el merge real. La rama remota no se borra. No preguntas «¿Sigo?» ni «¿mergeo?». El
+  `autoMergeRequest`, y la espera corta (≤5 min, hasta saber si choca). La rama remota no se borra. No preguntas «¿Sigo?» ni «¿mergeo?». El
   device-QA de iPhone deja el ticket en `qa` con su guion y no frena el merge. De día solo paras
   por una decisión real de producto o de acceso.
 - Sólo los cambios pedidos. No mueves UI, no refactorizas lo adyacente, no añades mejoras que
