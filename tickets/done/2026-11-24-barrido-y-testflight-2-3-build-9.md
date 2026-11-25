@@ -1,6 +1,6 @@
 ---
 id: 2026-11-24-barrido-y-testflight-2-3-build-9
-status: blocked
+status: done
 priority: high
 area: "qa, release, testflight"
 created: 2026-11-25
@@ -9,6 +9,21 @@ source: "Encargo de Jürgen (24-nov, 19:32 Lima): barrido de QA y subida a TestF
 ---
 
 # Barrido de QA y Yala 2.3 (9) a TestFlight
+
+## Resultado (25-nov, 06:55 Lima)
+
+- **Yala 2.3 (9) en TestFlight**: archivada en la Mini desde `2.3` en `ed09674d0` (CI de 2.3 en verde), subida con `asc`,
+  procesada `VALID` (06:37) y en `IN_BETA_TESTING` para el grupo «Test interno», que recibe todas las builds. No se envió
+  a revisión ni al grupo externo. Notas «Qué probar» (es-MX) cargadas desde `docs/qa/testflight-2-3-9/notas-que-probar.txt`.
+- **iCloud**: Dan desplegó `CD_InboxDraft.CD_joinRecordRaw` en Producción en los dos contenedores; medido con `cktool`
+  a las 06:24. Los dos `*-production.ckdb` se re-exportaron (solo entra ese campo) y `pendingProductionDeploy` quedó
+  vacío; `scripts/asc-preflight.sh` en verde sobre el archivado.
+- **dSYM en Sentry** por el post-action del scheme (3 ficheros). El aviso de commits sin asociar es el mismo de la build 8.
+- **Smoke en el iPhone 14** (Yala Dev): abre, Panel y Bandeja bien. Sin cambios de la app desde el barrido: no hizo falta
+  barrido corto.
+- **Guía de novedades** al día con la build 9, en su URL de siempre (`docs/guias/novedades-2-3/README.md`).
+- **Yala Dev en el iPhone personal de Jürgen** (pedido en la sesión): instalada desde el mismo código, para probar Dev y
+  TestFlight en paralelo.
 
 ## Estado (25-nov, 04:40 Lima)
 
