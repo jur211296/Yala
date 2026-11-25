@@ -6,7 +6,8 @@
     "bloquearDesde": "2026-12-01",
     "caducidadDias": 14,
     "caducidad": "A los caducidadDias días en la lista sin arreglo, la prueba se borra con su porqué, o sale de aquí si ya está arreglada. El CI la lista como vencida en el resumen del job; no borra nada solo.",
-    "campos": "prueba (YalaTests/Suite/caso() como la nombra el .xcresult, o YalaTests/Suite para la suite entera) · dueno · ticket · entrada (AAAA-MM-DD) · motivo",
+    "campos": "prueba (YalaTests/Suite/caso() como la nombra el .xcresult, o YalaTests/Suite para la suite entera; para la UI, YalaUITests/Suite/test_caso() o YalaUITests/Suite) · dueno · ticket · entrada (AAAA-MM-DD) · motivo",
+    "ui": "Desde el 2026-11-25 la lista vale también para la UI de la nocturna (job ui, paso «Veredicto de la tanda», qa/scripts/ci-ui-veredicto.py). La prueba corre igual; si su rojo final está en la lista, no pinta la tanda y sale aparte en el aviso con dueño, ticket y días. El modo observar/bloquear no aplica a la UI, que es advisory: solo separa. La caducidad sí: a los caducidadDias días sale de la lista o se borra la prueba.",
     "regla": ".claude/rules/ci-qa.md, sección «Cuarentena: un rescate solo vale si la prueba está en la lista»"
   },
   "pruebas": [
