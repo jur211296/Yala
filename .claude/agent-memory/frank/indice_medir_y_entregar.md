@@ -136,3 +136,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de correr tests, el gate o
 - [Medir esperas reales en transcripts](reference_medir_esperas_reales_en_transcripts.md) — esperar_merge no deja log: transcripts de Max y Mini (ssh + python3 -).
 - [Campo de iCloud pendiente frena la subida](reference_campo_de_icloud_pendiente_frena_la_subida.md) — pendingProductionDeploy + cktool de Producción en el Paso 0 de cada subida; desplegar es de Dan.
 - [Medir un cambio de build del CI en local](reference_medir_un_cambio_de_build_del_ci_en_local.md) — worktree desechable + strings del binario tras cada build; 8 s «verde» era un binario viejo.
+- [Los scans leen el árbol, no el binario](feedback_las_pruebas_de_cableado_leen_el_arbol.md) — test-without-building con otra rama: rojos falsos en los WiringTests.

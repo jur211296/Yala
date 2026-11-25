@@ -49,6 +49,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | 2026-11-25-ui-nocturna-intermitentes | done | tickets/done/2026-11-25-ui-nocturna-intermitentes.md |
 | 2026-11-25-esto-lei-moneda-descripcion-sin-hueco | done | tickets/done/2026-11-25-esto-lei-moneda-descripcion-sin-hueco.md |
 | 2026-11-25-build-9-migracion-bandeja-22 | done | tickets/done/2026-11-25-build-9-migracion-bandeja-22.md |
+| 2026-11-25-barrido-testflight-2-3-build-10-dev-limpio | done | tickets/done/2026-11-25-barrido-testflight-2-3-build-10-dev-limpio.md |
 | 2026-11-24-barrido-y-testflight-2-3-build-9 | done | tickets/done/2026-11-24-barrido-y-testflight-2-3-build-9.md |
 | 2026-11-25-ya-registrado-parte-descartar-con-texto-grande | backlog | tickets/backlog/2026-11-25-ya-registrado-parte-descartar-con-texto-grande.md |
 | 2026-11-25-ui-nocturna-cuelgues-cuarentena-ci | done | tickets/done/2026-11-25-ui-nocturna-cuelgues-cuarentena-ci.md |

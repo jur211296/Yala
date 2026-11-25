@@ -1,0 +1,104 @@
+{
+ "nuevos": [
+  {
+   "id": "1176-1",
+   "pr": 1176,
+   "titulo": "«Vaciar datos» en tu cuenta de Yala ya no pide iniciar sesión ni deja el Panel cargando",
+   "area": "Nube e iCloud",
+   "seccion": "existente",
+   "tipo": "arreglo",
+   "ruta": "Ajustes › Vaciar datos (con tus datos en la nube)",
+   "que_cambio": "Después de «Vaciar datos» con la cuenta de Yala, la app ya no enseña «Inicia sesión para subir N cambios» con la sesión abierta, y al reabrirla el Panel sale enseguida en vez de quedarse un minuto con el esqueleto gris. Los borrados suben en segundo plano.",
+   "por_que": "Con miles de registros, vaciar dejaba una cola enorme: la app intentaba subirla entera antes de bajar nada, la sesión vencía a mitad y pedía entrar otra vez.",
+   "estado": "listo",
+   "activar": "",
+   "pro": false,
+   "como_probar": "En el iPhone de pruebas con la cuenta de Yala y muchos registros: Ajustes › Vaciar datos, cierra Yala del todo y vuelve a abrirla. El Panel sale en segundos y no aparece el aviso de iniciar sesión.",
+   "orden": 0,
+   "build": "10"
+  },
+  {
+   "id": "1176-2",
+   "pr": 1176,
+   "titulo": "«Tu cuenta de Yala» y «Eliminar mi cuenta» salen siempre que tus datos estén en la nube",
+   "area": "Nube e iCloud",
+   "seccion": "existente",
+   "tipo": "arreglo",
+   "ruta": "Ajustes › Tu cuenta de Yala › Eliminar mi cuenta",
+   "que_cambio": "Con los datos en la nube, la sección «Tu cuenta de Yala» y «Eliminar mi cuenta» están siempre en Ajustes, también si la sesión se perdió. Sin sesión, al eliminar te pide entrar con la misma cuenta (Google o Apple), borra la cuenta en el servidor y vuelve a la bienvenida.",
+   "por_que": "Sin sesión desaparecían, y no había forma de borrar la cuenta desde el teléfono.",
+   "estado": "listo",
+   "activar": "",
+   "pro": false,
+   "como_probar": "En el iPhone de pruebas con una cuenta de Yala: Ajustes › Eliminar mi cuenta. Termina en la bienvenida. No lo hagas en tu teléfono personal.",
+   "orden": 0,
+   "build": "10"
+  },
+  {
+   "id": "1178-1",
+   "pr": 1178,
+   "titulo": "«Esto leí»: la moneda se cambia ahí mismo y la descripción se lee primero",
+   "area": "Nuevo registro",
+   "seccion": "ambos",
+   "tipo": "mejora",
+   "ruta": "Foto o voz › «Esto leí» / «Esto entendí»",
+   "que_cambio": "«S/ ▾» abre las monedas de Nuevo registro; al elegir una, la cuenta pasa a una de esa moneda y el chip solo enseña esas cuentas. La descripción va en negrita y se edita ahí mismo. «Ver todo» es una flecha a la derecha, así que la tarjeta ya no tiene un hueco arriba, y el chip de cuenta dice «Cuenta». «S/ ▾» queda centrada con el monto en las siete pantallas que la llevan.",
+   "por_que": "Lo pidió Jürgen al probar la hoja el 25-nov: no se podía corregir la moneda leída y la descripción se perdía.",
+   "estado": "listo",
+   "activar": "",
+   "pro": false,
+   "como_probar": "Lee la foto de un recibo en dólares: toca «S/ ▾», elige US$ y mira que la cuenta cambie a una en dólares.",
+   "orden": 0,
+   "build": "10"
+  },
+  {
+   "id": "1178-2",
+   "pr": 1178,
+   "titulo": "Hoja de varios: cada fila es la misma tarjeta, y lo incompleto se queda en la Bandeja",
+   "area": "Nuevo registro",
+   "seccion": "ambos",
+   "tipo": "mejora",
+   "ruta": "Foto o voz con varios gastos › la hoja de varios",
+   "que_cambio": "Un toque en una fila la despliega como la tarjeta de «Esto leí», con borde índigo. Un registro sin monto, cuenta o categoría sale con el check vacío y no se puede marcar: «Guardar» guarda lo completo y lo demás se queda en la Bandeja. Al completarlo se marca solo.",
+   "por_que": "Se podía marcar un registro a medias y guardarlo sin cuenta o sin monto.",
+   "estado": "listo",
+   "activar": "",
+   "pro": false,
+   "como_probar": "Dicta «almuerzo 25 y taxi» (el taxi sin monto): el taxi sale sin check; guarda y míralo en la Bandeja.",
+   "orden": 0,
+   "build": "10"
+  },
+  {
+   "id": "1179-1",
+   "pr": 1179,
+   "titulo": "Estadísticas: el chip del mismo mes del año pasado queda marcado",
+   "area": "Estadísticas",
+   "seccion": "existente",
+   "tipo": "arreglo",
+   "ruta": "Estadísticas › Resumen o Distribución › chips de comparación",
+   "que_cambio": "Al elegir «Con noviembre de 2025», ese chip queda marcado (también para VoiceOver). Antes cambiaba la frase de arriba pero seguía marcado «Con el mes anterior».",
+   "por_que": "El selector no se repintaba entero al cambiar de comparación.",
+   "estado": "listo",
+   "activar": "",
+   "pro": false,
+   "como_probar": "Estadísticas › Resumen › toca el chip del año pasado y mira que quede marcado.",
+   "orden": 0,
+   "build": "10"
+  }
+ ],
+ "cambios": [
+  {
+   "id": "1078-1",
+   "cambio_guia": "Arreglado en la 2.3 (10): Primeros pasos también sale al crear una cuenta nueva en un teléfono que tuvo Yala antes de la 2.3, en «Solo gastos» y en «Gastos e ingresos».",
+   "campos": {}
+  }
+ ],
+ "descartados": [
+  {"pr": 1171, "motivo": "Número de build, esquemas de iCloud y guía de la 2.3 (9)"},
+  {"pr": 1172, "motivo": "Servidor: reintento del gateway ante la base saturada, no viaja en la build"},
+  {"pr": 1173, "motivo": "Análisis de CI, sin cambios de la app"},
+  {"pr": 1174, "motivo": "Proceso de cierre de sesiones, sin cambios de la app"},
+  {"pr": 1175, "motivo": "Pruebas de interfaz, sin cambios de la app"},
+  {"pr": 1177, "motivo": "CI de la UI nocturna, sin cambios de la app"}
+ ]
+}

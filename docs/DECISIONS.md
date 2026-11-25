@@ -2,13 +2,14 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (146 entradas)
+## Índice (147 entradas)
 
-> **No hace falta leer este fichero entero** — son 357 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 361 KB. Localiza la entrada
 > aquí y salta a ella.
 
-- `2026-11-24` [Lote del 24-nov (17:58-17:59): el arreglo del paso 3 de Gmail a producción con Dan, y la web a Cloud](#2026-11-24-lote-del-24-nov-1758-1759-el-arreglo-del-paso-3-de-gmail-a-produccin-con-dan-y-la-web-a-cloudflare-pasa-a-24)
+- `2026-11-25` [Lote del 25-nov (07:07-12:33): la build 10 espera los cuatro PR de 2.3, y las tareas chicas de Yala ](#2026-11-25-lote-del-25-nov-0707-1233-la-build-10-espera-los-cuatro-pr-de-23-y-las-tareas-chicas-de-yala-van-en-lotes)
 - `2026-11-24` [Lote del 24-nov (08:47-14:33): la build 8 espera todo lo de 2.3, la Bandeja sin duplicados después d](#2026-11-24-lote-del-24-nov-0847-1433-la-build-8-espera-todo-lo-de-23-la-bandeja-sin-duplicados-despus-de-la-build-y-marketing-en-lenguaje-simple)
+- `2026-11-24` [Lote del 24-nov (17:58-17:59): el arreglo del paso 3 de Gmail a producción con Dan, y la web a Cloud](#2026-11-24-lote-del-24-nov-1758-1759-el-arreglo-del-paso-3-de-gmail-a-produccin-con-dan-y-la-web-a-cloudflare-pasa-a-24)
 - `2026-11-23` [Lote del 23-nov (15:02-15:51): la build 7 espera todo lo de 2.3, y la web a Cloudflare sin desplegar](#2026-11-23-lote-del-23-nov-1502-1551-la-build-7-espera-todo-lo-de-23-y-la-web-a-cloudflare-sin-desplegar)
 - `2026-11-23` [Lote del 23-nov (10:31-11:13): barrido de QA antes de la build 7, en el iPhone 14 real](#2026-11-23-lote-del-23-nov-1031-1113-barrido-de-qa-antes-de-la-build-7-en-el-iphone-14-real)
 - `2026-11-23` [«Conecta tu IA»: opción C, gratis, listar y desconectar desde la app, y desconectar como al reconect](#2026-11-23-conecta-tu-ia-opcin-c-gratis-listar-y-desconectar-desde-la-app-y-desconectar-como-al-reconectar)
@@ -172,6 +173,13 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-11-25] Lote del 25-nov (07:07-12:33): la build 10 espera los cuatro PR de 2.3, y las tareas chicas de Yala van en lotes
+**Contexto:** Decisiones de Jürgen en el chat del 25-nov (07:07, 07:26 y 12:33, Lima); las dos primeras, capturadas por el bot dueño (ADR-082 de casa). Las registra la sesión que subió la build 10.
+**Decisión:** (1) La build 10 de TestFlight de 2.3 **espera a que entren los cuatro PR abiertos** (build 9, bugs de cuenta, «Esto leí» y Estadísticas) y sube sobre 2.3 al día; no se le pregunta si sube sin ellos. (2) Se conserva la del 19-nov: las tareas chicas de Yala se juntan en lotes por sesión (un PR, un cierre), sin una sesión por tarea chica. (3) El reporte de bugs de cuenta de las 07:07 (Vaciar datos deja la nube sin sesión con cambios pendientes y el esqueleto pegado; falta «Eliminar cuenta» en Ajustes) no es una decisión: lo resolvió el PR de bugs de cuenta, que entró en la build 10.
+**Razones:** (1) Los arreglos de cuenta son lo que Jürgen prueba en la bienvenida; las otras dos, no las dio.
+**Consecuencias:** La build 10 esperó unas tres horas a que los tres PR de la app pasaran su CI (cada merge reiniciaba el CI de los otros). Ninguna regla de código cambia.
+**Estado:** Activa
 
 ### [2026-11-24] Lote del 24-nov (17:58-17:59): el arreglo del paso 3 de Gmail a producción con Dan, y la web a Cloudflare pasa a 2.4
 **Contexto:** Decisiones de Jürgen en el chat del 24-nov (17:58 y 17:59, Lima), capturadas por el bot dueño (ADR-082 de casa). Las registra la sesión del emparejador entre fuentes de la Bandeja.

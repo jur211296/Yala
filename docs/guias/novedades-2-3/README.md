@@ -1,4 +1,4 @@
-# Guía de novedades 2.3 (TestFlight 2.3 (9))
+# Guía de novedades 2.3 (TestFlight 2.3 (10))
 
 Artifact para que Jürgen recorra como usuario antiguo o nuevo todo lo que cambió de la 2.2 publicada a la 2.3 (9) de
 TestFlight, con lo que todavía no llegó, y deje notas «me gusta / mejorar / bug»: https://claude.ai/artifact/G74UBFLDowih9f2Rt5xaoS
@@ -101,3 +101,15 @@ Sus notas se guardan en la base del artifact, colección `notas` (un documento p
 - **Capturas:** se conservan las anteriores; la build 9 no suma capturas nuevas.
 - **Recorrido del usuario antiguo:** suma 5 pasos (los cuatro de la Bandeja y Gmail).
 - **Script:** `actualizar_2026_11_25.py` aplica el delta (ya aplicado; no se repite).
+
+## Actualización del 25-nov-2026, tarde (TestFlight 2.3 (10))
+
+- **Alcance:** los PR mergeados en `2.3` desde el corte de la 2.3 (9) hasta el de la 2.3 (10). 9 PR revisados: 5 ítems
+  nuevos (bugs de cuenta en la nube, «Esto leí» y el chip de Estadísticas), 1 cambio sobre un ítem existente (Primeros
+  pasos en un teléfono que tuvo Yala antes) y 6 PR descartados (número de build, servidor, CI y pruebas) con su motivo en
+  `delta_2026_11_25_build10.json`.
+- **iCloud:** la build 10 no escribe campos nuevos; el esquema de Producción de los dos contenedores coincide con el del
+  repo (medido con `cktool export-schema` el 25-nov).
+- **Capturas:** se conservan las anteriores y se suma 1 del simulador: «Esto leí» con la moneda cambiada a dólares.
+- **Recorrido del usuario antiguo:** suma 2 pasos («Esto leí» con moneda y la hoja de varios).
+- **Script:** `actualizar_2026_11_25_build10.py` aplica el delta (ya aplicado; no se repite).

@@ -547,8 +547,8 @@
   "id": "826-1",
   "orden": 50,
   "build": "1",
-  "nuevo_guia": true,
-  "cambio_guia": "Arreglado en la 2.3 (9): tocar «Ver detalle ›» abre Estadísticas; antes el toque lo recogía el ojo y ocultaba los montos. El ojo sigue ocultando con su propio toque."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 788,
@@ -4005,8 +4005,8 @@
   "id": "818-1",
   "orden": 0,
   "build": "2",
-  "nuevo_guia": true,
-  "cambio_guia": "Mergeado el 24-nov, solo servidor y aún sin producción: tu IA podrá ver tu Bandeja, no dejará dos borradores del mismo correo y preguntará antes de apuntar algo que parece repetido."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "pr": 613,
@@ -4342,8 +4342,8 @@
   "como_probar": "Con una tarjeta de crédito con gasto, mira las dos cifras y toca el «?».",
   "orden": 32.5,
   "build": "2",
-  "nuevo_guia": true,
-  "cambio_guia": "Arreglado en la 2.3 (9): el saldo grande sale en cuanto está calculado, también mientras se importan o se guardan muchos registros seguidos (antes podía tardar hasta 46 s).",
+  "nuevo_guia": false,
+  "cambio_guia": "",
   "area": "Panel",
   "seccion": "ambos",
   "titulo": "Panel: «Tu saldo hoy» en grande, «Tu dinero hoy» en chico y un «?» que explica los dos",
@@ -5582,8 +5582,8 @@
   "como_probar": "Instala desde cero, elige «Solo gastos» en el alta y mira el mazo del Panel.",
   "orden": 21,
   "build": "6",
-  "nuevo_guia": false,
-  "cambio_guia": ""
+  "nuevo_guia": true,
+  "cambio_guia": "Arreglado en la 2.3 (10): Primeros pasos también sale al crear una cuenta nueva en un teléfono que tuvo Yala antes de la 2.3, en «Solo gastos» y en «Gastos e ingresos»."
  },
  {
   "id": "1078-2",
@@ -6152,8 +6152,8 @@
   "como_probar": "Abre Compromisos en la hoja de la nota.",
   "orden": 0,
   "build": "7",
-  "nuevo_guia": true,
-  "cambio_guia": "Arreglado en la 2.3 (9): con texto de accesibilidad la cifra de «Te falta pagar» crece como la del Panel y vuelve a ser lo mayor del bloque."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1095-1",
@@ -6931,8 +6931,8 @@
   "como_probar": "Abre BCP, mira que dice «Aún no está activo», toca «Ya lo configuré» y vuelve a la lista.",
   "orden": 0,
   "build": "8",
-  "nuevo_guia": true,
-  "cambio_guia": "Arreglado en la 2.3 (9): en iOS 27 la guía de Atajos enseña los pasos de la app Atajos nueva (el «+» de abajo, la pestaña «Automatización» de la hoja y guardar con «‹»)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1149-1",
@@ -7045,8 +7045,8 @@
   "como_probar": "Abre Estadísticas › Resumen en «Este mes», toca una acción de «Para decidir hoy» y un comercio de los gastos hormiga.",
   "orden": 0,
   "build": "8",
-  "nuevo_guia": true,
-  "cambio_guia": "Arreglado en la 2.3 (9): con texto de accesibilidad la cifra grande crece como la del Panel, y al cambiar de período el hero sale en esqueleto en vez de enseñar las cifras del período anterior."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1156-1",
@@ -7140,8 +7140,8 @@
   "como_probar": "Guarda a mano un gasto de ayer y espera a que llegue el mismo cargo a la Bandeja; al guardarlo, el aviso nombra el de ayer.",
   "orden": 0,
   "build": "9",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (9)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1168-1",
@@ -7159,8 +7159,8 @@
   "como_probar": "Con Apple Pay y el correo del banco conectados, paga algo con el iPhone: cuando llegue el correo, la Bandeja sigue con un solo pendiente. Ábrelo y toca «Separar».",
   "orden": 0,
   "build": "9",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (9)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1169-1",
@@ -7178,8 +7178,8 @@
   "como_probar": "Paga algo con Apple Pay de noche y espera el correo del banco al día siguiente con otro importe (propina): sale «¿Es el mismo gasto?». Toca «Es el mismo».",
   "orden": 0,
   "build": "9",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (9)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1170-1",
@@ -7197,8 +7197,8 @@
   "como_probar": "Con un pago planificado estimado (la luz, el agua) y el correo del banco conectado, espera su cargo: la fila del pago dice el monto real y «Antes … estimado».",
   "orden": 0,
   "build": "9",
-  "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (9)."
+  "nuevo_guia": false,
+  "cambio_guia": ""
  },
  {
   "id": "1163-1",
@@ -7216,7 +7216,102 @@
   "como_probar": "En Ajustes › Correo del banco › Gmail, pon tu dirección de Yala como reenvío en Gmail y vuelve al paso 3: en unos segundos sale «Confirmar en Google».",
   "orden": 0,
   "build": "9",
+  "nuevo_guia": false,
+  "cambio_guia": ""
+ },
+ {
+  "id": "1176-1",
+  "pr": 1176,
+  "titulo": "«Vaciar datos» en tu cuenta de Yala ya no pide iniciar sesión ni deja el Panel cargando",
+  "area": "Nube e iCloud",
+  "seccion": "existente",
+  "tipo": "arreglo",
+  "ruta": "Ajustes › Vaciar datos (con tus datos en la nube)",
+  "que_cambio": "Después de «Vaciar datos» con la cuenta de Yala, la app ya no enseña «Inicia sesión para subir N cambios» con la sesión abierta, y al reabrirla el Panel sale enseguida en vez de quedarse un minuto con el esqueleto gris. Los borrados suben en segundo plano.",
+  "por_que": "Con miles de registros, vaciar dejaba una cola enorme: la app intentaba subirla entera antes de bajar nada, la sesión vencía a mitad y pedía entrar otra vez.",
+  "estado": "listo",
+  "activar": "",
+  "pro": false,
+  "como_probar": "En el iPhone de pruebas con la cuenta de Yala y muchos registros: Ajustes › Vaciar datos, cierra Yala del todo y vuelve a abrirla. El Panel sale en segundos y no aparece el aviso de iniciar sesión.",
+  "orden": 0,
+  "build": "10",
   "nuevo_guia": true,
-  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (9)."
+  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (10)."
+ },
+ {
+  "id": "1176-2",
+  "pr": 1176,
+  "titulo": "«Tu cuenta de Yala» y «Eliminar mi cuenta» salen siempre que tus datos estén en la nube",
+  "area": "Nube e iCloud",
+  "seccion": "existente",
+  "tipo": "arreglo",
+  "ruta": "Ajustes › Tu cuenta de Yala › Eliminar mi cuenta",
+  "que_cambio": "Con los datos en la nube, la sección «Tu cuenta de Yala» y «Eliminar mi cuenta» están siempre en Ajustes, también si la sesión se perdió. Sin sesión, al eliminar te pide entrar con la misma cuenta (Google o Apple), borra la cuenta en el servidor y vuelve a la bienvenida.",
+  "por_que": "Sin sesión desaparecían, y no había forma de borrar la cuenta desde el teléfono.",
+  "estado": "listo",
+  "activar": "",
+  "pro": false,
+  "como_probar": "En el iPhone de pruebas con una cuenta de Yala: Ajustes › Eliminar mi cuenta. Termina en la bienvenida. No lo hagas en tu teléfono personal.",
+  "orden": 0,
+  "build": "10",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (10)."
+ },
+ {
+  "id": "1178-1",
+  "pr": 1178,
+  "titulo": "«Esto leí»: la moneda se cambia ahí mismo y la descripción se lee primero",
+  "area": "Nuevo registro",
+  "seccion": "ambos",
+  "tipo": "mejora",
+  "ruta": "Foto o voz › «Esto leí» / «Esto entendí»",
+  "que_cambio": "«S/ ▾» abre las monedas de Nuevo registro; al elegir una, la cuenta pasa a una de esa moneda y el chip solo enseña esas cuentas. La descripción va en negrita y se edita ahí mismo. «Ver todo» es una flecha a la derecha, así que la tarjeta ya no tiene un hueco arriba, y el chip de cuenta dice «Cuenta». «S/ ▾» queda centrada con el monto en las siete pantallas que la llevan.",
+  "por_que": "Lo pidió Jürgen al probar la hoja el 25-nov: no se podía corregir la moneda leída y la descripción se perdía.",
+  "estado": "listo",
+  "activar": "",
+  "pro": false,
+  "como_probar": "Lee la foto de un recibo en dólares: toca «S/ ▾», elige US$ y mira que la cuenta cambie a una en dólares.",
+  "orden": 0,
+  "build": "10",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (10)."
+ },
+ {
+  "id": "1178-2",
+  "pr": 1178,
+  "titulo": "Hoja de varios: cada fila es la misma tarjeta, y lo incompleto se queda en la Bandeja",
+  "area": "Nuevo registro",
+  "seccion": "ambos",
+  "tipo": "mejora",
+  "ruta": "Foto o voz con varios gastos › la hoja de varios",
+  "que_cambio": "Un toque en una fila la despliega como la tarjeta de «Esto leí», con borde índigo. Un registro sin monto, cuenta o categoría sale con el check vacío y no se puede marcar: «Guardar» guarda lo completo y lo demás se queda en la Bandeja. Al completarlo se marca solo.",
+  "por_que": "Se podía marcar un registro a medias y guardarlo sin cuenta o sin monto.",
+  "estado": "listo",
+  "activar": "",
+  "pro": false,
+  "como_probar": "Dicta «almuerzo 25 y taxi» (el taxi sin monto): el taxi sale sin check; guarda y míralo en la Bandeja.",
+  "orden": 0,
+  "build": "10",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (10)."
+ },
+ {
+  "id": "1179-1",
+  "pr": 1179,
+  "titulo": "Estadísticas: el chip del mismo mes del año pasado queda marcado",
+  "area": "Estadísticas",
+  "seccion": "existente",
+  "tipo": "arreglo",
+  "ruta": "Estadísticas › Resumen o Distribución › chips de comparación",
+  "que_cambio": "Al elegir «Con noviembre de 2025», ese chip queda marcado (también para VoiceOver). Antes cambiaba la frase de arriba pero seguía marcado «Con el mes anterior».",
+  "por_que": "El selector no se repintaba entero al cambiar de comparación.",
+  "estado": "listo",
+  "activar": "",
+  "pro": false,
+  "como_probar": "Estadísticas › Resumen › toca el chip del año pasado y mira que quede marcado.",
+  "orden": 0,
+  "build": "10",
+  "nuevo_guia": true,
+  "cambio_guia": "Nuevo en la guía: llegó en la 2.3 (10)."
  }
 ]
