@@ -1,6 +1,6 @@
 ---
 id: 2026-11-25-barrido-testflight-2-3-build-10-dev-limpio
-status: in-progress
+status: done
 priority: high
 area: "qa, release, testflight, nube-dev"
 created: 2026-11-25
@@ -9,6 +9,22 @@ source: "Encargo de Jürgen (25-nov, 12:27 Lima): barrido de QA, Yala 2.3 a Test
 ---
 
 # Barrido QA, Yala 2.3 a TestFlight y dev limpio en el iPhone 14
+
+## Resultado (25-nov, 16:30 Lima)
+
+- **Yala 2.3 (10) en TestFlight**: archivada en la Mini sobre 2.3 con los cuatro PR dentro (build 9, bugs de cuenta,
+  «Esto leí», Estadísticas), árbol del commit del número de build. Subida con `asc`, `uploads list` en `COMPLETE`, build
+  `VALID` y `IN_BETA_TESTING` para «Test interno». No se envió a revisión. Notas «Qué probar» (es-MX) desde
+  `docs/qa/testflight-2-3-10/notas-que-probar.txt`. Preflight en verde; dSYM a Sentry por el post-action (3 ficheros; el
+  aviso de commits sin asociar es el de siempre).
+- **iCloud**: el esquema vivo de Producción coincide con el repo; `pendingProductionDeploy` vacío. Nada que desplegar.
+- **Barrido**: `docs/qa/barrido-2-3-antes-build-10/lista.md`. 22/22 de interfaz y 92/92 unitarias de lo nuevo; suite
+  unitaria completa 16.331 en verde (los 16 restantes, pruebas de cableado corridas contra un árbol sin los PR: 99/99 sobre
+  el commit final). Hallazgo de texto grande en «Esto leí» a una card del tablero.
+- **Dev limpio**: `docs/qa/dev-limpio-2-3-10/README.md`. Supabase staging sin cuentas de Google ni Apple (quedan los 4
+  sintéticos), restos huérfanos de D1/KV de staging fuera, entorno Development de los dos contenedores dev reseteado.
+- **iPhone 14**: Yala Dev 2.3 (10) del mismo árbol, desinstalada e instalada de cero con `devicectl`; abre en la bienvenida.
+- **Guía de novedades** al día con la build 10 en su URL de siempre.
 
 ## Paso 0 — decisiones
 
