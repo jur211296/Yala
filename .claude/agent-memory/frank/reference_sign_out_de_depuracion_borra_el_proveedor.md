@@ -15,3 +15,8 @@ Y la consola de una build Debug en el iPhone: `xcrun devicectl device process la
 --console com.jurgenschmidt.yala.dev > log` en segundo plano. La configuración `Release-Dev` no compila fuera del
 archivo (las pantallas de depuración exigen DEBUG): para el teléfono, `Debug-Dev` con `-derivedDataPath` propio.
 Relacionado: [[conducir-el-iphone-real-con-device-mcp]].
+
+**Y el iPhone 18 de Jürgen (25-nov):** cuando el bug lo vio en SU 18, ese teléfono guarda el estado roto y él ofreció
+usarlo. Sirvió sin instalar nada: `devicectl copy from` del App Group y de `Library/Preferences` de Yala Dev, y leer sus
+claves (ahí salió la causa de Primeros pasos). Leer, sí; instalar en el 18, solo si él lo pide. Ver
+[[el-iphone-de-pruebas-es-el-14-por-cable]].

@@ -14,8 +14,3 @@ Jurgen», por red) es su teléfono personal: no se instala nada ahí.
 **How to apply:** antes de instalar, `xcrun devicectl list devices` y elige por modelo (iPhone14,7) y por
 `connected`, no por el primer físico. Si hay dos, confirma con él cuál. Relacionado:
 [[device-mcp-lo-enciende-jurgen]].
-
-**Excepción medida el 2026-11-25:** cuando Jürgen reporta un bug que vio en SU 18, ese teléfono guarda el estado roto,
-y él mismo ofreció usarlo («usa el iPhone 18 que es donde hice las pruebas»). Lo que sirvió sin instalar nada: copiar
-del 18 el App Group y `Library/Preferences` de Yala Dev con `devicectl copy from` y leer sus claves (ahí apareció la
-causa del bug de Primeros pasos). Leer, sí; instalar en el 18, solo si él lo pide.
