@@ -840,6 +840,12 @@ final class UITestHooks {
     /// Bandeja sin duplicados). No decide nada: la pareja la calcula el emparejador de producción.
     nonisolated static var seedInboxSameExpensePair: Bool { hasArg("-uitest-inbox-same-expense-pair") }
 
+    /// `-uitest-inbox-planned-match`: la semilla de borradores añade tres pagos planificados y sus cargos (lote 4 de la
+    /// Bandeja sin duplicados): Luz del Sur estimado y su correo, la primera vez («¿Es tu pago…?»); Sedapal estimado, ya
+    /// aprendido y aún sin vencer (se adelanta con el monto real); y Netflix fijo, aprendido, con su Apple Pay. No decide
+    /// nada: los cargos entran por la unión de producción (`InboxArrivalJoin`).
+    nonisolated static var seedInboxPlannedMatch: Bool { hasArg("-uitest-inbox-planned-match") }
+
     /// «Conecta tu IA»: `-uitest-inbox-empty` deja la Bandeja sin los dos borradores de la semilla (para ver su puerta), y
     /// `-uitest-inbox-ai-drafts` los siembra como apuntados por una IA, «Claude» y «ChatGPT» (la etiqueta y el filtro
     /// «De tu IA»). Solo cambian el origen de la semilla; lo que se pinta lo decide producción.

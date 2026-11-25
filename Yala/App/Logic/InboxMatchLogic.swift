@@ -43,6 +43,10 @@ nonisolated enum InboxMatchLogic {
         case web
         /// Un movimiento ya guardado a mano, o uno guardado cuyo origen no se sabe. Solo aparece en lo guardado.
         case manual
+        /// El borrador de un pago planificado que absorbió un cargo (lote 4, `BandejaPlanificadoMatchLogic`). Solo sostiene
+        /// un consumo: nunca llega como fuente, y sin nada unido no entra en el emparejador. Va el último en importe, hora y
+        /// comercio: lo que manda es lo que dijo el banco, y el importe del planificado puede ser un estimado.
+        case planned
     }
 
     /// La fuente del emparejador para un borrador de la Bandeja, o `nil` si no entra. El aviso del banco y Yala web
@@ -310,13 +314,15 @@ nonisolated enum InboxMatchLogic {
     }
 
     /// Importe y moneda: del banco, que es lo que salió de la cuenta. El correo antes que el aviso: es el cargo asentado.
-    static let moneyPriority: [Source] = [.bankEmail, .bankNotice, .applePay, .web, .aiConnector, .manual]
-    /// Comercio: Apple Pay lo trae limpio; después lo que eligió la persona (web) o su IA; el texto del banco, al final.
-    static let merchantPriority: [Source] = [.applePay, .web, .aiConnector, .bankNotice, .bankEmail, .manual]
+    static let moneyPriority: [Source] = [.bankEmail, .bankNotice, .applePay, .web, .aiConnector, .manual, .planned]
+    /// Comercio: Apple Pay lo trae limpio; después lo que eligió la persona (web) o su IA; el texto del banco, al final. El
+    /// nombre del planificado no cuenta como comercio: el borrador del planificado conserva su nota aparte
+    /// (`InboxJoinLogic.mergedFields`).
+    static let merchantPriority: [Source] = [.applePay, .web, .aiConnector, .bankNotice, .bankEmail, .manual, .planned]
     /// Hora: Apple Pay o el aviso, los que la traen.
-    static let timePriority: [Source] = [.applePay, .bankNotice, .bankEmail, .aiConnector, .web, .manual]
+    static let timePriority: [Source] = [.applePay, .bankNotice, .bankEmail, .aiConnector, .web, .manual, .planned]
     /// Cuenta: quien traiga la tarjeta o los últimos 4.
-    static let accountPriority: [Source] = [.bankNotice, .bankEmail, .applePay, .aiConnector, .web, .manual]
+    static let accountPriority: [Source] = [.bankNotice, .bankEmail, .applePay, .aiConnector, .web, .manual, .planned]
 
     static func ordered(_ members: [Candidate], by priority: [Source]) -> [Candidate] {
         let rank: (Candidate) -> Int = { priority.firstIndex(of: $0.source) ?? priority.count }

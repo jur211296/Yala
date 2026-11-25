@@ -34,7 +34,9 @@ final class BandejaFilaConFuentesUITests: XCTestCase {
         let inboxButton = app.buttons["panel_inbox_button"]
         XCTAssertTrue(inboxButton.waitForExistence(timeout: 10), "No apareció el botón de la Bandeja en el Panel.")
         inboxButton.tap()
-        XCTAssertTrue(app.buttons["inbox_draft_row_Almuerzo equipo"].waitForExistence(timeout: 10), "La Bandeja no cargó.")
+        // Se espera el filtro, no una fila: antes del mediodía el correo de la semilla (fechado hoy a las 12:00) va arriba y
+        // «Almuerzo equipo» queda bajo el pliegue, fuera del árbol de una lista perezosa (rojo de 3 de 3 a las 02:00).
+        XCTAssertTrue(app.buttons["inbox_filter_pending"].waitForExistence(timeout: 10), "La Bandeja no cargó.")
         return app
     }
 
@@ -63,7 +65,8 @@ final class BandejaFilaConFuentesUITests: XCTestCase {
         let app = openInbox()
 
         let recorded = app.descendants(matching: .any)["inbox_already_recorded"]
-        XCTAssertTrue(recorded.waitForExistence(timeout: 5), "El almuerzo con su registro gemelo no dice «Ya registrado».")
+        reveal(recorded, in: app)
+        XCTAssertTrue(recorded.exists, "El almuerzo con su registro gemelo no dice «Ya registrado».")
         attachScreenshot("bandeja-ya-registrado", of: app)
 
         let distinct = app.buttons["inbox_same_expense_distinct"]
@@ -81,8 +84,14 @@ final class BandejaFilaConFuentesUITests: XCTestCase {
         reveal(distinct, in: app)
         distinct.tap()
         XCTAssertTrue(distinct.waitForNonExistence(timeout: 5), "«Son distintos» no quitó la pregunta.")
-        XCTAssertTrue(app.buttons["inbox_draft_row_Rappi"].waitForExistence(timeout: 5), "Desapareció el de Apple Pay.")
-        XCTAssertTrue(app.buttons["inbox_draft_row_RAPPI*PE"].exists, "Desapareció el del correo.")
+        // Separados, cada uno va en su día: primero el correo (hoy, más arriba) y después el de Apple Pay, que antes del
+        // mediodía queda en «Ayer», bajo el pliegue. `reveal` busca hacia abajo lo que aún no existe en la lista.
+        let email = app.buttons["inbox_draft_row_RAPPI*PE"]
+        reveal(email, in: app)
+        XCTAssertTrue(email.exists, "Desapareció el del correo.")
+        let applePay = app.buttons["inbox_draft_row_Rappi"]
+        reveal(applePay, in: app)
+        XCTAssertTrue(applePay.exists, "Desapareció el de Apple Pay.")
     }
 
     func test_same_joinsIntoOnePending_withSeparate() {

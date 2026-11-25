@@ -74,6 +74,22 @@ extension InboxDraft {
     }
 }
 
+// MARK: - El estimado de un planificado que tomó el cargo real (Bandeja sin duplicados, lote 4)
+
+extension InboxDraft {
+    /// «S/ 120.00»: el estimado de un pago planificado cuyo borrador tomó el importe real de un cargo, para la línea «Antes
+    /// S/ 120.00 estimado». `nil` si no es eso, o si el importe sigue siendo el estimado.
+    @MainActor
+    var plannedEstimateBeforeText: String? {
+        guard status == .pending, case .record(let record) = InboxJoinRecord.read(joinRecordRaw),
+              record.holderIsPlanned, record.holderIsEstimate == true,
+              let estimate = record.holderBefore.amount, estimate != amount else { return nil }
+        let currency = record.holderBefore.cachedCurrencyCode ?? record.holderSource.currencyCode
+            ?? account?.currencyCode ?? cachedCurrencyCode ?? ""
+        return YalaFormatterStatic.currency(value: abs(estimate), currencyCode: currency, forceFullPrecision: true)
+    }
+}
+
 // MARK: - Lo que falta (UX 2.2 · L4-7)
 
 extension InboxDraft {

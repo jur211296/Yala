@@ -28,3 +28,13 @@
 "bandejaUnir.recorded.saveAnyway" = "Toch opslaan";
 "bandejaUnir.recorded.saveAnyway.hint" = "Slaat het op, ook al lijkt het op een die je al vastlegde";
 "bandejaUnir.row.sources.a11y" = "Binnengekomen via %@";
+
+/* Lote 4: casar con un pago planificado. */
+"bandejaUnir.planned.ask.title" = "Is dit je betaling ‘%@’?";
+"bandejaUnir.planned.ask.yes" = "Ja, dat is die betaling";
+"bandejaUnir.planned.ask.yes.hint" = "We voegen het samen met je geplande betaling en doen het de volgende keer zelf";
+"bandejaUnir.planned.ask.no" = "Niet die betaling";
+"bandejaUnir.planned.ask.no.hint" = "Het blijft een apart openstaand item en we vragen het niet opnieuw";
+"bandejaUnir.planned.ask.detail" = "Gepland: %1$@ · vervalt op %2$@";
+"bandejaUnir.planned.amount.estimate" = "%@ geschat";
+"bandejaUnir.planned.before.estimate" = "Eerst %@ geschat";

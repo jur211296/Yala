@@ -42,8 +42,10 @@ enum InboxArrivalJoin {
 
     /// Lo que hizo una pasada: lo que se unió (ya borrado) y cómo deshacer lo que cambió en los pendientes.
     struct Outcome {
-        fileprivate(set) var absorbed: [InboxDraft] = []
-        fileprivate var undo: [HolderUndo] = []
+        var absorbed: [InboxDraft] = []
+        var undo: [HolderUndo] = []
+        /// Borradores de pagos planificados que la unión creó para casar un cargo (lote 4): si el guardado falla, se van.
+        var created: [InboxDraft] = []
 
         var joinedCount: Int { absorbed.count }
 
@@ -52,7 +54,7 @@ enum InboxArrivalJoin {
         }
     }
 
-    fileprivate struct HolderUndo {
+    struct HolderUndo {
         let draft: InboxDraft
         let note: String
         let amount: Double?
@@ -97,6 +99,7 @@ enum InboxArrivalJoin {
             holderByID[consumption.id] = draft
         }
 
+        var planned = PlannedTargets(pending: pending, context: context, calendar: calendar)
         for arrival in arriving {
             guard let arrivalFacts = facts(for: arrival),
                   let candidate = InboxJoinLogic.candidate(
@@ -110,15 +113,29 @@ enum InboxArrivalJoin {
                 var joined = consumptions[index]
                 let holderKey = ObjectIdentifier(holder)
                 if joined.absorb(candidate),
-                   join(arrival, facts: arrivalFacts, into: holder,
-                        holderFacts: arrivalFactsByDraft[holderKey] ?? derivedFacts(of: holder),
+                   join(arrival.draft, members: [member(from: arrival.draft, facts: arrivalFacts, joinedAt: now)],
+                        into: holder, holderFacts: arrivalFactsByDraft[holderKey] ?? derivedFacts(of: holder),
                         resolved: joined.resolved, holderIsArrival: arrivalSet.contains(holderKey), now: now,
                         outcome: &outcome) {
                     consumptions[index] = joined
                     context.delete(arrival.draft)
                     outcome.absorbed.append(arrival.draft)
+                    planned.refresh(holder)
                     continue
                 }
+            }
+            // Lote 4: lo que no se unió a otra fuente y ES un pago planificado completa su borrador (o lo adelanta).
+            if let holder = joinPlannedOnArrival(
+                arrival.draft, facts: arrivalFacts, candidate: candidate, planned: &planned, context: context,
+                now: now, calendar: calendar, outcome: &outcome) {
+                context.delete(arrival.draft)
+                outcome.absorbed.append(arrival.draft)
+                if let joined = consumption(of: holder) {
+                    consumptions.removeAll { holderByID[$0.id] === holder }
+                    consumptions.append(joined)
+                    holderByID[joined.id] = holder
+                }
+                continue
             }
             // No se unió: queda como pendiente propio, y lo que llega después en la misma tanda puede unirse a él.
             let own = InboxMatchLogic.Consumption(candidate)
@@ -131,8 +148,13 @@ enum InboxArrivalJoin {
     /// Deshace lo que la unión cambió en los pendientes que ya existían. Lo absorbido nunca llegó a guardarse: quien llama
     /// deshace sus propias altas.
     static func revert(_ outcome: Outcome) {
+        for draft in outcome.created where !draft.isDeleted {
+            draft.modelContext?.delete(draft)
+        }
         for entry in outcome.undo.reversed() {
             let draft = entry.draft
+            // Un borrador de planificado que la unión creó y ya se borró arriba no se toca: escribir en él aborta.
+            guard !draft.isDeleted else { continue }
             draft.note = entry.note
             draft.amount = entry.amount
             draft.date = entry.date
@@ -146,10 +168,12 @@ enum InboxArrivalJoin {
         }
     }
 
-    private static func join(
-        _ arrival: Arrival, facts arrivalFacts: InboxJoinRecord.SourceFacts, into holder: InboxDraft,
-        holderFacts: InboxJoinRecord.SourceFacts?, resolved: InboxMatchLogic.Resolved, holderIsArrival: Bool, now: Date,
-        outcome: inout Outcome
+    /// Une `newMembers` (lo que trae `arrivingDraft`: él solo, o él con lo que ya tenía unido) en `holder`, sin guardar.
+    /// `plannedRecord` solo cuando `holder` es el borrador de un planificado sin registro todavía (lote 4).
+    static func join(
+        _ arrivingDraft: InboxDraft, members newMembers: [InboxJoinRecord.Member], into holder: InboxDraft,
+        holderFacts: InboxJoinRecord.SourceFacts?, resolved: InboxMatchLogic.Resolved, holderIsArrival: Bool,
+        plannedRecord: (createdByJoin: Bool, isEstimate: Bool)? = nil, now: Date, outcome: inout Outcome
     ) -> Bool {
         let current = fields(of: holder)
         var record: InboxJoinRecord
@@ -161,11 +185,13 @@ enum InboxArrivalJoin {
         case .none:
             guard let holderFacts else { return false }
             record = InboxJoinRecord(version: InboxJoinRecord.currentVersion, holderSource: holderFacts,
-                                     holderBefore: current, holderAfter: current, members: [])
+                                     holderBefore: current, holderAfter: current, members: [],
+                                     holderCreatedByJoin: plannedRecord.map(\.createdByJoin),
+                                     holderIsEstimate: plannedRecord.map(\.isEstimate))
         }
 
-        let merged = InboxJoinLogic.mergedFields(holder: current, arriving: fields(of: arrival.draft), resolved: resolved)
-        record.members.append(member(from: arrival.draft, facts: arrivalFacts, joinedAt: now))
+        let merged = InboxJoinLogic.mergedFields(holder: current, arriving: fields(of: arrivingDraft), resolved: resolved)
+        record.members.append(contentsOf: newMembers)
         record.holderAfter = merged
         guard let raw = record.encoded() else { return false }
 
@@ -179,10 +205,10 @@ enum InboxArrivalJoin {
         holder.note = merged.note
         holder.amount = merged.amount
         holder.date = merged.date
-        if holder.account == nil, let account = arrival.draft.account { holder.account = account }
-        if holder.subcategory == nil, let subcategory = arrival.draft.subcategory {
+        if holder.account == nil, let account = arrivingDraft.account { holder.account = account }
+        if holder.subcategory == nil, let subcategory = arrivingDraft.subcategory {
             holder.subcategory = subcategory
-            holder.confidenceSubcategory = arrival.draft.confidenceSubcategory
+            holder.confidenceSubcategory = arrivingDraft.confidenceSubcategory
         }
         holder.cachedCurrencyCode = holder.account?.currencyCode ?? merged.cachedCurrencyCode
         holder.needsUserInput = DraftBuilder.computeNeedsUserInput(
@@ -210,9 +236,9 @@ enum InboxArrivalJoin {
         guard joined.absorb(candidate) else { return false }
 
         var outcome = Outcome()
-        let arrival = Arrival(draft: arriving, currencyCode: arrivalFacts.currencyCode, last4: arrivalFacts.last4)
-        guard join(arrival, facts: arrivalFacts, into: holder, holderFacts: derivedFacts(of: holder),
-                   resolved: joined.resolved, holderIsArrival: false, now: now, outcome: &outcome) else { return false }
+        guard join(arriving, members: [member(from: arriving, facts: arrivalFacts, joinedAt: now)], into: holder,
+                   holderFacts: derivedFacts(of: holder), resolved: joined.resolved, holderIsArrival: false, now: now,
+                   outcome: &outcome) else { return false }
         do {
             // La fila del que se va se desmonta antes del borrado (crash de iOS 27 al leer un modelo borrado, card f8rj).
             InboxRowPruneCoordinator.shared.pruneRow(arriving.persistentModelID)
@@ -235,7 +261,8 @@ enum InboxArrivalJoin {
     // MARK: - Separar
 
     /// Deshace la unión de un borrador pendiente: cada fuente absorbida vuelve como pendiente propio, tal como llegó, y el
-    /// que la sostenía recupera sus valores donde siguen siendo los que dejó la unión (Paso 0, D6). Guarda. Devuelve los
+    /// que la sostenía recupera sus valores donde siguen siendo los que dejó la unión (Paso 0, D6); si era el borrador de un
+    /// planificado que creó la unión (lote 4), se borra. Guarda. Devuelve los
     /// borradores que volvió a crear, o `nil` si no había nada que separar o el guardado falló (entonces no cambia nada).
     @discardableResult
     static func separate(_ draft: InboxDraft, context: ModelContext, now: Date = .now) -> [InboxDraft]? {
@@ -307,6 +334,7 @@ enum InboxArrivalJoin {
             SaveBreadcrumb.willSave("InboxArrivalJoin.separate")
             try context.save()
             SaveBreadcrumb.didSave("InboxArrivalJoin.separate")
+            if record.holderCreatedByJoin == true { deletePlannedDraftCreatedByJoin(draft, context: context) }
             return created
         } catch {
             #if DEBUG
@@ -317,6 +345,22 @@ enum InboxArrivalJoin {
             undo.undo = [previous]
             revert(undo)
             return nil
+        }
+    }
+
+    /// Lote 4: el borrador de un planificado que solo existía para sostener el cargo se va al separar (el planificado lo
+    /// vuelve a sacar el día que vence). Va en un guardado aparte, ya separado: si falla, queda como el borrador del
+    /// planificado con sus valores de antes, que es un estado válido. La fila se desmonta antes del borrado (card f8rj).
+    private static func deletePlannedDraftCreatedByJoin(_ draft: InboxDraft, context: ModelContext) {
+        InboxRowPruneCoordinator.shared.pruneRow(draft.persistentModelID)
+        context.delete(draft)
+        do {
+            try context.save()
+        } catch {
+            #if DEBUG
+            print("InboxArrivalJoin: Error deleting the planned draft created by a join: \(error)")
+            #endif
+            context.rollback()
         }
     }
 
@@ -379,7 +423,7 @@ enum InboxArrivalJoin {
         case .bankEmail:
             // «BCP · ****4321»
             last4 = InboxMatchLogic.normalizedLast4(draft.evidence?.components(separatedBy: "****").dropFirst().first)
-        case .bankNotice, .aiConnector, .web, .manual:
+        case .bankNotice, .aiConnector, .web, .manual, .planned:
             break
         }
         return InboxJoinRecord.SourceFacts(
@@ -387,7 +431,7 @@ enum InboxArrivalJoin {
             hasExactTime: source == .applePay || source == .bankNotice)
     }
 
-    private static func facts(for arrival: Arrival) -> InboxJoinRecord.SourceFacts? {
+    static func facts(for arrival: Arrival) -> InboxJoinRecord.SourceFacts? {
         guard let source = matchSource(of: arrival.draft) else { return nil }
         let currency = arrival.currencyCode ?? arrival.draft.account?.currencyCode
         return InboxJoinRecord.SourceFacts(
@@ -404,7 +448,7 @@ enum InboxArrivalJoin {
         case .unreadable:
             return nil
         case .record(let record):
-            guard matchSource(of: draft) != nil else { return nil }
+            guard matchSource(of: draft) != nil || isPlannedHolder(draft, record: record) else { return nil }
             return InboxJoinLogic.consumption(holderID: id, record: record, fallbackDate: draft.createdAt)
         case .none:
             guard let facts = derivedFacts(of: draft),
@@ -414,7 +458,7 @@ enum InboxArrivalJoin {
         }
     }
 
-    private static func member(
+    static func member(
         from draft: InboxDraft, facts: InboxJoinRecord.SourceFacts, joinedAt: Date
     ) -> InboxJoinRecord.Member {
         InboxJoinRecord.Member(

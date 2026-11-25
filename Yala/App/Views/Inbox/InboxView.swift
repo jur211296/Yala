@@ -865,7 +865,43 @@ struct InboxView: View {
             draftRow(for: draft)
         case .pair(let pair):
             sameExpensePairRow(pair)
+        case .planned(let question):
+            plannedQuestionRow(question)
         }
+    }
+
+    /// «¿Es tu pago X?» (Bandeja sin duplicados, lote 4).
+    private func plannedQuestionRow(_ question: InboxPlannedQuestion) -> some View {
+        InboxPlannedQuestionCard(
+            question: question,
+            currencyCode: { viewModel.displayCurrencyCode(for: $0, fallback: appPreferences.defaultCurrencyCode.rawValue) },
+            onOpen: { handleDraftTap($0) },
+            onConfirm: { confirmPlanned(question) },
+            onDeny: { denyPlanned(question) }
+        )
+        .listRowBackground(Color.clear)
+        .listRowSeparator(.hidden)
+        .listRowInsets(EdgeInsets(top: DS.Spacing.xs, leading: DS.Spacing.lg, bottom: DS.Spacing.xs, trailing: DS.Spacing.lg))
+    }
+
+    /// «Sí, es ese pago»: el pendiente se une al borrador del planificado (que toma el importe del banco) y su comercio
+    /// queda aprendido; «Separar» en el borrador lo deshace.
+    private func confirmPlanned(_ question: InboxPlannedQuestion) {
+        guard InboxArrivalJoin.confirmPlanned(question.arriving, paymentID: question.paymentID, context: modelContext) else {
+            DS.Haptic.error()
+            viewModel.loadData()
+            return
+        }
+        DS.Haptic.success()
+        dsWithAnimation(reduceMotion) { viewModel.loadData() }
+        sessionState.incrementDataVersion()
+    }
+
+    /// «No es ese pago»: queda como pendiente aparte y no se vuelve a preguntar en este teléfono.
+    private func denyPlanned(_ question: InboxPlannedQuestion) {
+        InboxPlannedDistinct.markDistinct([question.arriving], paymentID: question.paymentID, viewModel.distinctDefaults)
+        DS.Haptic.selection()
+        dsWithAnimation(reduceMotion) { viewModel.loadData() }
     }
 
     private func sameExpensePairRow(_ pair: InboxSameExpensePair) -> some View {
