@@ -2025,6 +2025,7 @@
 "inbox.errorFutureDate" = "Les enregistrements avec une date future ne peuvent pas être enregistrés";
 "inbox.duplicateWarningTitle" = "Doublon possible";
 "inbox.duplicateWarningMessage" = "Un enregistrement similaire existe déjà. L’enregistrer quand même ?";
+"inbox.duplicateWarningNamed" = "Il y en a déjà un similaire : %@. L’enregistrer quand même ?";
 "inbox.createAnyway" = "Enregistrer quand même";
 "inbox.bulkDuplicates.skipped" = "Non enregistrés, doublon possible : %d";
 "inbox.saveLater" = "Laisser pour plus tard";

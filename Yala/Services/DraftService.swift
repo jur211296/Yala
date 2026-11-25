@@ -619,6 +619,7 @@ final class DraftService {
                     amount: amount,
                     date: draft.effectiveDate,
                     account: account,
+                    fromSource: draft.sourceType,
                     in: context
                 ) != nil {
                     skippedPossibleDuplicates.append(draft)

@@ -2027,6 +2027,7 @@
 "inbox.errorFutureDate" = "Registraties met een datum in de toekomst kunnen niet worden opgeslagen";
 "inbox.duplicateWarningTitle" = "Mogelijk duplicaat";
 "inbox.duplicateWarningMessage" = "Er bestaat al een vergelijkbare registratie. Toch opslaan?";
+"inbox.duplicateWarningNamed" = "Er bestaat al een vergelijkbare registratie: %@. Toch opslaan?";
 "inbox.createAnyway" = "Toch opslaan";
 "inbox.bulkDuplicates.skipped" = "Niet opgeslagen, mogelijk dubbel: %d";
 "inbox.saveLater" = "Bewaar voor later";

@@ -79,6 +79,11 @@ final class InboxDuplicateCheckUITests: XCTestCase {
         let cancel = app.alerts.firstMatch.buttons["inbox_swipe_duplicate_cancel"].firstMatch
         XCTAssertTrue(cancel.waitForExistence(timeout: 5), "Deslizar guardó el posible duplicado sin preguntar.")
         attachScreenshot("deslizar-aviso", of: app)
+        // El aviso nombra el gemelo (lote 0 de Bandeja sin duplicados): la nota del registro ya guardado.
+        XCTAssertTrue(
+            app.alerts.firstMatch.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", twinDraft)).firstMatch.exists,
+            "El aviso no dice cuál es el registro parecido."
+        )
         cancel.tap()
 
         XCTAssertTrue(cancel.waitForNonExistence(timeout: 5), "El aviso no se cerró con «Cancelar».")

@@ -2023,6 +2023,7 @@
 "inbox.errorFutureDate" = "Não é possível salvar registros com data futura";
 "inbox.duplicateWarningTitle" = "Possível duplicado";
 "inbox.duplicateWarningMessage" = "Já existe um registro parecido. Salvar mesmo assim?";
+"inbox.duplicateWarningNamed" = "Já existe um parecido: %@. Salvar mesmo assim?";
 "inbox.createAnyway" = "Salvar mesmo assim";
 "inbox.bulkDuplicates.skipped" = "Não salvos, possível duplicado: %d";
 "inbox.saveLater" = "Deixar para depois";

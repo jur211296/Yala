@@ -2025,6 +2025,7 @@
 "inbox.errorFutureDate" = "No se pueden guardar registros con fecha futura";
 "inbox.duplicateWarningTitle" = "Posible duplicado";
 "inbox.duplicateWarningMessage" = "Ya existe un registro parecido. ¿Guardarlo de todas formas?";
+"inbox.duplicateWarningNamed" = "Ya hay uno parecido: %@. ¿Guardarlo de todas formas?";
 "inbox.createAnyway" = "Guardar de todas formas";
 "inbox.bulkDuplicates.skipped" = "Sin guardar por posible duplicado: %d";
 "inbox.saveLater" = "Dejar para después";

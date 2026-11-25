@@ -1755,6 +1755,7 @@
 "inbox.discardChangesMessage" = "You have unsaved changes that will be lost.";
 "inbox.discardChangesTitle" = "Discard changes?";
 "inbox.duplicateWarningMessage" = "A similar record already exists. Save it anyway?";
+"inbox.duplicateWarningNamed" = "There’s already a similar one: %@. Save it anyway?";
 "inbox.duplicateWarningTitle" = "Possible duplicate";
 "inbox.editDraft" = "Edit draft";
 "inbox.errorArchivedAccount" = "This account is archived. Edit the draft and pick another account to save it.";
