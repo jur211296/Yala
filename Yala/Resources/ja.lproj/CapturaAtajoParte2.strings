@@ -102,3 +102,11 @@
 "atajoParte2.changes.stoppedDetail" = "%@から請求がありません。";
 "atajoParte2.changes.pause" = "支払いを一時停止";
 "atajoParte2.changes.stillActive" = "まだ有効";
+
+/* Guía de iOS 27 o posterior (barrido de la build 8): Atajos cambió de forma. */
+"atajoParte2.bank.guide27.step2.detail" = "下部中央の＋をタップすると「新規ショートカット」が開きます。下のシートで「オートメーション」タブをタップします。";
+"atajoParte2.bank.guide27.step3.detail" = "「App」までスクロールして「通知」をタップします。上に出たブロックで「App」をタップして%@を選びます。フィルタは付けません。";
+"atajoParte2.bank.guide27.step4.detail" = "下のシートの検索に「Yala」と入力し、「テキストから取引を記録」をタップします。通知の下に追加されます。";
+"atajoParte2.bank.guide27.step5.detail" = "「テキスト」をタップし、「変数を選択」から「通知」を選びます。アクションの › をタップし、「銀行」で%@を選びます。左上の ‹ をタップして保存します。";
+"atajoParte2.bank.remove27.step1" = "ショートカットを開き、「オートメーション」で%@のものを探します。";
+"atajoParte2.bank.remove27.step2" = "長押しして「削除」をタップし、確認します。";

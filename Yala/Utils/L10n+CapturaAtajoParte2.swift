@@ -144,6 +144,14 @@ extension L10n {
             static var removeSection: String { string("bank.remove.section") }
             static func removeStep1(_ bank: String) -> String { format("bank.remove.step1", bank) }
             static var removeStep2: String { string("bank.remove.step2") }
+
+            // Guía de iOS 27 o posterior (`BankNoticeGuideVersion`, barrido de la build 8): Atajos cambió de forma.
+            static var guide27Step2Detail: String { string("bank.guide27.step2.detail") }
+            static func guide27Step3Detail(_ app: String) -> String { format("bank.guide27.step3.detail", app) }
+            static var guide27Step4Detail: String { string("bank.guide27.step4.detail") }
+            static func guide27Step5Detail(_ bankValue: String) -> String { format("bank.guide27.step5.detail", bankValue) }
+            static func remove27Step1(_ bank: String) -> String { format("bank.remove27.step1", bank) }
+            static var remove27Step2: String { string("bank.remove27.step2") }
         }
 
         // MARK: - Pagos planificados: cambios de precio y bajas (S2)

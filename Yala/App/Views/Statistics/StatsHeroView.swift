@@ -52,6 +52,58 @@ extension EnvironmentValues {
     /// «Tu dinero hoy» ya calculado en este contenedor de Estadísticas (`StatsMoneyTodayMemory`). Lo pone
     /// `DetailContainerView`; fuera de él, `nil` y cada hero calcula el suyo.
     @Entry var statsMoneyTodayMemory: StatsMoneyTodayMemory? = nil
+    /// Las cifras que tiene el hero son de otro período: el elegido aún se está calculando. Lo pone `DetailContainerView`
+    /// (`StatsHeroPendingLogic`); fuera de él, `false`.
+    @Entry var statsHeroFiguresPending: Bool = false
+}
+
+/// El período de unas cifras de Estadísticas: el elegido y, con «Personalizado», su rango.
+struct StatsHeroPeriodKey: Equatable {
+    let period: DetailPeriod
+    let customRange: DateInterval?
+
+    init(period: DetailPeriod, customRange: DateInterval?) {
+        self.period = period
+        // El rango solo cuenta con «Personalizado»: en los demás períodos la sesión puede guardar el último elegido.
+        self.customRange = period == .custom ? customRange : nil
+    }
+}
+
+/// Barrido de la build 8 (24-nov-2026): con datos pesados, cambiar de período en Estadísticas dejaba unos segundos el
+/// ingreso y el gasto del período anterior bajo el rótulo nuevo. Mientras la última pasada completa sea de otro período,
+/// el hero sale en esqueleto. Antes de la primera pasada no hace falta: tapa la página `StatisticsLoadingSkeleton`.
+enum StatsHeroPendingLogic {
+    static func isPending(hasCalculatedOnce: Bool, calculated: StatsHeroPeriodKey?, current: StatsHeroPeriodKey) -> Bool {
+        guard hasCalculatedOnce else { return false }
+        return calculated != current
+    }
+}
+
+/// La cifra grande de un hero crece con el texto de accesibilidad, con techo, como la del Panel (`HeroMonthView`, card
+/// eb9i). Con los 36 pt fijos de `panelHeroAmount`, a AX5 las líneas de debajo medían más que la cifra en Estadísticas,
+/// Registros y Pagos planificados (barrido de la build 8). Hasta xxxLarge sigue siendo el token de siempre.
+struct HeroFigureFonts: DynamicProperty {
+    @ScaledMetric(relativeTo: .largeTitle) private var scaledSize: CGFloat = 36
+    /// Símbolo y decimales, en la misma proporción que el token (17 de 36).
+    @ScaledMetric(relativeTo: .largeTitle) private var scaledSecondarySize: CGFloat = 17
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    /// El techo del Panel: el `largeTitle` de AX5. Con el `minimumScaleFactor(0.7)` de `AmountText` no baja de 42 pt.
+    static let maxSize: CGFloat = 60
+    /// Lo que acompaña a la cifra (rótulo, líneas de debajo) deja de crecer en AX2, como en el Panel: no compite con ella.
+    static let sidesMaxTypeSize = DynamicTypeSize.accessibility2
+
+    var figure: Font {
+        guard dynamicTypeSize.isAccessibilitySize else { return DS.Typography.panelHeroAmount }
+        // A11Y-DT: tamaño escalado a mano con techo; el token es fijo a propósito y aquí tiene que crecer.
+        return .system(size: min(scaledSize, Self.maxSize), weight: .semibold)
+    }
+
+    var secondary: Font {
+        guard dynamicTypeSize.isAccessibilitySize else { return DS.Typography.panelHeroAmountSecondary }
+        // A11Y-DT: el mismo techo, en la proporción del token.
+        return .system(size: min(scaledSecondarySize, Self.maxSize * 17 / 36), weight: .regular)
+    }
 }
 
 /// De dónde sale «Tu dinero hoy»: los movimientos y las cuentas que ya cargó la pantalla.
@@ -68,6 +120,9 @@ struct StatsHeroView<Period: View>: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// La memoria de «Tu dinero hoy» del contenedor de Estadísticas; `nil` fuera de él (la pestaña Registros).
     @Environment(\.statsMoneyTodayMemory) private var moneyMemory
+    /// Las cifras son de otro período y el elegido se está calculando: salen en esqueleto.
+    @Environment(\.statsHeroFiguresPending) private var figuresPending
+    private var figureFonts = HeroFigureFonts()
 
     let caption: StatsHeroCaption
     /// La cifra cuando es de un lado (gasto, ingreso o total); `nil` si no hay nada que enseñar. Con `.moneyToday` no se lee.
@@ -109,17 +164,19 @@ struct StatsHeroView<Period: View>: View {
                         )
                     }
                 }
+                .dynamicTypeSize(...HeroFigureFonts.sidesMaxTypeSize)
             }
         } figure: {
             if let figure {
                 AmountText(
                     value: figure.value,
                     currencyCode: currencyCode,
-                    font: DS.Typography.panelHeroAmount, secondaryFont: DS.Typography.panelHeroAmountSecondary,
+                    font: figureFonts.figure, secondaryFont: figureFonts.secondary,
                     isEstimate: figure.isApproximate,
                     animatesValue: true
                 )
                 .accessibilityIdentifier(figureIdentifier)
+                .yalaSkeleton(figuresPending)
             }
         } detail: {
             if figure != nil {
@@ -127,9 +184,12 @@ struct StatsHeroView<Period: View>: View {
                     // La fila de flechas sería solo el gasto, que ya es la cifra grande: queda su variación.
                     if let variation = expensesOnlyVariation {
                         ExpensesOnlyHeroVariation(variation: variation)
+                            .dynamicTypeSize(...HeroFigureFonts.sidesMaxTypeSize)
+                            .yalaSkeleton(figuresPending)
                     }
                 } else if let flow {
                     flowRow(flow)
+                        .yalaSkeleton(figuresPending)
                 }
             }
         }
@@ -210,6 +270,8 @@ struct StatsHeroView<Period: View>: View {
             flowSide(.income, flow: flow)
             flowSide(.expense, flow: flow)
         }
+        // Detalle de la cifra, como en el Panel: deja de crecer en AX2 para que la cifra siga siendo lo mayor del hero.
+        .dynamicTypeSize(...HeroFigureFonts.sidesMaxTypeSize)
         // El lado que no filtra se atenúa animado. Implícita: en una pestaña un `withAnimation` no anima.
         .dsAnimation(DS.Animation.selection, value: natureFilter?.selected, reduceMotion: reduceMotion)
     }

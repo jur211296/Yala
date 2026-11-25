@@ -102,3 +102,11 @@
 "atajoParte2.changes.stoppedDetail" = "Keine Abbuchung seit dem %@.";
 "atajoParte2.changes.pause" = "Zahlung pausieren";
 "atajoParte2.changes.stillActive" = "Läuft noch";
+
+/* Guía de iOS 27 o posterior (barrido de la build 8): Atajos cambió de forma. */
+"atajoParte2.bank.guide27.step2.detail" = "Tippe unten in der Mitte auf +: „Neuer Kurzbefehl“ öffnet sich. Tippe im unteren Bereich auf den Tab „Automation“.";
+"atajoParte2.bank.guide27.step3.detail" = "Scrolle zu „Apps“ und tippe auf „Mitteilung“. Tippe im Block, der oben erscheint, auf „App“ und wähle %@, ohne Filter.";
+"atajoParte2.bank.guide27.step4.detail" = "Gib im Suchfeld unten „Yala“ ein und tippe auf „Buchung aus Text erfassen“. Die Aktion steht dann unter der Mitteilung.";
+"atajoParte2.bank.guide27.step5.detail" = "Tippe auf „Text“, dann auf „Variable auswählen“, und wähle „Mitteilung“. Tippe auf den Pfeil › der Aktion und wähle bei „Bank“ %@. Tippe zum Sichern oben links auf ‹.";
+"atajoParte2.bank.remove27.step1" = "Öffne Kurzbefehle, geh zu „Automation“ und suche die für %@.";
+"atajoParte2.bank.remove27.step2" = "Lege den Finger darauf, tippe auf Löschen und bestätige.";

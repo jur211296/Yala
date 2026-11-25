@@ -102,3 +102,11 @@
 "atajoParte2.changes.stoppedDetail" = "No hay cobro desde el %@.";
 "atajoParte2.changes.pause" = "Pausar el pago";
 "atajoParte2.changes.stillActive" = "Sigue activo";
+
+/* Guía de iOS 27 o posterior (barrido de la build 8): Atajos cambió de forma. */
+"atajoParte2.bank.guide27.step2.detail" = "Tocá + abajo, al centro: se abre «Nuevo atajo». En la hoja de abajo, tocá la pestaña «Automatización».";
+"atajoParte2.bank.guide27.step3.detail" = "Bajá hasta «Apps» y tocá «Notificación». En el bloque que aparece arriba, tocá «App» y elegí %@, sin ningún filtro.";
+"atajoParte2.bank.guide27.step4.detail" = "En el buscador de la hoja de abajo, escribí «Yala» y tocá «Registrar movimiento desde texto». Queda debajo de la notificación.";
+"atajoParte2.bank.guide27.step5.detail" = "Tocá «Texto», después «Seleccionar variable», y elegí «Notificación». Tocá la flecha › de la acción y, en «Banco», elegí %@. Tocá ‹ arriba a la izquierda para guardar.";
+"atajoParte2.bank.remove27.step1" = "Abrí Atajos, andá a «Automatización» y buscá la de %@.";
+"atajoParte2.bank.remove27.step2" = "Mantené el dedo sobre ella, tocá Eliminar y confirmalo.";

@@ -102,3 +102,11 @@
 "atajoParte2.changes.stoppedDetail" = "No charge since %@.";
 "atajoParte2.changes.pause" = "Pause payment";
 "atajoParte2.changes.stillActive" = "Still active";
+
+/* Guía de iOS 27 o posterior (barrido de la build 8): Atajos cambió de forma. */
+"atajoParte2.bank.guide27.step2.detail" = "Tap + at the bottom center: “New Shortcut” opens. In the sheet at the bottom, tap the “Automation” tab.";
+"atajoParte2.bank.guide27.step3.detail" = "Scroll down to “Apps” and tap “Notification”. In the block that appears at the top, tap “App” and choose %@, without any filter.";
+"atajoParte2.bank.guide27.step4.detail" = "In the search field of the sheet at the bottom, type “Yala” and tap “Record transaction from text”. It goes below the notification.";
+"atajoParte2.bank.guide27.step5.detail" = "Tap “Text”, then “Select Variable”, and choose “Notification”. Tap the action’s › arrow and, for “Bank”, choose %@. Tap ‹ at the top left to save.";
+"atajoParte2.bank.remove27.step1" = "Open Shortcuts, go to “Automation” and find the %@ one.";
+"atajoParte2.bank.remove27.step2" = "Touch and hold it, tap Delete and confirm.";

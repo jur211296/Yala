@@ -728,6 +728,10 @@ final class PanelViewModel {
     /// `trendChart.currentBalance` solo se actualiza si el widget está visible).
     var panelTotalBalance: Double = 0
 
+    /// El saldo de `panelTotalBalance` ya salió de un cálculo. Con él basta para enseñar el saldo grande: no espera al pase
+    /// por tramos del hero, que cada guardado corta y vuelve a empezar (barrido de la build 8, `PanelHeroFigureLogic.showsHero`).
+    private(set) var hasCalculatedBalance = false
+
     /// Si el saldo total del panorama se compuso con alguna tasa que no era la de hoy. Este número
     /// es el caso más puro de conversión en vivo —agrupa saldos por divisa nativa y los pasa al TC
     /// ACTUAL, sin ningún monto guardado en el que apoyarse—, así que su señal viene entera del
@@ -1689,6 +1693,7 @@ final class PanelViewModel {
         // cuentas, TC) aunque el widget de Tendencias esté oculto — `trendChart`
         // de abajo solo se reasigna cuando `trendVisible`.
         if self.panelTotalBalance != newBalance { self.panelTotalBalance = newBalance }
+        if !self.hasCalculatedBalance { self.hasCalculatedBalance = true }
         if self.panelTotalBalanceIsApproximate != newBreakdown.amountsAreApproximate {
             self.panelTotalBalanceIsApproximate = newBreakdown.amountsAreApproximate
         }

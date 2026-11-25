@@ -71,6 +71,9 @@ struct BankNoticeBankView: View {
         bank == .other ? L10n.CapturaAtajoParte2.Bank.guideYourBankApp : L10n.CapturaAtajoParte2.Bank.guideAppOf(bank.brandName)
     }
     /// Lo que se elige en «Banco» dentro de Atajos: el valor de `BankNoticeBankChoice` («Otro banco» para `.other`).
+    /// La guía de Atajos de este sistema: iOS 26 y iOS 27 la tienen distinta (`BankNoticeGuideVersion`).
+    private let guideVersion = BankNoticeGuideVersion.forSystem()
+
     private var shortcutBankValue: String { bank == .other ? L10n.CapturaAtajoParte2.Bank.pickerOther : bank.brandName }
     private var isActive: Bool { BankNoticeChoiceLogic.isActive(settings: settings, activity: activity) }
     private var status: BankNoticeStatus { BankNoticeStatus.status(activity: activity, settings: settings) }
@@ -248,10 +251,10 @@ struct BankNoticeBankView: View {
     private var guideSection: some View {
         YalaSettingsSection(L10n.CapturaAtajoParte2.Bank.guideSection) {
             guideStep(1, L10n.CapturaAtajoParte2.Bank.guideStep1Title, L10n.CapturaAtajoParte2.Bank.guideStep1Detail)
-            guideStep(2, L10n.CapturaAtajoParte2.Bank.guideStep2Title, L10n.CapturaAtajoParte2.Bank.guideStep2Detail)
-            guideStep(3, L10n.CapturaAtajoParte2.Bank.guideStep3Title(guideApp), L10n.CapturaAtajoParte2.Bank.guideStep3Detail(guideApp))
-            guideStep(4, L10n.CapturaAtajoParte2.Bank.guideStep4Title, L10n.CapturaAtajoParte2.Bank.guideStep4Detail)
-            guideStep(5, L10n.CapturaAtajoParte2.Bank.guideStep5Title, L10n.CapturaAtajoParte2.Bank.guideStep5Detail(shortcutBankValue))
+            guideStep(2, L10n.CapturaAtajoParte2.Bank.guideStep2Title, guideVersion.step2Detail)
+            guideStep(3, L10n.CapturaAtajoParte2.Bank.guideStep3Title(guideApp), guideVersion.step3Detail(guideApp))
+            guideStep(4, L10n.CapturaAtajoParte2.Bank.guideStep4Title, guideVersion.step4Detail)
+            guideStep(5, L10n.CapturaAtajoParte2.Bank.guideStep5Title, guideVersion.step5Detail(shortcutBankValue))
             guideStep(6, L10n.CapturaAtajoParte2.Bank.guideStep6Title, L10n.CapturaAtajoParte2.Bank.guideStep6Detail)
             if let link = BankNoticeShortcutLinks.url(for: bank) {
                 Button(L10n.CapturaAtajoParte2.Bank.addShortcut) { open(link) }
@@ -379,9 +382,9 @@ struct BankNoticeBankView: View {
 
     private var removeSection: some View {
         YalaSettingsSection(L10n.CapturaAtajoParte2.Bank.removeSection) {
-            guideStep(1, L10n.CapturaAtajoParte2.Bank.removeStep1(name), "")
+            guideStep(1, guideVersion.removeStep1(name), "")
                 .accessibilityIdentifier("bank_notice_remove_step_1")
-            guideStep(2, L10n.CapturaAtajoParte2.Bank.removeStep2, "")
+            guideStep(2, guideVersion.removeStep2, "")
                 .accessibilityIdentifier("bank_notice_remove_step_2")
             Button(L10n.CapturaAtajoParte2.Bank.deactivate, role: .destructive) { confirmsDeactivation = true }
                 .accessibilityIdentifier("bank_notice_deactivate")
