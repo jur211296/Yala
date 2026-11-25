@@ -1,6 +1,6 @@
 ---
 id: 2026-11-25-gateway-d1-overloaded-vincular-suscripcion
-status: backlog
+status: done
 priority: high
 area: "gateway, entitlement, d1"
 created: 2026-11-25
@@ -50,3 +50,11 @@ El 24-nov a las 21:15 Lima (25-nov 02:15:26–27 UTC) el gateway de producción 
   todas las rutas (cubre `/mail/drafts`), y la manda a Sentry como aviso con una sola huella (`d1-saturada`).
 - Tests: `gateway/test/d1-overloaded/` (20 casos, D1 de SQLite con el error inyectado). Dos mutantes comprobados:
   reintentar solo el batch y quitar el 503 ponen rojos 2 casos cada uno.
+
+## Despliegue
+
+- **Staging (2026-11-25, 06:31 Lima):** versión `74034dfa`, sobre lo que ya corría (`bd180561`, manifest v9, que va por
+  detrás de 2.3) + solo el parche de bundle de este cambio. Verificado: el script vivo es byte a byte el parcheado;
+  `/healthz` y `/config` 200; `GET` y `POST /account/entitlement` con el usuario de prueba A → 200. La saturación no se
+  puede provocar en staging: la cubren los tests. Vuelta atrás: `wrangler rollback bd180561`.
+- **Producción:** la despliega Dan (pasos en el PR). Después, resolver YALA-GATEWAY-2, -3 y -4 en Sentry.
