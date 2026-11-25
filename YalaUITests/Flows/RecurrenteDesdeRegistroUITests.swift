@@ -35,8 +35,15 @@ final class RecurrenteDesdeRegistroUITests: XCTestCase {
         return app
     }
 
+    /// El primer GASTO de la lista, no la primera fila: la semilla `minimal` siembra una transferencia los días 10 y 25,
+    /// y esos días encabeza la lista. Una transferencia no ofrece «Hacer recurrente» (un pago planificado es gasto o
+    /// ingreso, `RecurringFromRecordLogic.offersMakeRecurring`), así que los dos casos caían esos días con la app bien
+    /// (nocturna del 25-nov). La etiqueta empieza por el tipo si el registro no tiene nota («Gasto, S/ 20.00, …») y lo
+    /// lleva en segundo lugar si la tiene («Bus, Gasto, …»).
     private func firstRow(_ app: XCUIApplication) -> XCUIElement {
-        app.buttons.matching(identifier: "record_row").firstMatch
+        app.buttons.matching(NSPredicate(
+            format: "identifier == 'record_row' AND (label BEGINSWITH 'Gasto, ' OR label CONTAINS ', Gasto, ')"))
+            .firstMatch
     }
 
     /// El editor de recurrentes, o la pregunta de «ya tienes uno parecido» si la semilla trae uno.
