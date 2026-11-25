@@ -72,6 +72,9 @@
 #   --informe-cuarentena F  solo escribe el estado y las vencidas (≥ `caducidadDias`) en el resumen
 #                           del job y como avisos; sale 0 siempre. No corre ningún test.
 #   --validar-cuarentena F  comprueba el formato (lo corre `cuarentena-test.sh`); sale 0 o 1.
+#   --juzgar-cuarentena F -- ID…  dice de cada ID si está en la lista: líneas `DENTRO id dueño
+#                           ticket días` o `FUERA id`, tras las de ESTADO/MODO/N/MALA. Lo usa el
+#                           veredicto de las tandas de UI (`ci-ui-veredicto.py`, 2026-11-25).
 # `HOY=AAAA-MM-DD` fija la fecha (el banco); por defecto, la de hoy en UTC.
 #
 # Salida en `$GITHUB_OUTPUT` (si existe): `rojos` (los que siguen en rojo, separados por «; »),
@@ -103,6 +106,7 @@ while [ $# -gt 0 ]; do
     --cuarentena) CUARENTENA="${2:-}"; [ -n "$CUARENTENA" ] || uso; shift 2 ;;
     --informe-cuarentena) MODO_SOLO="informe"; CUARENTENA="${2:-}"; [ -n "$CUARENTENA" ] || uso; shift 2 ;;
     --validar-cuarentena) MODO_SOLO="validar"; CUARENTENA="${2:-}"; [ -n "$CUARENTENA" ] || uso; shift 2 ;;
+    --juzgar-cuarentena) MODO_SOLO="juzgar"; CUARENTENA="${2:-}"; [ -n "$CUARENTENA" ] || uso; shift 2 ;;
     --) shift; break ;;
     *) uso ;;
   esac
@@ -219,6 +223,11 @@ if [ "$MODO_SOLO" = "validar" ]; then
   printf '%s\n' "$sal" | awk -F'\t' '$1 == "MALA" { print "MALA: " $2 } $1 == "ESTADO" && $2 != "ok" { print "ESTADO: " $2 " " $3 }'
   [ "$ex" -eq 0 ] && echo "── cuarentena válida: $(campo "$sal" N) entrada(s), modo $(campo "$sal" MODO)."
   exit "$ex"
+fi
+
+if [ "$MODO_SOLO" = "juzgar" ]; then
+  lee_cuarentena juzgar "$CUARENTENA" "$HOY" "$@"
+  exit 0
 fi
 
 if [ "$MODO_SOLO" = "informe" ]; then
