@@ -132,3 +132,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de correr tests, el gate o
 - [Medir miles de filas en la nube contra staging](reference_medir_miles_de_filas_en_la_nube_contra_staging.md) — dos stores en el sim; B al día antes; ~14 min con 3.000.
 - [Medir el cambio de chip con sample](reference_medir_cambio_de_chip_con_sample.md) — semilla pesado + axe; descuenta mshMIGPerform (AX del conductor); el scroll se mide en el teléfono.
 - [Simular un aviso de banco con un recordatorio](reference_simular_un_aviso_de_banco_con_un_recordatorio.md) — sin app de banco: Recordatorios dispara; texto con PEN; elegir la acción por la app.
+- [Gate apilado sobre otra rama](reference_gate_apilado_sobre_otra_rama.md) — `depende:` en cola: reset --keep a esa rama; interfaz con --base de ella; el revisor, su diff.
