@@ -1,0 +1,84 @@
+/*
+  DividirBoleta.strings
+  Yala
+
+  Dividir una boleta sin crear grupo (maqueta 1A, 26-nov-2026): nombres al vuelo, por igual o por líneas, quién pagó,
+  la imagen para compartir (resumen o detalle, tres diseños) y registrar mi parte. Tabla propia, fuera de
+  Localizable.strings.
+*/
+
+"dividirBoleta.entry.title" = "Rekening delen";
+"dividirBoleta.entry.hint" = "Deel met iedereen, ook zonder Yala. Je legt alleen jouw deel vast.";
+"dividirBoleta.entry.hintGroups" = "Zonder groep, met iedereen.";
+"dividirBoleta.source.subtitle" = "Maak een foto van de rekening of kies hem uit je foto's of bestanden.";
+"dividirBoleta.who.photo" = "Foto van de rekening";
+"dividirBoleta.who.photoPending" = "Yala leest hem als je op Verdelen tikt";
+"dividirBoleta.who.photoRead" = "Gelezen ✓";
+"dividirBoleta.who.photoReadDetail" = "Totaal %@";
+"dividirBoleta.who.otherPhoto" = "Andere foto";
+"dividirBoleta.who.peopleSection" = "Tussen wie?";
+"dividirBoleta.who.me" = "Ik";
+"dividirBoleta.who.namePlaceholder" = "Typ een naam…";
+"dividirBoleta.who.add" = "Toevoegen";
+"dividirBoleta.who.remove" = "%@ verwijderen";
+"dividirBoleta.who.peopleFooter" = "Jij bent er altijd bij. De anderen hebben Yala niet nodig.";
+"dividirBoleta.who.duplicateName" = "Iemand heeft die naam al.";
+"dividirBoleta.who.modeSection" = "Hoe verdelen we?";
+"dividirBoleta.mode.equal" = "Gelijk";
+"dividirBoleta.mode.byLines" = "Per item";
+"dividirBoleta.who.phraseSection" = "Wie had wat? · optioneel";
+"dividirBoleta.who.phrasePlaceholder" = "Ik de burger, Carla de salade, drankjes voor iedereen";
+"dividirBoleta.who.phraseFooter" = "Zo niet, dan kies je bij het nakijken wie elk item had.";
+"dividirBoleta.who.split" = "Verdelen";
+"dividirBoleta.who.needsPeople" = "Voeg nog minstens één persoon toe.";
+"dividirBoleta.manual.title" = "Vul het totaal van de rekening in";
+"dividirBoleta.manual.footer" = "We verdelen het gelijk over iedereen.";
+"dividirBoleta.manual.lineName" = "Totaal van de rekening";
+"dividirBoleta.review.title" = "Controleer de verdeling";
+"dividirBoleta.review.linesSection" = "Wat er besteld is";
+"dividirBoleta.review.linesFooterByLines" = "Tik op een item om te kiezen wie het had.";
+"dividirBoleta.review.linesFooterEqual" = "Gelijk: alles wordt over iedereen verdeeld.";
+"dividirBoleta.review.continue" = "Bekijk ieders deel";
+"dividirBoleta.result.title" = "Verdeling";
+"dividirBoleta.result.done" = "Klaar";
+"dividirBoleta.result.owedToYou" = "Jij krijgt";
+"dividirBoleta.result.oneOwesYou" = "%@ is je schuldig";
+"dividirBoleta.result.youOwe" = "Je bent %@ schuldig";
+"dividirBoleta.result.nobodyOwes" = "Niemand is de betaler iets schuldig";
+"dividirBoleta.result.subtitle" = "%1$@ · totaal %2$@";
+"dividirBoleta.result.merchantFallback" = "Rekening";
+"dividirBoleta.result.paidBy" = "Wie heeft betaald?";
+"dividirBoleta.result.yourPart" = "Jouw deel";
+"dividirBoleta.result.paidLabel" = "Betaalde";
+"dividirBoleta.result.footerPaidByMe" = "Jouw deel wordt als jouw uitgave vastgelegd. Dat van de anderen niet.";
+"dividirBoleta.result.footerPaidByOther" = "Wat je %@ schuldig bent, is jouw uitgave. Leg je het nu vast, doe dat dan niet opnieuw bij het betalen.";
+"dividirBoleta.result.footerGroupsOnly" = "Hier wordt niets vastgelegd: je ziet de verdeling en deelt hem.";
+"dividirBoleta.image.section" = "Afbeelding om te delen";
+"dividirBoleta.image.kindLabel" = "Wat erop staat";
+"dividirBoleta.image.summary" = "Alleen overzicht";
+"dividirBoleta.image.detailed" = "Met details";
+"dividirBoleta.image.styleLabel" = "Ontwerp";
+"dividirBoleta.image.styleLight" = "Licht";
+"dividirBoleta.image.styleBrand" = "Yala";
+"dividirBoleta.image.styleReceipt" = "Bonnetje";
+"dividirBoleta.image.share" = "Afbeelding delen";
+"dividirBoleta.image.preview" = "Voorbeeld van de afbeelding";
+"dividirBoleta.image.renderFailed" = "De afbeelding kon niet worden gemaakt.";
+"dividirBoleta.image.owedToOther" = "%@ krijgt";
+"dividirBoleta.image.oneOwesOther" = "%1$@ is %2$@ schuldig";
+"dividirBoleta.image.paidByTotal" = "Betaald door %1$@ · totaal %2$@";
+"dividirBoleta.image.payerPart" = "Deel van %1$@: %2$@";
+"dividirBoleta.image.everyone" = "Iedereen";
+"dividirBoleta.image.sharedBy" = "door %d";
+"dividirBoleta.image.footerTitle" = "Verdeeld met Yala";
+"dividirBoleta.image.footerSubtitle" = "Verdeel je rekening gratis";
+"dividirBoleta.image.nameLabel" = "Je naam op de afbeelding";
+"dividirBoleta.image.namePlaceholder" = "Typ je naam";
+"dividirBoleta.image.nameFooter" = "De afbeelding gaat naar anderen: daarop sta je met je naam. Die wordt in je profiel bewaard.";
+"dividirBoleta.register.button" = "Mijn deel vastleggen · %@";
+"dividirBoleta.register.inbox" = "of stuur het naar de Inbox";
+"dividirBoleta.register.done" = "Jouw deel is vastgelegd";
+"dividirBoleta.register.inInbox" = "Jouw deel staat in de Inbox";
+"dividirBoleta.register.failed" = "Je deel kon niet worden opgeslagen. Probeer het opnieuw.";
+"dividirBoleta.close" = "Sluiten";
+"dividirBoleta.back" = "Terug";

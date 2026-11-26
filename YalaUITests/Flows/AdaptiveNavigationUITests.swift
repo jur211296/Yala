@@ -289,6 +289,12 @@ final class AdaptiveNavigationUITests: XCTestCase {
                 app.buttons["group_detail_back"].tap()
             }
             let target = card(name)
+            // Desde el 26-nov-2026 «Dividir una boleta» va bajo la fila de Grupos y en iPhone la tercera tarjeta queda
+            // bajo la barra de pestañas: se baja con arrastres cortos hasta poder tocarla.
+            for _ in 0..<4 where target.exists && !target.isHittable {
+                let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.7))
+                start.press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.45)))
+            }
             XCTAssertTrue(target.waitForHittable(timeout: 10), "No se ve la tarjeta de «\(name)» en la lista.")
             target.tap()
             XCTAssertTrue(app.navigationBars[name].waitForExistence(timeout: 10), "El título no pasó a «\(name)».")

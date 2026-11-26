@@ -101,6 +101,9 @@ struct ImageSelectionView: View {
     @State private var autoCloseTask: Task<Void, Never>?
     /// La hoja ya se va a cerrar sola: no se ofrece «Listo» durante la confirmación.
     @State private var isClosingAlone = false
+    /// «Dividir una boleta» abierta encima (maqueta 1A). Con «Listo», al cerrarse se cierra también esta hoja.
+    @State private var showDividirBoleta = false
+    @State private var dividirBoletaFinished = false
 
     /// Práctica guiada: recibos de ejemplo que se pueden leer sin tener uno a mano.
     var exampleImages: [UIImage]?
@@ -204,6 +207,13 @@ struct ImageSelectionView: View {
         }
         .sheet(isPresented: $showsPhotos) {
             EstoLeiPhotoViewer(images: images)
+        }
+        .sheet(isPresented: $showDividirBoleta, onDismiss: dividirBoletaClosed) {
+            DividirBoletaFlowView(
+                currencyCode: appPreferences.defaultCurrencyCode.rawValue,
+                allowsRegistering: true,
+                onFinished: { dividirBoletaFinished = true }
+            )
         }
         // «Convertir a gasto compartido» desde la hoja del borrador, como en la Bandeja (bug del 2026-11-03).
         .draftGroupConversionFlow($conversionRequest, onFinished: afterGroupConversion)
@@ -395,6 +405,13 @@ struct ImageSelectionView: View {
             }
 
             sourceTiles
+
+            // «Dividir una boleta» (maqueta 1A, 26-nov-2026): un camino aparte, fuera de la práctica guiada y de «Otra foto».
+            if !isSetupTrial && !returnsToReview {
+                DividirBoletaEntryButton(hint: L10n.DividirBoleta.entryHint, identifier: "image_dividir_boleta") {
+                    showDividirBoleta = true
+                }
+            }
 
             if courtesyTrialText != nil, let receipt = exampleImages?.first {
                 exampleReceiptButton(receipt)
@@ -1638,6 +1655,15 @@ struct ImageSelectionView: View {
         fileBatch = nil
         pdfPassword = ""
         phase = .review
+    }
+
+    // MARK: - «Dividir una boleta»
+
+    /// Con «Listo» la persona terminó: volver a la hoja de foto no tiene sentido. Cerrada con la X o deslizando, se vuelve.
+    private func dividirBoletaClosed() {
+        guard dividirBoletaFinished else { return }
+        dividirBoletaFinished = false
+        dismiss()
     }
 
     // MARK: - «Ver todo»

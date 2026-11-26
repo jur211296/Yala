@@ -4696,6 +4696,21 @@
       "coverage": "xcuitest:YalaUITests/PulidoPrimerosPasos/PulidoPrimerosPasosCapturasUITests (fila de pasos, «Otra moneda», intro de Grupos con «Antes de empezar», «¡Listo por ahora!») · unit:YalaTests/PulidoPrimerosPasos/PulidoPrimerosPasosPaywallTests (título final según pasos para después, paywall sin precios neutro en 16 idiomas, título del selector por hueco, tabla y cableado). | device-qa: el confeti del cierre sin tapar «Cerrar» y la fila de siete en el iPhone 14.",
       "owner": "frank",
       "lastVerified": "2026-11-25"
+    },
+    {
+      "area": "dividir-boleta-sin-grupo",
+      "codeGlobs": [
+        "Yala/App/Views/DividirBoleta/**",
+        "Yala/App/Logic/DividirBoleta/**",
+        "Yala/Resources/*.lproj/DividirBoleta.strings",
+        "Yala/App/Views/Image/ImageSelectionView.swift",
+        "Yala/App/Views/Groups/GroupsContainerView.swift"
+      ],
+      "scenarioIDs": [],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/DividirBoletaSinGrupoUITests + unit:YalaTests/DividirBoletaSinGrupo/DividirBoletaRepartoTests,DividirBoletaImagenTests,DividirBoletaSinGrupoCableadoTests | 2026-11-26 (maqueta 1A con los ajustes de Jürgen, 2.3): «Dividir una boleta» bajo Cámara/Fotos/Archivo de la hoja de foto y bajo la fila de Grupos; foto de ejemplo y lectura sin red (-uitest-receipt-split boleta: Cevichería El Muelle, 7 líneas, Yo/Carla/Martín/Rocío); nombres al vuelo sin SplitMember; por líneas y por igual al céntimo; «¿Quién pagó?» cambia la cifra («Te deben» / «Le debes a Carla»); imagen Solo resumen / Con detalle en tres diseños con logo, en tercera persona con el nombre de quien la manda (sin nombre en el perfil, lo pide); mi parte a la Bandeja; «Listo» cierra también la hoja de foto; ningún grupo nuevo. Device-QA en el iPhone 14 (cámara real, compartir a WhatsApp/Instagram, aprobar mi parte) en el ticket.",
+      "owner": "frank",
+      "lastVerified": "2026-11-26"
     }
   ]
 }
