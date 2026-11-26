@@ -1,0 +1,2 @@
+panel_quieta                 27 s  hilo ppal   0.3%  todos los hilos   0.7%  | Spotlight 36%
+final_quieta                 17 s  hilo ppal   7.0%  todos los hilos   7.4%  | performCalculation 65%, Spotlight 1%

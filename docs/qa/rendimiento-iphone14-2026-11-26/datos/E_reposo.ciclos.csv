@@ -1,0 +1,11 @@
+ciclo,evento,hora_lima,epoch_ms
+panel_arriba,quieta_inicio,09:57:13,1795705033110
+panel_arriba,quieta_fin,09:57:43,1795705063305
+panel_tendencia_visible,quieta_inicio,09:57:46,1795705066319
+panel_tendencia_visible,quieta_fin,09:58:16,1795705096519
+registros,quieta_inicio,09:58:20,1795705100799
+registros,quieta_fin,09:58:50,1795705130992
+mas,quieta_inicio,09:58:54,1795705134281
+mas,quieta_fin,09:59:19,1795705159372
+panel_vuelta,quieta_inicio,09:59:22,1795705162665
+panel_vuelta,quieta_fin,09:59:52,1795705192863

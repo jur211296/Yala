@@ -1,0 +1,14 @@
+ciclo,evento,hora_lima,epoch_ms,detalle
+1,sale,10:34:15,1795707255162,com.apple.mobilesafari
+1,vuelve,10:34:23,1795707263468,fuera=8s
+1,scroll_inicio,10:34:25,1795707265812,flicks=6
+1,scroll_fin,10:34:27,1795707267379,
+2,sale,10:34:31,1795707271542,com.apple.Preferences
+2,vuelve,10:34:53,1795707293828,fuera=22s
+2,scroll_inicio,10:34:56,1795707296117,flicks=6
+2,scroll_fin,10:34:57,1795707297704,
+3,sale,10:35:01,1795707301763,com.apple.mobilenotes
+3,vuelve,10:35:14,1795707314084,fuera=12s
+3,scroll_inicio,10:35:16,1795707316371,flicks=6
+3,scroll_fin,10:35:17,1795707317916,
+fin,fin,10:35:22,1795707322056,

@@ -1,0 +1,55 @@
+
+=== reposo Panel (20 s): 114695 actualizaciones en 20 s (5691/s), 320 ms
+    26464 (  1313/s)     41.8 ms  DisplayList Item: RendererEffectDisplayList<_OpacityEffect>  ⟨OpacityRendererEffect⟩
+    16717 (   830/s)     45.2 ms  DisplayList Item: RendererEffectDisplayList<_OpacityEffect>  ⟨_VStackLayout⟩
+     8856 (   439/s)     28.5 ms  DisplayList Item: RendererEffectDisplayList<_OpacityEffect>  ⟨_ZStackLayout⟩
+     7390 (   367/s)     30.3 ms  DisplayList Item: RendererEffectDisplayList<_OpacityEffect>  ⟨_ClipEffect⟩
+     6198 (   308/s)     11.7 ms  DisplayList Item: RendererEffectDisplayList<_OpacityEffect>  ⟨_GeometryActionModifier⟩
+     4650 (   231/s)      7.1 ms  DisplayList Item: RendererEffectDisplayList<_OpacityEffect>  ⟨_OverlayModifier⟩
+     4300 (   213/s)      9.4 ms  DisplayList Item: RendererEffectDisplayList<_OpacityEffect>  ⟨_OpacityEffect⟩
+     3974 (   197/s)      8.7 ms  DisplayList Item: RendererEffectDisplayList<_OpacityEffect>  ⟨_AllowsHitTestingModifier⟩
+     3198 (   159/s)      5.8 ms  DisplayList Item: RendererEffectDisplayList<_OpacityEffect>  ⟨_ConditionalContent⟩
+     3063 (   152/s)      8.2 ms  DisplayList Item: RendererEffectDisplayList<_OpacityEffect>  ⟨GeometryReaderLayout⟩
+     3008 (   149/s)     13.8 ms  AnimatableAttribute<_ScaleEffect>  ⟨_ScaleEffect⟩
+     2983 (   148/s)      8.9 ms  DisplayList Item: RendererEffectDisplayList<_OpacityEffect>  ⟨SystemScrollView⟩
+     2920 (   145/s)     14.0 ms  AnimatableAttribute<_OpacityEffect>  ⟨_OpacityEffect⟩
+     2888 (   143/s)      6.4 ms  DisplayList Item: RendererEffectDisplayList<_OpacityEffect>  ⟨_OverlayPreferenceModifier⟩
+     2784 (   138/s)     14.8 ms  DisplayList Item: RendererEffectDisplayList<_OpacityEffect>  ⟨AnyLayout⟩
+     2508 (   124/s)      7.5 ms  DisplayList Item: RendererEffectDisplayList<_OpacityEffect>  ⟨_BackgroundStyleModifier⟩
+     2235 (   111/s)     10.9 ms  DisplayList Item: GeometryEffectDisplayList<DefaultGeometryEffectProvider<_ScaleEffect>>  ⟨_ScaleEffect⟩
+     1201 (    60/s)      0.3 ms  AnimatableAttribute<_BlurEffect>  ⟨ForEach⟩
+     1178 (    58/s)      1.8 ms  DisplayList Item: RendererEffectDisplayList<_OpacityEffect>  ⟨_BackgroundPreferenceModifier⟩
+     1106 (    55/s)      1.9 ms  DisplayList Item: ShapeStyledDisplayList<_ShapeView<Rectangle, LinearGradient>>  ⟨GeometryReaderLayout⟩
+     1076 (    53/s)      2.5 ms  DisplayList Item: ShapeStyledDisplayList<_ShapeView<Rectangle, LinearGradient>>  ⟨OpacityRendererEffect⟩
+     1045 (    52/s)      1.8 ms  EnvironmentWriter: Array<AnyFontModifier>  ⟨ForEach⟩
+     1037 (    51/s)      2.2 ms  DisplayList Item: RendererEffectDisplayList<_OpacityEffect>  ⟨Root View for AnyView⟩
+      988 (    49/s)      3.8 ms  Layout: AnimatableFrameAttribute  ⟨_OpacityEffect⟩
+      951 (    47/s)      3.5 ms  DisplayList Item: RendererEffectDisplayList<_OpacityEffect>  ⟨_MaskEffect⟩
+
+=== 10 s tras volver: 175869 actualizaciones en 20 s (8793/s), 647 ms
+     6524 (   326/s)      1.0 ms  EnvironmentWriter: ClearCustomHoverEffectContextFromEnvironment  ⟨StyledTextContentView⟩
+     6503 (   325/s)      7.3 ms  ShapeStyleResolver<AnyShapeStyle>  ⟨StyledTextContentView⟩
+     4942 (   247/s)     47.3 ms  Text Content  ⟨Text⟩
+     3939 (   197/s)      0.8 ms  EnvironmentWriter: MergedEnvironment  ⟨StyledTextContentView⟩
+     3853 (   193/s)      0.8 ms  EnvironmentWriter: ClearCustomHoverEffectContextFromEnvironment  ⟨OpacityRendererEffect⟩
+     3002 (   150/s)      0.6 ms  EnvironmentWriter: MergedEnvironment  ⟨OpacityRendererEffect⟩
+     2697 (   135/s)      0.6 ms  EnvironmentWriter: MergedEnvironment  ⟨Resolved⟩
+     2610 (   130/s)      1.7 ms  ShapeStyleResolver<Color>  ⟨_ShapeView⟩
+     2540 (   127/s)      4.3 ms  ShapeStyleResolver<AnyShapeStyle>  ⟨Resolved⟩
+     2351 (   118/s)      3.1 ms  DisplayList Item: RendererEffectDisplayList<_OpacityEffect>  ⟨OpacityRendererEffect⟩
+     2343 (   117/s)     13.3 ms  Image Content  ⟨Image⟩
+     2235 (   112/s)      1.2 ms  EnvironmentWriter: ClearCustomHoverEffectContextFromEnvironment  ⟨GlassEffectContainerModifier⟩
+     2086 (   104/s)      1.3 ms  EnvironmentWriter: MergedEnvironment  ⟨GlassEffectContainerModifier⟩
+     1995 (   100/s)      0.4 ms  EnvironmentWriter: ClearCustomHoverEffectContextFromEnvironment  ⟨_ConditionalContent⟩
+     1884 (    94/s)      0.4 ms  EnvironmentWriter: ClearCustomHoverEffectContextFromEnvironment  ⟨Resolved⟩
+     1707 (    85/s)      0.5 ms  EnvironmentWriter: MergedEnvironment  ⟨_ConditionalContent⟩
+     1666 (    83/s)      0.5 ms  EnvironmentWriter: MergedEnvironment  ⟨TupleView⟩
+     1610 (    80/s)      2.0 ms  EnvironmentWriter: MergedEnvironment  ⟨_EnvironmentKeyWritingModifier<Font?>⟩
+     1505 (    75/s)      1.4 ms  EnvironmentWriter: MergedEnvironment  ⟨_ForegroundStyleModifier⟩
+     1476 (    74/s)      3.4 ms  DisplayList Item: RendererEffectDisplayList<_OpacityEffect>  ⟨_VStackLayout⟩
+     1457 (    73/s)      1.0 ms  EnvironmentWriter: MergedEnvironment  ⟨_FrameLayout⟩
+     1320 (    66/s)      1.3 ms  EnvironmentWriter: ClearCustomHoverEffectContextFromEnvironment  ⟨_EnvironmentKeyWritingModifier<Int?>⟩
+     1300 (    65/s)      0.3 ms  GlassEffectItemMaterial  ⟨GlassEffectContainerModifier⟩
+     1297 (    65/s)      0.5 ms  EnvironmentWriter: ClearCustomHoverEffectContextFromEnvironment  ⟨TupleView⟩
+     1276 (    64/s)      0.5 ms  ContainerStorageView.Init  ⟨GlassEffectContainerModifier⟩
+fin

@@ -1,0 +1,7 @@
+ventana                            dur(s)              Yala (2392)          backboardd (73)          axauditd (1556)         SpringBoard (37)               kernel (0)
+reposo inicial (delante, quieta)     17.2              1.4% núcleo             19.2% núcleo              0.0% núcleo              0.3% núcleo             12.9% núcleo
+fuera (otra app delante)            165.7              1.2% núcleo             17.0% núcleo              1.5% núcleo              2.4% núcleo             14.6% núcleo
+primeros 2 s al volver               22.9             23.8% núcleo             28.1% núcleo              6.0% núcleo             16.0% núcleo             25.1% núcleo
+scroll (12 flicks)                  315.8             34.5% núcleo             23.5% núcleo             16.7% núcleo              2.2% núcleo             17.6% núcleo
+quieta tras scroll                   35.6             17.0% núcleo             21.5% núcleo              9.2% núcleo              1.0% núcleo             15.7% núcleo
+reposo final (delante, quieta)       13.0              1.5% núcleo             17.8% núcleo              0.0% núcleo              0.1% núcleo              9.9% núcleo

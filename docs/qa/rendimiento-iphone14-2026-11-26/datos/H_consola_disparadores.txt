@@ -1,0 +1,39 @@
+    PanelViewModel: volver al Panel → recarga
+10:25:50.737 ciclo arranque tras              Panel.reloadAndRecalculate <- Yala/PanelViewModel.swift:2994
+10:25:50.835 ciclo arranque tras              scenePhase active
+10:25:50.882 ciclo arranque tras              scenePhase active
+10:25:50.985 ciclo arranque tras              dataVersion 1 <- Yala/AppBootstrapper.swift:806
+10:25:51.018 ciclo arranque tras              Panel.reloadAndRecalculate <- Yala/PanelDataObservers.swift:66
+10:25:51.972 ciclo arranque tras              Panel.loadData 346 ms
+    PanelViewModel: performCalculation #1
+10:25:58.950 ciclo arranque tras              Panel.performCalculation 6979 ms
+10:26:05.796 ciclo arranque tras              Widgets.reloadAllTimelines 
+10:26:05.796 ciclo arranque tras              Widgets.updateCacheNow 19 ms
+10:26:36.052 ciclo    1 tras sale         scenePhase background
+10:26:36.052 ciclo    1 tras sale         scenePhase background
+10:26:44.192 ciclo    1 tras vuelve       scenePhase active
+10:26:44.254 ciclo    1 tras vuelve       scenePhase active
+10:26:52.805 ciclo    2 tras sale         scenePhase background
+10:26:52.805 ciclo    2 tras sale         scenePhase background
+10:27:14.930 ciclo    2 tras vuelve       scenePhase active
+10:27:15.017 ciclo    2 tras vuelve       scenePhase active
+10:27:23.635 ciclo    3 tras sale         scenePhase background
+10:27:23.635 ciclo    3 tras sale         scenePhase background
+10:27:35.727 ciclo    3 tras vuelve       scenePhase active
+10:27:35.789 ciclo    3 tras vuelve       scenePhase active
+10:27:44.369 ciclo    4 tras sale         scenePhase background
+10:27:44.369 ciclo    4 tras sale         scenePhase background
+10:28:14.479 ciclo    4 tras vuelve       scenePhase active
+10:28:14.545 ciclo    4 tras vuelve       scenePhase active
+10:28:23.194 ciclo    5 tras sale         scenePhase background
+10:28:23.194 ciclo    5 tras sale         scenePhase background
+10:28:28.190 ciclo    5 tras vuelve       scenePhase active
+10:28:28.249 ciclo    5 tras vuelve       scenePhase active
+10:28:31.481 ciclo    5 tras scroll_inicio Panel.reloadAndRecalculate <- Yala/PanelView.swift:1070
+10:28:32.492 ciclo    5 tras scroll_fin   Panel.loadData 317 ms
+    PanelViewModel: performCalculation #2
+10:28:39.569 ciclo    6 tras sale         Panel.performCalculation 7076 ms
+10:28:39.602 ciclo    6 tras sale         scenePhase background
+10:28:39.602 ciclo    6 tras sale         scenePhase background
+10:28:54.735 ciclo    6 tras vuelve       scenePhase active
+10:28:54.779 ciclo    6 tras vuelve       scenePhase active

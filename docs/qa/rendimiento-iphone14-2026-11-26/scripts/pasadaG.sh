@@ -1,0 +1,14 @@
+#!/bin/bash
+S=/private/tmp/claude-501/-Users-max-jur-Claude-worktrees-Yala-2026-11-26-analisis-rendimiento-calentamiento-scroll-iphone14/c5c9629f-e7cd-4dfe-93bd-2fb889928dca/scratchpad
+OUT=$S/trazas; N=G_sin_pulso_sin_recarga; U=00008110-001A35A6267A401E
+ts(){ TZ=America/Lima date '+%H:%M:%S'; }; ms(){ python3 -c 'import time;print(int(time.time()*1000))'; }
+xcrun xctrace record --device $U --output $OUT/$N.trace --time-limit 15m --template "Time Profiler" --instrument "Hitches" --instrument "Thermal State" --launch -- com.jurgenschmidt.yala.dev -uitest -uitest-skip-onboarding -perfTempSinPulso YES -perfTempSinRecargaAlVolver YES > $OUT/$N.xctrace.log 2>&1 &
+XP=$!
+ok=0; for i in $(seq 1 90); do grep -q "Ctrl-C to stop" $OUT/$N.xctrace.log && { ok=1; break; }; kill -0 $XP 2>/dev/null || break; sleep 1; done
+[ $ok = 1 ] || { echo "[$(ts)] ABORTADA"; cat $OUT/$N.xctrace.log; exit 1; }
+echo "[$(ts)] grabando; 40 s de arranque"; sleep 40
+L=$OUT/$N.reposo.csv; echo "ciclo,evento,hora_lima,epoch_ms" > $L
+echo "panel_quieta,quieta_inicio,$(ts),$(ms)" >> $L; sleep 30; echo "panel_quieta,quieta_fin,$(ts),$(ms)" >> $L
+MODO=swipe bash $S/ciclos.sh com.jurgenschmidt.yala.dev 6 $OUT/$N.ciclos.csv 6
+echo "final_quieta,quieta_inicio,$(ts),$(ms)" >> $L; sleep 20; echo "final_quieta,quieta_fin,$(ts),$(ms)" >> $L
+kill -INT $XP; wait $XP; echo "[$(ts)] traza cerrada"; tail -1 $OUT/$N.xctrace.log

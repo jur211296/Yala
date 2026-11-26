@@ -1,0 +1,42 @@
+7823 muestras
+    67   0.9% closure #1 in TrendChartView.liveAnchorOverlay(proxy:)
+    49   0.6% ls(_:comment:)
+    23   0.3% closure #1 in VerticalFoldReader.body(content:)
+    20   0.3% static LanguageManager.resolved.getter
+    14   0.2% closure #2 in static LanguageManager.resolved.getter
+    13   0.2% closure #1 in static SpotlightIndexService.reconcile(context:)
+    13   0.2% closure #1 in static SpotlightIndexService.enqueue(_:)
+    10   0.1% closure #2 in FadesTowardVerticalBar271.body(content:)
+     5   0.1% closure #1 in TrendChartView.todayHintPillOverlay(proxy:)
+     5   0.1% static LanguageManager.overrideLanguage.getter
+     2   0.0% SupportedLocale.init(rawValue:)
+     2   0.0% static SupportedLocale.from(_:)
+     2   0.0% specialized closure #1 in ZStack.init(alignment:content:)
+     2   0.0% specialized _VariadicView.Tree.init(_:content:)
+     2   0.0% specialized ZStack.init(alignment:content:)
+     2   0.0% TrendChartView.todayPillWidth.getter
+     1   0.0% __swift_closure_destructorTm
+     1   0.0% specialized Array._getElement(_:wasNativeTypeChecked:matchingSubscriptCheck:)
+     1   0.0% specialized Array.subscript.getter
+     1   0.0% specialized Array.subscript.read
+     1   0.0% specialized protocol witness for Collection.subscript.read in conformance [A]
+     1   0.0% specialized Collection.first.getter
+     1   0.0% specialized DefaultStringInterpolation.appendInterpolation<A>(_:)
+     1   0.0% CloudSignInNoticeWatcher.runtimeKey()
+     1   0.0% CloudSignInNoticeWatcher.poll()
+-- SwiftUI animación/efectos --
+  3359  42.9% GraphHost.runTransaction()
+   209   2.7% GlassEffectLayout.Resolved.ResolvedEntryGeometries.value.getter
+   209   2.7% protocol witness for Rule.value.getter in conformance GlassEffectLayout.Resolved<A, B>.ResolvedEntryGeometries
+   166   2.1% closure #1 in GlassEffectLayout.Resolved.ResolvedEntryGeometries.value.getter
+   166   2.1% partial apply for closure #1 in GlassEffectLayout.Resolved.ResolvedEntryGeometries.value.getter
+   159   2.0% GlassEffectShapePathModifier.GlassEntryUnanimatedPath.updateValue()
+   156   2.0% GlassEffectShapePathModifier.ResolvedMaterialPath.updateValue()
+   116   1.5% AnimatableFrameAttribute.updateValue()
+   102   1.3% specialized AnimatableAttributeHelper.update(value:defaultAnimation:environment:sampleCollector:)
+    95   1.2% GlassEffectShapePathModifier.ResolvedMaterialPath.frame.getter
+    73   0.9% GlassContainer.ResolvedStorage.State.updateEffects(data:resolved:cache:proxy:updateSeed:inputs:)
+    60   0.8% specialized AnimatorState.update(_:at:environment:)
+    58   0.7% GlassEffectLayout.placeSubviews(in:proposal:subviews:cache:)
+    55   0.7% GlassEffectResolvedMaterial.value.getter
+    50   0.6% GlassEffectAnimatedPathSet.updateValue()
