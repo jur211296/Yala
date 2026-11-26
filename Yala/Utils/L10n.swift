@@ -409,6 +409,9 @@ enum L10n {
                 static func scheduled(total: String, pending: Int) -> String {
                     String(format: ls("panel.widgetInfo.yourData.scheduled", comment: "Widget help, planned payments: total this month and how many are still to pay. %1$@ = amount, %2$d = count"), total, pending)
                 }
+                static func scheduledNext(name: String, date: String) -> String {
+                    String(format: ls("panel.widgetInfo.yourData.scheduledNext", comment: "Widget help, planned payments: nothing left this month, the next due payment. %1$@ = payment name, %2$@ = date"), name, date)
+                }
                 static func weekday(_ day: String) -> String {
                     String(format: ls("panel.widgetInfo.yourData.weekday", comment: "Widget help, weekday chart: the day with the highest average spending. %@ = weekday name"), day)
                 }

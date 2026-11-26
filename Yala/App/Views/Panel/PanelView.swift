@@ -127,7 +127,7 @@ struct PanelView: View {
 
     /// Lo que el Panel deja ver con Primeros pasos a medias (Panel progresivo, acuerdo de Jürgen del 19-nov-2026).
     private var panelGate: PrimerosPasosPanelGate {
-        SetupChecklistManager.shared.panelGate(expensesOnly: sessionState.isExpensesOnlyMode)
+        SetupChecklistManager.shared.panelGate()
     }
 
     /// El mazo, también con «Solo gastos» (Jürgen, 19-nov-2026): los mismos siete pasos. Hasta entonces «Solo gastos»
@@ -135,10 +135,7 @@ struct PanelView: View {
     private var setupDeckSlot: some View {
         SetupChecklistCard(
             manager: SetupChecklistManager.shared,
-            onStepTapped: { step in handleSetupStep(step) },
-            // «Solo gastos»: el paso 1 lo hizo Yala, que creó la cuenta de gastos; la lista lo dice con su nombre.
-            expensesAccountName: sessionState.isExpensesOnlyMode
-                ? viewModel.accounts.first(where: \.isBillableUserAccount)?.name : nil
+            onStepTapped: { step in handleSetupStep(step) }
         )
         // Telemetría del usuario nuevo (card 4b7h): vio Primeros pasos.
         .onAppear { MetricsService.used(.primerosPasosVe) }

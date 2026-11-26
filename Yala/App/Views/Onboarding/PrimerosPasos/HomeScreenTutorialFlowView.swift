@@ -138,7 +138,7 @@ struct HomeScreenTutorialFlowView: View {
         }
     }
 
-    /// Pasar la última historia: hecho si se vio algún mini tutorial; si no, para después.
+    /// Pasar la última historia («Terminar»): el paso queda hecho (`HomeScreenTutorialLogic.resolution`).
     private func finish() {
         onClose(.finished(anyDone: Logic.doneCount(progress.outcomes, in: methods) > 0))
     }

@@ -6866,6 +6866,9 @@
 /* Widget help, planned payments: total this month and how many are still to pay. %1$@ = amount, %2$d = count */
 "panel.widgetInfo.yourData.scheduled" = "Paiements planifiés ce mois-ci : %1$@. Restant à payer : %2$d.";
 
+/* Widget help, planned payments: nothing left this month, the next due payment. %1$@ = payment name, %2$@ = date (e.g. 20 de diciembre) */
+"panel.widgetInfo.yourData.scheduledNext" = "Prochain paiement : %1$@, le %2$@.";
+
 /* Widget help, weekday chart: the day with the highest average spending. %@ = weekday name */
 "panel.widgetInfo.yourData.weekday" = "Le jour où tu dépenses le plus en moyenne : %@.";
 
@@ -9066,7 +9069,6 @@
 "setup.deck.then" = "Puis : %@";
 "setup.deck.resume" = "Reprendre où j’en étais";
 "setup.deck.firstExpense" = "Noter ma première dépense";
-"setup.deck.firstExpense.note" = "Tes dépenses vont dans « %@ », que Yala crée pour toi.";
 "setup.deck.currentValue" = "Étape en cours";
 "setup.deck.skippedValue" = "Passée";
 "setup.deck.step.account" = "Crée ton premier compte";
@@ -9638,7 +9640,7 @@
 "pasos23.groups.what.createHint" = "Un voyage, la maison, les amis…";
 "pasos23.groups.what.link" = "J’ai un lien d’invitation";
 "pasos23.groups.what.linkHint" = "Quelqu’un a déjà créé le groupe";
-"pasos23.groups.alreadySeen" = "Tu connais déjà Groupes : tu l’as vu en arrivant. On passe à l’étape 6.";
+"pasos23.groups.alreadySeen" = "Tu connais déjà Groupes. On passe à l’étape 6.";
 
 /* VoiceOver: name of the Show only / Hide segmented control in Records filters */
 "a11y.selectores.filterMode" = "Mode du filtre";

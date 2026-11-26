@@ -130,10 +130,9 @@ final class SetupChecklistManager {
     }
 
     /// Lo que el Panel deja ver ahora (Panel progresivo).
-    func panelGate(expensesOnly: Bool) -> PrimerosPasosPanelGate {
+    func panelGate() -> PrimerosPasosPanelGate {
         PrimerosPasosPanelGate.make(
             deckInProgress: isPrimerosPasosShown,
-            expensesOnly: expensesOnly,
             accountStepResolved: isResolved(.firstAccount),
             recordStepResolved: isResolved(.firstExpense),
             planningShown: isPlanningShownInPanel)

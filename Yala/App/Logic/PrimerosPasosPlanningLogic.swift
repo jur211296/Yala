@@ -289,16 +289,27 @@ nonisolated enum GroupsTutorialLogic {
         case joinWithLink
     }
 
+    /// Cómo queda el paso 5 en el mazo.
+    enum DeckResolution: Equatable {
+        case completed
+        case skipped
+    }
+
     /// Si al salir se marca `hasShownGroupsOnboarding`, para que Grupos no lo repita (ficha: «al completarlo aquí»).
     static func marksOnboardingSeen(_ exit: Exit) -> Bool {
         exit != .skipped && exit != .closed
     }
 
-    /// Si el mazo pasa al 6 al salir. El paso 5 queda omitido de entrada; lo da por hecho el grupo cuando llega
-    /// (`SetupChecklistManager.autoDetect` cuenta los grupos al volver al Panel), así un formulario cancelado o un enlace
-    /// que falla no lo dejan «hecho» sin grupo.
-    static func advancesDeck(_ exit: Exit) -> Bool {
-        exit != .closed
+    /// Lo que el paso 5 hace con el mazo al salir. Ver y aceptar la intro basta (Jürgen, 25-nov-2026): «Ahora no», crear
+    /// o unirse lo dejan hecho, aunque el grupo no llegue a existir. «Omitir este paso» antes del consentimiento lo deja
+    /// para después, y «Atrás» desde la primera parte no lo toca. Hasta entonces quedaba omitido hasta que existiera un
+    /// grupo, y volver a tocarlo daba «Grupos ya lo conoces: lo viste al entrar».
+    static func deckResolution(_ exit: Exit) -> DeckResolution? {
+        switch exit {
+        case .closed: return nil
+        case .skipped: return .skipped
+        case .seenNotNow, .createGroup, .joinWithLink: return .completed
+        }
     }
 
     /// Si al volver al Panel sale la guía «Tus grupos, a un toque»: cuando se fue a la pestaña Grupos a crear el grupo.

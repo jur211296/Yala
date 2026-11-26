@@ -617,7 +617,7 @@ struct NewTransactionView: View {
                     isActive: tutorialGuideActive, keyboardVisible: isKeyboardVisible, sheetOpen: isAnySelectorOpen),
                 hasAmount: viewModel.amount > 0,
                 hasCategory: viewModel.selectedSubcategory != nil,
-                hasSingleAccount: viewModel.accounts.count <= 1,
+                hasSingleAccount: NewRecordTutorialGuide.hasSingleAccount(viewModel.accounts),
                 onWriteName: { isNoteFieldFocused = true }
             ))
             .navigationTitle(formTitle)

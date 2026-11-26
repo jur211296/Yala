@@ -62,8 +62,16 @@ struct ScheduledPaymentsWidget: View {
                 headerInfoButton: headerInfoButton
             )
 
-            if data.activeCount == 0 || data.monthlyTotal == 0 {
+            if data.activeCount == 0 {
                 smallEmptyState
+            } else if data.monthlyTotal == 0 {
+                // Nada que pagar este mes: el próximo pago, aunque caiga el mes que viene (opción 1 de Jürgen,
+                // 25-nov-2026). Un ingreso planificado no es un pago. Sin ninguno a la vista, el vacío de siempre.
+                if let next = data.upcomingPayments.first(where: { !$0.isIncome }) {
+                    smallNextPayment(next)
+                } else {
+                    smallEmptyState
+                }
             } else {
                 // En columna: compartiendo fila con el anillo, la cifra no cabía en media tarjeta y salía «S/ 2,…».
                 VStack(alignment: .leading, spacing: DS.Spacing.sm) {
@@ -191,6 +199,26 @@ struct ScheduledPaymentsWidget: View {
             green: from.g + (to.g - from.g) * t,
             blue: from.b + (to.b - from.b) * t
         )
+    }
+
+    /// «Próximo pago», su nombre y cuándo vence, cuando este mes no queda nada.
+    private func smallNextPayment(_ item: ScheduledPaymentListItem) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+            Text(L10n.Scheduled.Detail.nextFirst)
+                .font(DS.Typography.captionSmall)
+                .foregroundStyle(.secondary)
+            Text(item.name)
+                .font(DS.Typography.label)
+                .foregroundStyle(.primary)
+                .lineLimit(2)
+            Text(item.dueDateLabel)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("scheduled_widget_small_next")
     }
 
     private var smallEmptyState: some View {

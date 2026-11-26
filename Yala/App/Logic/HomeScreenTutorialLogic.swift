@@ -76,12 +76,14 @@ nonisolated enum HomeScreenTutorialLogic {
         return .finished(anyDone: doneCount(outcomes, in: methods) > 0)
     }
 
-    /// Hecho si vio al menos una manera; omitido si las omitió todas o se saltó el paso; nada si solo cerró.
+    /// Hecho si llegó al final; omitido si se saltó el paso; nada si solo cerró. Llegar a «Terminar» tras las historias
+    /// cuenta como hecho aunque no abriera ningún «Enséñame cómo» (Jürgen, 25-nov-2026): desde que el paso 7 son
+    /// historias, pasarlas con toques no marcaba ninguna manera, y quien las vio todas quedaba «para después».
     static func resolution(of exit: Exit) -> StepResolution? {
         switch exit {
         case .closed: return nil
         case .skippedStep: return .skipped
-        case .finished(let anyDone): return anyDone ? .completed : .skipped
+        case .finished: return .completed
         }
     }
 

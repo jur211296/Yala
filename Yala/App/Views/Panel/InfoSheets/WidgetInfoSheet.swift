@@ -197,7 +197,12 @@ struct WidgetInfoSheet<Preview: View>: View {
         case .scheduledPayments:
             let data = viewModel.scheduledPaymentsWidget
             guard data.activeCount > 0 else { return nil }
-            return L10n.Panel.WidgetInfo.YourData.scheduled(total: money(data.monthlyTotal), pending: data.pendingCount)
+            let month = L10n.Panel.WidgetInfo.YourData.scheduled(total: money(data.monthlyTotal), pending: data.pendingCount)
+            // Nada este mes: también el próximo, aunque caiga el mes que viene, como el widget (opción 1 de Jürgen,
+            // 25-nov-2026).
+            guard data.monthlyTotal == 0, let next = data.upcomingPayments.first(where: { !$0.isIncome }) else { return month }
+            let date = next.dueDate.formatted(Date.FormatStyle(locale: AppLocale.current).day().month(.wide))
+            return month + " " + L10n.Panel.WidgetInfo.YourData.scheduledNext(name: next.name, date: date)
         case .weekdayBar:
             guard let top = viewModel.weekdayWidget.weekdaySpending.max(by: { $0.average < $1.average }),
                   top.average > 0 else { return nil }

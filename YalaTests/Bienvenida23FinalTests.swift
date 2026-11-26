@@ -159,7 +159,9 @@ struct Bienvenida23FinalTests {
     @Test func homeScreen_resolution_ofEachExit() {
         typealias L = HomeScreenTutorialLogic
         #expect(L.resolution(of: .finished(anyDone: true)) == .completed)
-        #expect(L.resolution(of: .finished(anyDone: false)) == .skipped)
+        // Llegar a «Terminar» deja el paso hecho aunque no se abriera ningún «Enséñame cómo» (Jürgen, 25-nov-2026): las
+        // historias se pasan con toques y no marcan ninguna manera. Hasta entonces quedaba «para después».
+        #expect(L.resolution(of: .finished(anyDone: false)) == .completed)
         #expect(L.resolution(of: .skippedStep) == .skipped)
         #expect(L.resolution(of: .closed) == nil)
     }

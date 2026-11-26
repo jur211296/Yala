@@ -24,30 +24,22 @@ struct PanelProgresivoGateTests {
     private let factory: Set<PanelSectionKind> = [.distribucion, .tools]
     private let all = Set(PanelSectionKind.allCases)
 
-    private func gate(expensesOnly: Bool = false, account: Bool = false, record: Bool = false,
+    private func gate(account: Bool = false, record: Bool = false,
                       planning: Bool = false, inProgress: Bool = true) -> Gate {
-        Gate.make(deckInProgress: inProgress, expensesOnly: expensesOnly, accountStepResolved: account,
+        Gate.make(deckInProgress: inProgress, accountStepResolved: account,
                   recordStepResolved: record, planningShown: planning)
     }
 
-    /// Al entrar por primera vez: solo el mazo. Ni «Tus finanzas» ni ningún widget, en los dos modos.
+    /// Al entrar por primera vez: solo el mazo. Ni «Tus finanzas» ni ningún widget, en los dos modos (desde el
+    /// 25-nov-2026 «Solo gastos» también llega sin cuenta, así que es la misma puerta).
     @Test func arrival_hidesEverySection_inBothModes() {
         #expect(gate().hiddenSections(factory) == all)
-        #expect(gate(expensesOnly: true, account: true).hiddenSections(factory) == all)
     }
 
     /// «Ingresos y gastos», tras el paso 1: la cuenta, nada más.
     @Test func afterTheFirstAccount_onlyTheAccountShows() {
         let hidden = gate(account: true).hiddenSections(factory)
         #expect(all.subtracting(hidden) == [.accounts])
-    }
-
-    /// «Solo gastos»: Yala crea la cuenta y el paso 1 sale hecho solo; la cuenta aparece con el primer paso que hace la
-    /// persona, aprender a registrar.
-    @Test func expensesOnly_theAccountWaitsForTheRecordStep() {
-        #expect(all.subtracting(gate(expensesOnly: true, account: true).hiddenSections(factory)).isEmpty)
-        let afterRecord = gate(expensesOnly: true, account: true, record: true).hiddenSections(factory)
-        #expect(all.subtracting(afterRecord) == [.accounts, .latestRecords])
     }
 
     /// Tras aprender a registrar: «Últimos registros» y nada más.

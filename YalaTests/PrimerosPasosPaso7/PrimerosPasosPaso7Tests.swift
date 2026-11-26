@@ -254,7 +254,7 @@ struct PrimerosPasosPaso7DeckTests {
         let deck = try Paso7Source.body(after: "private func deckView(_ deck: SetupDeckLogic.Deck) -> some View {", in: card)
         #expect(deck.contains("SetupDeckSegments(steps: manager.steps, current: deck.current, ink: theme.onAccent)"))
         #expect(deck.contains("Text(L10n.SetupChecklist.Deck.resume)"))
-        #expect(deck.contains("SetupDeckStepsRow(steps: manager.steps, current: deck.current, note: stepsNote, onOpen: onStepTapped)"))
+        #expect(deck.contains("SetupDeckStepsRow(steps: manager.steps, current: deck.current, onOpen: onStepTapped)"))
         let done = try Paso7Source.body(after: "private var deckCompletedView: some View {", in: card)
         #expect(done.contains("SetupDeckStepsRow(steps: manager.steps, current: nil"))
     }

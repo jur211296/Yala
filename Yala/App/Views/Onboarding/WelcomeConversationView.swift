@@ -541,27 +541,13 @@ enum WelcomeConversationCommit {
         }
     }
 
-    /// Lo que el alta deja en el almacén: categorías por defecto siempre, la cuenta de gastos con «Solo gastos» y los
-    /// tipos de aviso. Aparte de las preferencias para probarlo con un contexto en memoria.
+    /// Lo que el alta deja en el almacén: categorías por defecto siempre y los tipos de aviso. Sin cuenta, en los dos
+    /// modos: la primera es el paso 1 de «Primeros pasos» (con «Solo gastos» también desde el 25-nov-2026). Aparte de las
+    /// preferencias para probarlo con un contexto en memoria.
     @MainActor
     static func writeStore(currency: CurrencyCode, tracking: WelcomeConversationLogic.Tracking, context: ModelContext) {
         // Las categorías van siempre por defecto: «Prefiero crearlas yo» salió del alta.
         _ = seedDefaultCategoriesOnUserRequest(in: context)
-
-        if tracking.createsExpensesAccount {
-            let accountName = OnboardingAccountNameLogic.suggestedName(
-                mode: .expensesOnly,
-                accountTypeName: AccountType.general.localizedName,
-                currencyName: currency.shortPluralName.capitalized,
-                allTogetherFormat: L10n.Onboarding.accountNameAllTogetherFormat,
-                expensesWord: L10n.CashFlow.expense)
-            context.insert(Account(
-                name: accountName,
-                currencyCode: currency.rawValue,
-                colorHex: AppConstants.defaultColorHex,
-                iconName: iconName(for: .general),
-                type: AccountType.general.rawValue))
-        }
 
         OnboardingDefaultNotifications.seedIfNeeded(in: context)
     }
