@@ -1,0 +1,624 @@
+<title>Compartido v2</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+/* Layout: columna de lectura; cada pantalla es una fila de iPhones (la captura real de hoy a la izquierda, la propuesta
+   a la derecha) que se desliza en el celular; bajo cada fila, su veredicto. La elección del nombre va arriba. */
+:root{
+  --bg:#F3F3F8; --surface:#FFFFFF; --fg:#15142A; --muted:#5C5A77; --line:#E1E0EE;
+  --accent:#4F4CD9; --accent-soft:#ECEBFD; --new:#D4006E; --new-soft:#FFE6F2; --good:#17733F; --warn:#9A5600;
+  --f-display:"Space Grotesk",system-ui,sans-serif; --f-body:"Inter",system-ui,-apple-system,sans-serif;
+  --pw:248px; --s:.6359;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0D0C1B; --surface:#17162B; --fg:#EDECF8; --muted:#A4A2C0; --line:#2A2844;
+  --accent:#9290FF; --accent-soft:#24224A; --new:#FF5AAE; --new-soft:#3A1630; --good:#5BD08F; --warn:#F2B35A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0D0C1B; --surface:#17162B; --fg:#EDECF8; --muted:#A4A2C0; --line:#2A2844;
+  --accent:#9290FF; --accent-soft:#24224A; --new:#FF5AAE; --new-soft:#3A1630; --good:#5BD08F; --warn:#F2B35A; color-scheme:dark}
+@media (min-width:760px){:root{--pw:272px; --s:.6974}}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.5;margin:0;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 72px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:1200px;margin:0 auto;display:flex;flex-direction:column;gap:40px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:clamp(27px,5vw,40px)} h2{font-size:clamp(21px,3.4vw,27px)} h3{font-size:16px}
+p{margin:0;max-width:72ch}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.lead{color:var(--muted)}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.box>div{display:flex;flex-direction:column;gap:6px;min-width:0}
+.newtag{display:inline-flex;align-items:center;gap:6px;font:700 11px var(--f-body);letter-spacing:.04em;text-transform:uppercase;color:var(--new);background:var(--new-soft);border-radius:999px;padding:2px 9px;width:fit-content}
+.controls{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:10px;display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;border-bottom:1px solid var(--line)}
+.seg{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px}
+.seg button{font:600 13px var(--f-body);border:0;background:transparent;color:var(--muted);padding:6px 12px;border-radius:999px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#fff}
+button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.ctl-label{font-size:12px;color:var(--muted);font-weight:600;margin-right:6px}
+section{display:flex;flex-direction:column;gap:14px}
+.shead{display:flex;flex-direction:column;gap:6px}
+.row{display:flex;gap:18px;overflow-x:auto;padding-bottom:10px;scroll-snap-type:x mandatory}
+.col{flex:0 0 auto;width:calc(var(--pw) + 2px);display:flex;flex-direction:column;gap:8px;scroll-snap-align:start}
+.cap{font:600 13px var(--f-body);min-height:20px}
+.cap small{display:block;font-weight:400;color:var(--muted);font-size:12.5px;line-height:1.4}
+.cap .hoy,.cap .prop{display:block}
+.cap .hoy{color:var(--muted);font-weight:700;letter-spacing:.05em;text-transform:uppercase;font-size:11px}
+.cap .prop{color:var(--new);font-weight:700;letter-spacing:.05em;text-transform:uppercase;font-size:11px}
+.verdict{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 14px}
+.verdict .q{font:600 13px var(--f-body);flex:1 1 200px}
+.verdict .seg button[data-v="si"][aria-pressed="true"]{background:var(--good)}
+.verdict .seg button[data-v="ajustar"][aria-pressed="true"]{background:var(--warn)}
+.verdict .seg button[data-v="no"][aria-pressed="true"]{background:#B3261E}
+.same{font-size:13.5px;color:var(--muted);display:flex;flex-direction:column;gap:4px}
+.same li{margin-left:18px}
+table{border-collapse:collapse;font-size:13.5px;min-width:520px}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;color:var(--muted);font-weight:600}
+.tw{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.est{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.est div{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:4px;min-width:0;font-size:14px}
+.est b{font-family:var(--f-display);font-size:15px}
+.kind{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+.kind.v{color:var(--good)} .kind.d{color:var(--warn)}
+.risks{display:flex;flex-direction:column;gap:10px}
+.risks li{margin-left:18px;max-width:80ch}
+.names{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.nopt{background:var(--surface);border:1.5px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px;cursor:pointer;text-align:left;font:inherit;color:inherit}
+.nopt[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.nopt .t{display:flex;gap:8px;align-items:center;justify-content:space-between}
+.nopt b{font-family:var(--f-display);font-size:18px}
+.nopt .r{font:600 11px var(--f-body);color:var(--good);border:1px solid currentColor;border-radius:999px;padding:1px 8px}
+.nopt p{font-size:13.5px;color:var(--muted)}
+.decide{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:12px}
+textarea{width:100%;min-height:90px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font:14px var(--f-body);padding:10px 12px}
+.btn{font:600 14px var(--f-body);border:0;background:var(--accent);color:#fff;border-radius:12px;padding:10px 18px;cursor:pointer;width:fit-content}
+.status{font-size:13px;color:var(--muted)}
+
+/* ---------- iPhone 17 Pro (390 × 844 pt) escalado. Medidas y colores tomados de las capturas reales. ---------- */
+.phone{width:var(--pw);height:calc(var(--pw) * 2.1641);border-radius:calc(var(--pw) * .13);border:1px solid var(--line);overflow:hidden;position:relative;background:#000}
+.phone>img{width:100%;height:100%;object-fit:cover;display:block}
+.scr{width:390px;height:844px;transform:scale(var(--s));transform-origin:0 0;position:absolute;left:0;top:0;overflow:hidden;
+  font-family:-apple-system,"SF Pro Text",system-ui,sans-serif;color:var(--p-fg);font-size:17px;line-height:1.25;-webkit-font-smoothing:antialiased}
+.p-dark{--p-bg:linear-gradient(180deg,#2B2D76 0,#1A1C51 22%,#0D0F31 46%,#05050F 75%,#000 100%);--p-card:#12122D;--p-glass:rgba(84,86,190,.42);--p-glass-b:rgba(255,255,255,.10);
+  --p-fg:#FFFFFF;--p-fg2:rgba(235,235,245,.62);--p-fg3:rgba(235,235,245,.38);--p-acc:#6063F1;--p-acc-t:#A5A7FF;--p-owed:#4ADE80;--p-owe:#FF4DA6;--p-gold:#F5B70A;
+  --p-tab:rgba(28,28,36,.92);--p-tab-on:rgba(255,255,255,.12);--p-pill:rgba(255,255,255,.08);--p-dot:#2DD4BF;--p-menu:rgba(44,44,56,.97);--p-sep:rgba(255,255,255,.10)}
+.p-light{--p-bg:linear-gradient(180deg,#F4F4F6 0,#F1F1F7 40%,#EFF1FE 100%);--p-card:#FFFFFF;--p-glass:#FFFFFF;--p-glass-b:rgba(0,0,0,.06);
+  --p-fg:#000000;--p-fg2:rgba(60,60,67,.62);--p-fg3:rgba(60,60,67,.36);--p-acc:#6063F1;--p-acc-t:#5B5EE4;--p-owed:#15803D;--p-owe:#C80066;--p-gold:#B98600;
+  --p-tab:rgba(255,255,255,.94);--p-tab-on:rgba(0,0,0,.06);--p-pill:rgba(0,0,0,.05);--p-dot:#0EA5B0;--p-menu:rgba(250,250,252,.98);--p-sep:rgba(0,0,0,.08)}
+.scr{background:var(--p-bg)}
+.p-light .card,.p-light .circ,.p-light .caps,.p-light .mini,.p-light .tabbar{box-shadow:0 0 0 .5px rgba(0,0,0,.06),0 2px 8px rgba(30,30,80,.06)}
+.sb{height:54px;display:flex;justify-content:space-between;align-items:flex-end;padding:0 34px 4px 50px;font:600 17px -apple-system,system-ui}
+.sb i{font-style:normal;font-size:13px;letter-spacing:1px}
+.tb{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 16px}
+.tb .r{display:flex;gap:12px;margin-left:auto}
+.circ{width:44px;height:44px;border-radius:50%;background:var(--p-glass);border:1px solid var(--p-glass-b);display:grid;place-items:center;color:var(--p-fg)}
+.circ.acc{color:var(--p-acc-t)}
+.circ.av{background:var(--p-acc);color:#fff;border:2px solid var(--p-gold)}
+.p-light .circ.av{background:#fff;color:var(--p-acc)}
+.caps{height:44px;border-radius:22px;background:var(--p-glass);border:1px solid var(--p-glass-b);display:flex;align-items:center;gap:14px;padding:0 14px;font:500 17px -apple-system,system-ui}
+svg{display:block;flex:0 0 auto}
+.lt{font:700 34px -apple-system,system-ui;letter-spacing:.2px;padding:8px 16px 0;white-space:nowrap}
+.chips{display:flex;gap:8px;padding:14px 16px 10px}
+.chip{height:36px;border-radius:18px;display:flex;align-items:center;gap:7px;padding:0 13px;font:500 15px -apple-system,system-ui;background:var(--p-glass);border:1px solid var(--p-glass-b);color:var(--p-fg);white-space:nowrap}
+.chip.on{background:var(--p-acc);color:#fff;border-color:transparent}
+.chip.ico{width:44px;justify-content:center;padding:0}
+.pad{padding:0 16px}
+.sum .l{font-size:15px;color:var(--p-fg2);margin-top:12px}
+.sum .big{font:700 38px ui-rounded,"SF Pro Rounded",-apple-system,system-ui;color:var(--p-owed);margin-top:6px;letter-spacing:-.3px}
+.sum .bar{display:flex;gap:4px;height:8px;margin-top:14px}
+.sum .bar i{border-radius:4px;display:block}
+.sum .bar .o{background:var(--p-owe)} .sum .bar .d{background:var(--p-owed);flex:1}
+.sum .two{display:flex;justify-content:space-between;margin-top:12px;font-size:15px}
+.sum .two span{color:var(--p-fg2)} .sum .two b{display:block;font:500 17px ui-rounded,"SF Pro Rounded",-apple-system,system-ui;color:var(--p-fg)}
+.sum .two .rt{text-align:right}
+.arrow{font-weight:400}
+.arr-o{color:var(--p-owe)} .arr-d{color:var(--p-owed)}
+.qa{display:flex;gap:8px;align-items:center;margin-top:18px}
+.qa .ng{height:42px;border-radius:21px;background:var(--p-acc);color:#fff;display:flex;align-items:center;gap:8px;padding:0 17px;font:500 17px -apple-system,system-ui;white-space:nowrap}
+.qa .mini{width:42px;height:46px;border-radius:21px;background:var(--p-pill);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px;color:var(--p-fg)}
+.p-light .qa .mini{background:#fff}
+.qa .ia{height:42px;border-radius:21px;border:2px solid var(--p-gold);color:var(--p-gold);display:flex;align-items:center;gap:7px;padding:0 13px;font:500 17px -apple-system,system-ui;white-space:nowrap}
+.list{display:flex;flex-direction:column;gap:16px;margin-top:22px}
+.card{background:var(--p-card);border-radius:18px;padding:14px 14px 14px}
+.gh{display:flex;gap:12px;align-items:center}
+.gi{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:#fff;flex:0 0 auto;font:600 16px -apple-system,system-ui}
+.gh b{display:block;font:600 17px -apple-system,system-ui}
+.gh span{font-size:13px;color:var(--p-fg2)}
+.dr{display:flex;justify-content:space-between;margin-top:9px;font-size:15px}
+.dr:first-of-type{margin-top:14px}
+.dr b{font:600 15px ui-rounded,"SF Pro Rounded",-apple-system,system-ui}
+.owed{color:var(--p-owed)} .owe{color:var(--p-owe)}
+.more{font-size:13px;color:var(--p-fg2);margin-top:8px}
+.arch{display:flex;align-items:center;gap:8px;font:500 15px -apple-system,system-ui;color:var(--p-acc-t);padding:4px 2px}
+.dim{opacity:.62}
+.tabbar{position:absolute;left:16px;right:16px;bottom:22px;height:62px;border-radius:31px;background:var(--p-tab);display:flex;align-items:center;justify-content:space-around;padding:0 6px}
+.tab{display:flex;flex-direction:column;align-items:center;gap:3px;font:500 10px -apple-system,system-ui;color:var(--p-fg);padding:6px 9px;border-radius:24px;white-space:nowrap}
+.tab.on{background:var(--p-tab-on);color:var(--p-acc-t)}
+.tab b{font-weight:600}
+.fade{position:absolute;left:0;right:0;bottom:0;height:120px;background:linear-gradient(transparent,rgba(0,0,0,.35))}
+.p-light .fade{background:linear-gradient(transparent,rgba(240,241,254,.85))}
+/* Detalle */
+.hl{font-size:15px;color:var(--p-fg2);display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px}
+.hero{font:700 50px ui-rounded,"SF Pro Rounded",-apple-system,system-ui;margin-top:10px;letter-spacing:-.5px}
+.hero small{font-size:20px;font-weight:500;color:var(--p-fg2);letter-spacing:0}
+.hs{font-size:15px;color:var(--p-fg2);margin-top:6px}
+.fcap{height:32px;border-radius:16px;background:var(--p-pill);display:inline-flex;align-items:center;gap:6px;padding:0 12px;font:600 13px -apple-system,system-ui;color:var(--p-fg);white-space:nowrap}
+.p-light .fcap{background:#fff;box-shadow:0 0 0 .5px rgba(0,0,0,.08)}
+.dh{font-size:14px;color:var(--p-fg2);margin:22px 0 8px}
+.er{display:flex;gap:12px;align-items:center;background:var(--p-card);border-radius:18px;padding:13px 14px;margin-bottom:10px}
+.er .gi{width:38px;height:38px}
+.er .t{flex:1;min-width:0}
+.er .t b{display:block;font:500 17px -apple-system,system-ui;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.er .t span{font-size:14px;color:var(--p-fg2);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.er .a{text-align:right;flex:0 0 auto}
+.er .a b{font:600 21px ui-rounded,"SF Pro Rounded",-apple-system,system-ui;white-space:nowrap}
+.er .a b small{font-size:13px;font-weight:500;color:var(--p-fg2)}
+.st{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;color:var(--p-fg2);background:var(--p-pill);border-radius:10px;padding:1px 8px;margin-top:3px}
+.st i{width:6px;height:6px;border-radius:50%;background:var(--p-fg3);display:block}
+.st.td{color:var(--p-fg)} .st.td i{background:var(--p-dot)}
+.gt{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;color:var(--p-fg2);border:1px solid var(--p-sep);border-radius:8px;padding:0 6px;margin-top:5px;width:fit-content}
+.gt i{width:7px;height:7px;border-radius:50%;display:block}
+.sh{font:600 19px -apple-system,system-ui;margin:24px 0 12px}
+.sc{background:var(--p-card);border-radius:20px;padding:14px 16px;margin-bottom:12px}
+.sc .who{display:flex;align-items:center;gap:8px;font:600 17px -apple-system,system-ui}
+.sc .who span{font:400 13px -apple-system,system-ui;color:var(--p-fg2)}
+.ini{width:28px;height:28px;border-radius:50%;background:rgba(96,99,241,.22);color:var(--p-acc-t);display:grid;place-items:center;font:600 14px -apple-system,system-ui}
+.sc .amt{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+.sc .amt b{font:600 20px ui-rounded,"SF Pro Rounded",-apple-system,system-ui}
+.saldar{height:40px;border-radius:20px;background:var(--p-acc);color:#fff;display:flex;align-items:center;padding:0 18px;font:600 16px -apple-system,system-ui}
+.brk{margin-top:10px;border-top:1px solid var(--p-sep);padding-top:8px;display:flex;flex-direction:column;gap:6px;font-size:14px}
+.brk div{display:flex;justify-content:space-between;color:var(--p-fg2)} .brk b{color:var(--p-fg);font:500 14px ui-rounded,"SF Pro Rounded",-apple-system,system-ui}
+.menu{position:absolute;right:16px;width:236px;background:var(--p-menu);border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,.35);z-index:8;overflow:hidden;font-size:16px}
+.menu div{display:flex;align-items:center;gap:10px;padding:11px 16px;border-top:1px solid var(--p-sep)}
+.menu div:first-child{border-top:0}
+.menu .ck{width:16px;color:var(--p-fg)}
+.scrim{position:absolute;inset:0;background:rgba(0,0,0,.18);z-index:7}
+.barrow{margin-top:10px}
+.barrow .lbl{display:flex;justify-content:space-between;font-size:13px;color:var(--p-fg2);margin-bottom:4px}
+.barrow .lbl b{color:var(--p-fg);font:500 13px ui-rounded,"SF Pro Rounded",-apple-system,system-ui}
+.barrow .tr{height:12px;border-radius:6px;background:var(--p-pill)}
+.barrow .tr i{display:block;height:100%;border-radius:6px;background:var(--p-acc)}
+/* Lo nuevo */
+.nw{position:relative;outline:2.5px dashed #FF0080;outline-offset:4px;border-radius:14px}
+.nw::after{content:"Nuevo";position:absolute;top:-15px;right:-2px;background:#FF0080;color:#fff;font:700 10px -apple-system,system-ui;letter-spacing:.4px;text-transform:uppercase;padding:2px 7px;border-radius:8px;z-index:3}
+.nw.l::after{right:auto;left:-2px}
+.hide-new .nw{outline:0}.hide-new .nw::after{display:none}
+/* Hojas e invitación */
+.sheet{position:absolute;left:8px;right:8px;bottom:8px;top:300px;border-radius:38px;background:var(--p-card);z-index:6;display:flex;flex-direction:column;align-items:center;padding:30px 20px 18px;text-align:center}
+.p-dark .sheet{background:#1B1B2E}
+.dimbg{position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:5}
+.sheet .big-ic{width:70px;height:70px;border-radius:50%;display:grid;place-items:center;color:#fff;font:600 26px -apple-system,system-ui}
+.sheet h4{font:600 21px -apple-system,system-ui;margin:16px 0 6px}
+.sheet p{font-size:14.5px;color:var(--p-fg2);line-height:1.35}
+.cta{height:50px;border-radius:25px;background:var(--p-acc);color:#fff;font:600 16px -apple-system,system-ui;display:flex;align-items:center;justify-content:center;gap:8px;width:100%}
+.cta2{height:50px;border-radius:25px;border:1.5px solid var(--p-fg3);color:var(--p-fg);font:600 16px -apple-system,system-ui;display:flex;align-items:center;justify-content:center;width:100%}
+.opt{width:100%;background:rgba(127,127,160,.12);border-radius:20px;padding:12px 14px;text-align:left;display:flex;gap:10px;margin-top:16px}
+.opt b{font:600 16px -apple-system,system-ui;display:block}
+.opt span{font-size:12.5px;color:var(--p-fg2)}
+.ghost{margin-top:auto;color:var(--p-fg2);font-size:15px}
+.invcard{margin:150px 20px 0;border-radius:24px;background:rgba(127,127,170,.18);border:1px solid var(--p-glass-b);padding:26px 18px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px}
+.invcard b{font:600 21px -apple-system,system-ui;margin-top:8px}
+.invcard span{font-size:14px;color:var(--p-fg2)}
+.invsub{font-size:14.5px;color:var(--p-fg2);text-align:center;padding:20px 32px 0;line-height:1.35}
+.field{margin:20px 32px 0;height:46px;border-radius:12px;border:1px solid var(--p-glass-b);background:rgba(127,127,170,.08);display:flex;align-items:center;padding:0 14px;color:var(--p-fg3)}
+.bot{position:absolute;left:20px;right:20px;bottom:46px;display:flex;flex-direction:column;gap:12px}
+.steps{background:var(--p-card);border-radius:22px;padding:18px;margin:0 16px}
+.steps h5{font:600 19px -apple-system,system-ui;margin:0 0 14px}
+.sr{display:flex;gap:10px;align-items:center;margin:10px 0;font-size:15px}
+.sr i{width:26px;height:26px;border-radius:50%;background:var(--p-acc);color:#fff;display:grid;place-items:center;font-style:normal;font-size:13px;flex:0 0 auto}
+.sr.done span{text-decoration:line-through;color:var(--p-fg2)}
+.sr.cur i{background:#FF0080}
+.empty{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;padding:28px 18px;background:var(--p-card);border-radius:20px}
+.empty b{font:600 18px -apple-system,system-ui}
+.empty span{font-size:14.5px;color:var(--p-fg2);line-height:1.35}
+.empty .lnk{color:var(--p-acc-t);font-weight:600;font-size:15px;margin-top:4px}
+.form-h{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 0}
+.form-h b{font:600 17px -apple-system,system-ui}
+.amtbig{text-align:center;font:700 54px ui-rounded,"SF Pro Rounded",-apple-system,system-ui;margin-top:26px}
+.amtbig small{font-size:22px;color:var(--p-fg2);font-weight:500}
+.fl{margin:12px 16px 0;background:var(--p-card);border-radius:18px;overflow:hidden}
+.fl>div{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-top:1px solid var(--p-sep);font-size:16px}
+.fl>div:first-child{border-top:0}
+.fl span{color:var(--p-fg2)}
+.pp{display:flex;gap:8px;flex-wrap:wrap;padding:10px 16px 0}
+.pchip{height:36px;border-radius:18px;background:var(--p-pill);display:flex;align-items:center;gap:7px;padding:0 12px 0 5px;font-size:15px}
+.p-light .pchip{background:#fff}
+.pchip.on{background:var(--p-acc);color:#fff}
+.pchip .ini{width:26px;height:26px;font-size:12px}
+.pchip.on .ini{background:rgba(255,255,255,.25);color:#fff}
+.pchip.add{padding:0 14px;color:var(--p-acc-t);border:1.5px dashed var(--p-acc-t);background:transparent}
+.kb{position:absolute;left:0;right:0;bottom:0;height:290px;background:rgba(160,160,180,.22);backdrop-filter:blur(4px)}
+.p-dark .kb{background:rgba(60,60,72,.9)}
+.p-light .kb{background:#D1D3DA}
+.kb .ln{display:flex;justify-content:center;gap:6px;margin-top:10px}
+.kb .ln i{width:32px;height:42px;border-radius:6px;background:rgba(255,255,255,.28);display:block}
+.p-light .kb .ln i{background:#fff}
+</style>
+
+<div class="wrap" id="top">
+  <header style="display:flex;flex-direction:column;gap:12px">
+    <span class="eyebrow">Yala 2.3 · Maquetas v2 · 26-nov-2026</span>
+    <h1>Compartido: Grupos y Personas</h1>
+    <p class="lead">Segunda vuelta de las deudas con personas. Esta vez, cada pantalla está copiada de la app de hoy:
+      a la izquierda va la captura real (simulador, rama 2.3) y a la derecha la propuesta. Solo lo marcado
+      <span class="newtag">Nuevo</span> no existe hoy. Abajo de cada pantalla puedes decir «Sí», «Ajustar» o «No».</p>
+    <div class="box">
+      <div><span class="eyebrow">Recomendación</span>
+        <p><b>Aprobar con el nombre «Compartido».</b> Los chips «Grupos | Personas» copian a Presupuestos | Pagos planificados.
+          Por dentro, cada persona es un grupo de dos que no se ve como grupo: reusa saldos, liquidar, invitar y la nube.</p></div>
+      <div><span class="eyebrow">Dos correcciones a lo pedido</span>
+        <p>La fila de captura real es «Nuevo gasto · Voz · Foto · Yala IA» (el pedido decía «Nuevo registro · Imagen»).
+          El primer chip del detalle se llama «Gastos», no «Registros». Se dibuja lo real.</p></div>
+      <div><span class="eyebrow">Construcción</span>
+        <p>Unas <b>6 a 7 sesiones</b> en 2.3: 2 solo de vista y 4 a 5 que tocan datos o sincronización. Detalle y riesgos al final.</p></div>
+    </div>
+  </header>
+
+  <div class="controls" role="toolbar" aria-label="Opciones de la página">
+    <span><span class="ctl-label">Teléfono</span>
+      <span class="seg" id="ph-theme"><button type="button" data-t="dark" aria-pressed="true">Oscuro</button><button type="button" data-t="light" aria-pressed="false">Claro</button></span></span>
+    <span><span class="ctl-label">Marcas de lo nuevo</span>
+      <span class="seg" id="ph-new"><button type="button" data-n="on" aria-pressed="true">Ver</button><button type="button" data-n="off" aria-pressed="false">Ocultar</button></span></span>
+  </div>
+
+  <!-- 1 · NOMBRE -->
+  <section id="nombre">
+    <div class="shead"><span class="eyebrow">1 · Nombre de la sección</span><h2>¿Cómo se llama la pestaña?</h2>
+      <p class="lead">Hoy dice «Grupos». Cuando adentro viven grupos y personas, el nombre tiene que cubrir los dos. Toca una opción para elegirla.</p></div>
+    <div class="names" id="names">
+      <button type="button" class="nopt" data-name="Compartido" aria-pressed="false">
+        <span class="t"><b>Compartido</b><span class="r">Recomendado</span></span>
+        <div class="tbwrap" data-label="Compartido"></div>
+        <p>Nombra lo que hay dentro, sean grupos o personas. Cabe: es más corto que «Planificación», que ya entra en la barra.
+          Tiene palabra corta en los 16 idiomas (Shared, Partagé, Geteilt, Condivisi, Compartilhado, 共有).</p></button>
+      <button type="button" class="nopt" data-name="Juntos" aria-pressed="false">
+        <span class="t"><b>Juntos</b></span>
+        <div class="tbwrap" data-label="Juntos"></div>
+        <p>Cálido y corto. No dice qué hay dentro: en inglés «Together» se lee como una red social, no como cuentas.</p></button>
+      <button type="button" class="nopt" data-name="Dividir" aria-pressed="false">
+        <span class="t"><b>Dividir</b></span>
+        <div class="tbwrap" data-label="Dividir"></div>
+        <p>Dice la acción, pero es un verbo entre sustantivos y choca con «Dividir una boleta», que ya existe en 2.3.</p></button>
+      <button type="button" class="nopt" data-name="Grupos" aria-pressed="false">
+        <span class="t"><b>Grupos (sin cambio)</b></span>
+        <div class="tbwrap" data-label="Grupos"></div>
+        <p>Cero coste y nadie se pierde. Pero «Personas» queda dentro de algo que se llama «Grupos».</p></button>
+    </div>
+    <p class="lead" style="font-size:13.5px">Para lo que no pertenece a ningún grupo propongo <b>«Sin grupo»</b>: se entiende solo
+      y se traduce sin dudas. «Libre» se confunde con «gratis» y «Directo» no dice de qué.</p>
+  </section>
+
+  <!-- 2 · GRUPOS -->
+  <section id="s-grupos">
+    <div class="shead"><span class="eyebrow">2 · Compartido, chip «Grupos»</span><h2>La pestaña de hoy, con dos chips arriba</h2>
+      <p class="lead">Debajo de los chips va exactamente lo de hoy: «Te deben en total», la fila de captura y las tarjetas.
+        Lo único nuevo en la lista es la tarjeta «Sin grupo», que resume lo que tienes con personas fuera de grupos y lleva al chip Personas.</p></div>
+    <div class="row">
+      <div class="col"><div class="cap"><span class="hoy">Hoy</span>Grupos<small>Captura real, rama 2.3</small></div><div class="phone"><img data-cap="01-grupos" alt="Pestaña Grupos hoy"></div></div>
+      <div class="col"><div class="cap"><span class="prop">Propuesta</span>Chip Grupos<small>Mismo total, misma fila, mismas tarjetas</small></div><div class="phone" data-ph="grupos1"></div></div>
+      <div class="col"><div class="cap"><span class="prop">Propuesta</span>Al bajar<small>«Sin grupo» antes de los archivados</small></div><div class="phone" data-ph="grupos2"></div></div>
+    </div>
+    <div class="verdict" data-k="grupos"><span class="q">¿Te sirve el chip Grupos así?</span>
+      <span class="seg"><button type="button" data-v="si" aria-pressed="false">Sí</button><button type="button" data-v="ajustar" aria-pressed="false">Ajustar</button><button type="button" data-v="no" aria-pressed="false">No</button></span></div>
+  </section>
+
+  <!-- 3 · PERSONAS -->
+  <section id="s-personas">
+    <div class="shead"><span class="eyebrow">3 · Compartido, chip «Personas»</span><h2>Una tarjeta por persona con deudas abiertas</h2>
+      <p class="lead">El bloque «Te deben en total» enseña la misma cifra en los dos chips, porque es la misma plata vista de dos formas.
+        Cada tarjeta copia la de grupo: en vez de «3 miembros activos» dice dónde compartes con esa persona, y las filas dicen el neto por moneda.
+        Las personas ya saldadas bajan a «Ver liquidadas», con el mismo pliegue que «Ver archivados».
+        En la barra, «Añadir persona» ocupa el sitio de «Nuevo grupo».</p></div>
+    <div class="row">
+      <div class="col"><div class="cap"><span class="prop">Propuesta</span>Chip Personas<small>Neto por persona, sumando grupos y lo sin grupo</small></div><div class="phone" data-ph="personas1"></div></div>
+      <div class="col"><div class="cap"><span class="prop">Propuesta</span>Al bajar, liquidadas abiertas<small>Atenuadas, como los grupos archivados</small></div><div class="phone" data-ph="personas2"></div></div>
+    </div>
+    <div class="verdict" data-k="personas"><span class="q">¿Te sirve la lista de Personas?</span>
+      <span class="seg"><button type="button" data-v="si" aria-pressed="false">Sí</button><button type="button" data-v="ajustar" aria-pressed="false">Ajustar</button><button type="button" data-v="no" aria-pressed="false">No</button></span></div>
+  </section>
+
+  <!-- 4 · DETALLE -->
+  <section id="s-detalle">
+    <div class="shead"><span class="eyebrow">4 · Detalle de una persona</span><h2>Espejo del detalle de grupo, con un filtro de grupo</h2>
+      <p class="lead">Mismo título grande, mismos chips «Gastos · Saldos · Estadísticas» (icono en los tres, nombre solo en el elegido),
+        misma cifra grande y misma fila de captura. El filtro de grupo es la misma cápsula que hoy tiene Estadísticas
+        («Todas», «Todo»), puesta al lado del rótulo en las tres páginas: <b>Todos los grupos · cada grupo · Sin grupo</b>.</p></div>
+    <div class="row">
+      <div class="col"><div class="cap"><span class="hoy">Hoy</span>Detalle de grupo<small>«Viaje a Cusco», captura real</small></div><div class="phone"><img data-cap="03-detalle-records" alt="Detalle de grupo hoy, Gastos"></div></div>
+      <div class="col"><div class="cap"><span class="prop">Propuesta</span>Gastos<small>Cada fila dice su grupo o «Sin grupo»</small></div><div class="phone" data-ph="det-gastos"></div></div>
+      <div class="col"><div class="cap"><span class="hoy">Hoy</span>Saldos del grupo<small>«Para quedar a mano», captura real</small></div><div class="phone"><img data-cap="03-detalle-balances" alt="Saldos de grupo hoy"></div></div>
+      <div class="col"><div class="cap"><span class="prop">Propuesta</span>Saldos, todos los grupos<small>Saldar todo de una vez, con el desglose</small></div><div class="phone" data-ph="det-saldos"></div></div>
+      <div class="col"><div class="cap"><span class="prop">Propuesta</span>Saldos, eligiendo el grupo<small>El menú de la cápsula: saldar solo uno</small></div><div class="phone" data-ph="det-saldos-menu"></div></div>
+      <div class="col"><div class="cap"><span class="hoy">Hoy</span>Estadísticas del grupo<small>Ya trae «Todas» y «Todo»</small></div><div class="phone"><img data-cap="03-detalle-stats" alt="Estadísticas de grupo hoy"></div></div>
+      <div class="col"><div class="cap"><span class="prop">Propuesta</span>Estadísticas<small>Tercera cápsula de grupo y «Por grupo»</small></div><div class="phone" data-ph="det-stats"></div></div>
+    </div>
+    <div class="verdict" data-k="detalle"><span class="q">¿Te sirve el detalle de persona?</span>
+      <span class="seg"><button type="button" data-v="si" aria-pressed="false">Sí</button><button type="button" data-v="ajustar" aria-pressed="false">Ajustar</button><button type="button" data-v="no" aria-pressed="false">No</button></span></div>
+  </section>
+
+  <!-- 5 · INVITAR -->
+  <section id="s-invitar">
+    <div class="shead"><span class="eyebrow">5 · Invitar a una persona</span><h2>La invitación de grupo, con otro mensaje</h2>
+      <p class="lead">Cambian dos pantallas: la hoja que sale al añadir a alguien y la tarjeta que ve quien abre el enlace.
+        Todo lo demás es la invitación de hoy, sin tocar.</p></div>
+    <div class="row">
+      <div class="col"><div class="cap"><span class="hoy">Hoy</span>Grupo creado<small>«Está listo» con invitar, captura real</small></div><div class="phone"><img data-cap="07-grupo-creado" alt="Hoja de grupo creado hoy"></div></div>
+      <div class="col"><div class="cap"><span class="prop">Propuesta</span>Persona añadida<small>Misma hoja; solo cambia el texto</small></div><div class="phone" data-ph="inv-hoja"></div></div>
+      <div class="col"><div class="cap"><span class="hoy">Hoy</span>Quien abre el enlace<small>Tarjeta del grupo, captura real</small></div><div class="phone"><img data-cap="06-invitacion-tarjeta" alt="Tarjeta de invitación hoy"></div></div>
+      <div class="col"><div class="cap"><span class="prop">Propuesta</span>Quien abre el enlace<small>Te invitan a Yala, no a un grupo</small></div><div class="phone" data-ph="inv-tarjeta"></div></div>
+      <div class="col"><div class="cap"><span class="prop">Propuesta</span>Ya conectados<small>Molde de «Ya estás en», con otro titular</small></div><div class="phone" data-ph="inv-listo"></div></div>
+    </div>
+    <div class="same"><b style="color:var(--fg)">Quedan igual, sin tocar:</b>
+      <ul style="margin:0;padding:0"><li>Abrir el enlace y «Abriendo tu invitación…».</li>
+        <li>Entrar con Apple o Google, y aceptar cómo se guardan los datos compartidos.</li>
+        <li>«Conectando…», «Está tardando un poco más», «Enlace no válido» y el error de conexión.</li>
+        <li>Pedir aprobación: no aplica, porque en una persona no hay admin que apruebe.</li></ul></div>
+    <div class="verdict" data-k="invitar"><span class="q">¿Te sirve la invitación a una persona?</span>
+      <span class="seg"><button type="button" data-v="si" aria-pressed="false">Sí</button><button type="button" data-v="ajustar" aria-pressed="false">Ajustar</button><button type="button" data-v="no" aria-pressed="false">No</button></span></div>
+  </section>
+
+  <!-- 6 · ENTRADA -->
+  <section id="s-entrada">
+    <div class="shead"><span class="eyebrow">6 · Entrada después del onboarding</span><h2>La vista completa desde el primer día, sin crear un grupo</h2>
+      <p class="lead">Hoy la pestaña vacía es solo la tarjeta de tres pasos y no deja apuntar nada hasta crear un grupo.
+        Con la propuesta se ven los chips y la fila de captura desde el principio. «Nuevo gasto» pregunta «¿Con quién?»
+        y acepta a un grupo o a una persona escrita al vuelo. La cuenta y el permiso de la nube se piden al guardar, no al entrar.</p></div>
+    <div class="row">
+      <div class="col"><div class="cap"><span class="hoy">Hoy</span>Sin grupos<small>Tarjeta de pasos, captura real</small></div><div class="phone"><img data-cap="05-vacio" alt="Grupos vacío hoy"></div></div>
+      <div class="col"><div class="cap"><span class="prop">Propuesta</span>Vacío, chip Grupos<small>Fila de captura activa desde el día uno</small></div><div class="phone" data-ph="vacio-grupos"></div></div>
+      <div class="col"><div class="cap"><span class="prop">Propuesta</span>Vacío, chip Personas<small>Invita a apuntar el primero</small></div><div class="phone" data-ph="vacio-personas"></div></div>
+      <div class="col"><div class="cap"><span class="prop">Propuesta</span>Nuevo gasto: ¿con quién?<small>«¿Con quién?» en el sitio de la fila «Grupo»</small></div><div class="phone" data-ph="primer-gasto"></div></div>
+      <div class="col"><div class="cap"><span class="prop">Propuesta</span>Primer gasto guardado<small>La persona aparece con su saldo</small></div><div class="phone" data-ph="primer-listo"></div></div>
+    </div>
+    <div class="verdict" data-k="entrada"><span class="q">¿Te sirve la entrada sin grupo obligatorio?</span>
+      <span class="seg"><button type="button" data-v="si" aria-pressed="false">Sí</button><button type="button" data-v="ajustar" aria-pressed="false">Ajustar</button><button type="button" data-v="no" aria-pressed="false">No</button></span></div>
+  </section>
+
+  <!-- 7 · ESTIMACIÓN -->
+  <section id="s-estimacion">
+    <div class="shead"><span class="eyebrow">7 · Construcción en 2.3</span><h2>6 a 7 sesiones: 2 de vista, 4 a 5 de datos</h2></div>
+    <div class="est">
+      <div><span class="kind v">Solo vista · 1 sesión</span><b>Nombre y chips</b>Renombrar la pestaña en 16 idiomas, chips Grupos | Personas, botón de la barra según el chip. El identificador interno de la pestaña no cambia, así que la barra que cada persona ordenó se conserva.</div>
+      <div><span class="kind d">Datos · 1,5 sesiones</span><b>Persona como grupo de dos</b>Una marca nueva en el grupo («de dos, no se lista») en la app y en el servidor, más el cálculo del neto por persona sumando sus grupos. Toca el modelo de SwiftData y el manifiesto de Grupos.</div>
+      <div><span class="kind v">Vista · 1 sesión</span><b>Lista y detalle de persona</b>Tarjetas, liquidadas, detalle espejo y la cápsula de grupo en las tres páginas (reusa Gastos, Saldos y Estadísticas de hoy con otro origen de datos).</div>
+      <div><span class="kind d">Datos y sync · 1 sesión</span><b>Saldar por grupo o todo</b>«Saldar todo» escribe una liquidación en cada grupo y en lo sin grupo, cada una en su moneda. Es lo más delicado: se sincroniza en varias zonas.</div>
+      <div><span class="kind d">Datos y servidor · 1 sesión</span><b>Invitar a una persona</b>Mismo enlace y mismo canal; el servidor tiene que saber que es una persona para mostrar el otro mensaje y saltar la aprobación.</div>
+      <div><span class="kind d">Datos · 0,5 a 1 sesión</span><b>Entrada sin grupo</b>Quitar la obligación de crear grupo, «¿Con quién?» en Nuevo gasto y crear la persona al guardar el primer gasto, pidiendo cuenta y permiso ahí.</div>
+    </div>
+  </section>
+
+  <section id="s-riesgos">
+    <div class="shead"><span class="eyebrow">Riesgos</span><h2>Lo que puede salir mal</h2></div>
+    <ul class="risks" style="padding:0;margin:0">
+      <li><b>Teléfonos con 2.2 o la web.</b> No conocen la marca «de dos»: verían el grupo de dos como un grupo más, llamado como la persona. Hay que decidir si la marca viaja en una versión nueva del manifiesto y qué enseña la web.</li>
+      <li><b>¿Es la misma persona en dos grupos?</b> Solo es seguro cuando los dos tienen cuenta. Un «Beto» sin cuenta en un grupo y otro «Beto» en otro no se pueden juntar solos: la propuesta los deja aparte hasta que entren.</li>
+      <li><b>Saldar todo con varias monedas.</b> Se liquida cada grupo en su moneda; si alguien espera ver un solo pago, el desglose tiene que quedar claro (la maqueta lo enseña debajo de la cifra).</li>
+      <li><b>El nombre nuevo se ve en más sitios.</b> 45 textos en español dicen «Grupos», más la ficha de la App Store y las capturas, que son de Lola y van aparte.</li>
+      <li><b>La entrada sin grupo mueve el momento de pedir cuenta.</b> Hoy se pide al entrar; con la propuesta, al guardar el primer gasto. Si la persona dice que no, el gasto no puede quedarse a medias: hay que decidir si se guarda solo en sus finanzas o se descarta.</li>
+      <li><b>Convive con «Dividir una boleta».</b> Esa función crea personas temporales sin grupo; tienen que ser las mismas personas de este chip, no otra lista.</li>
+    </ul>
+  </section>
+
+  <section id="decidir">
+    <div class="decide">
+      <span class="eyebrow">Tu decisión</span>
+      <h2>Nombre y comentarios</h2>
+      <p class="lead" id="namepick">Nombre elegido: ninguno todavía (toca una opción arriba).</p>
+      <label for="notes" class="ctl-label">Ajustes o comentarios</label>
+      <textarea id="notes" placeholder="Por ejemplo: en Personas quiero ver primero a quien más me debe."></textarea>
+      <button type="button" class="btn" id="save">Guardar decisión</button>
+      <span class="status" id="status" role="status">Cargando…</span>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  /* ---------- Iconos (trazos al estilo SF Symbols) ---------- */
+  var I={
+    p2plus:'<svg width="26" height="22" viewBox="0 0 26 22" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="6" r="3.4"/><circle cx="16" cy="6" r="3.4"/><path d="M2 18c0-3.5 2.8-6 6-6 2 0 3.6.8 4.6 2M12.5 15c.8-1.9 2.5-3 4-3"/><circle cx="20.5" cy="16.5" r="4.3" fill="currentColor" stroke="none"/><path d="M20.5 14.2v4.6M18.2 16.5h4.6" stroke="var(--p-card)" stroke-width="1.5"/></svg>',
+    pplus:'<svg width="24" height="22" viewBox="0 0 24 22" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="6" r="3.6"/><path d="M2.5 18.5c0-3.8 2.9-6.4 6.5-6.4 1.8 0 3.3.6 4.4 1.6"/><circle cx="18" cy="16" r="4.3" fill="currentColor" stroke="none"/><path d="M18 13.7v4.6M15.7 16h4.6" stroke="var(--p-card)" stroke-width="1.5"/></svg>',
+    gear:'<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M10.3 2h3.4l.5 2.6c.6.2 1.2.5 1.7.9l2.5-1 1.7 2.9-2 1.7c.1.6.1 1.3 0 1.9l2 1.7-1.7 2.9-2.5-1c-.5.4-1.1.7-1.7.9l-.5 2.6h-3.4l-.5-2.6c-.6-.2-1.2-.5-1.7-.9l-2.5 1L3.5 14l2-1.7a6 6 0 0 1 0-1.9l-2-1.7 1.7-2.9 2.5 1c.5-.4 1.1-.7 1.7-.9zM12 8.6a3.4 3.4 0 1 0 0 6.8 3.4 3.4 0 0 0 0-6.8z" transform="translate(0 0.5)"/></svg>',
+    gearO:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M10.3 2.5h3.4l.5 2.4 1.7.9 2.3-.9 1.7 2.9-1.9 1.6v1.9l1.9 1.6-1.7 2.9-2.3-.9-1.7.9-.5 2.4h-3.4l-.5-2.4-1.7-.9-2.3.9-1.7-2.9 1.9-1.6v-1.9L3.8 7.8l1.7-2.9 2.3.9 1.7-.9z"/><circle cx="12" cy="11.5" r="3"/></svg>',
+    person:'<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4.3"/><path d="M3.5 21c0-4.6 3.8-7.6 8.5-7.6s8.5 3 8.5 7.6z"/></svg>',
+    back:'<svg width="13" height="22" viewBox="0 0 13 22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M11 2 2 11l9 9"/></svg>',
+    edit:'<svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 11v5.5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 2 16.5v-11A1.5 1.5 0 0 1 3.5 4H9"/><path d="M14.5 2.5l3 3L10 13l-3.6.6.6-3.6z"/></svg>',
+    wave:'<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="6" width="1.6" height="4" rx=".8"/><rect x="4" y="3.5" width="1.6" height="9" rx=".8"/><rect x="7.2" y="1" width="1.6" height="14" rx=".8"/><rect x="10.4" y="3.5" width="1.6" height="9" rx=".8"/><rect x="13.4" y="6" width="1.6" height="4" rx=".8"/></svg>',
+    photo:'<svg width="18" height="15" viewBox="0 0 18 15" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="1" y="1" width="16" height="13" rx="2.5"/><circle cx="6" cy="5.3" r="1.5" fill="currentColor"/><path d="M1.5 12 6.5 8l3 2.5L13 7l3.5 3.5"/></svg>',
+    spark:'<svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path d="M8 2.5l1.6 4.4L14 8.5l-4.4 1.6L8 14.5 6.4 10.1 2 8.5l4.4-1.6z"/><path d="M15 11l.8 2.2 2.2.8-2.2.8L15 17l-.8-2.2-2.2-.8 2.2-.8z"/></svg>',
+    list:'<svg width="18" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M5.5 1.5H17M5.5 7H17M5.5 12.5H17"/><circle cx="1.6" cy="1.5" r=".9" fill="currentColor"/><circle cx="1.6" cy="7" r=".9" fill="currentColor"/><circle cx="1.6" cy="12.5" r=".9" fill="currentColor"/></svg>',
+    arrows:'<svg width="20" height="18" viewBox="0 0 20 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 5H3m0 0 3.5-3.5M3 5l3.5 3.5M2 13h15m0 0-3.5-3.5M17 13l-3.5 3.5"/></svg>',
+    pie:'<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="9" r="7.6"/><path d="M9 1.4V9l5.4 5.4"/></svg>',
+    groups:'<svg width="24" height="18" viewBox="0 0 24 18" fill="currentColor"><circle cx="8" cy="5" r="4"/><circle cx="17" cy="5.5" r="3.4"/><path d="M0 17c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5zM16 17c0-2.2-.8-4-2.2-5.3 1-.6 2.1-.9 3.3-.9 3.7 0 6.4 2.2 6.4 6.2z"/></svg>',
+    pfill:'<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4.6"/><path d="M3 22c0-5 4-8 9-8s9 3 9 8z"/></svg>',
+    plane:'<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M21.5 11.2c0-.8-.7-1.4-1.5-1.4h-5.3L9.6 2.6H7.4l2.5 7.2H5L3.3 7.6H1.6L2.8 12l-1.2 4.4h1.7L5 14.2h4.9l-2.5 7.2h2.2l5.1-7.2H20c.8 0 1.5-.6 1.5-1.4z"/></svg>',
+    house:'<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 2 11.5h2.6V21h5.6v-5.6h3.6V21h5.6v-9.5H22z"/></svg>',
+    pgroup:'<svg width="22" height="18" viewBox="0 0 24 18" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="5" r="3.4"/><circle cx="16.5" cy="5.5" r="3"/><path d="M1.5 16.5c0-3.5 2.9-5.7 6.5-5.7s6.5 2.2 6.5 5.7M15 11.3c3.6-.4 7 1.6 7 5.2"/></svg>',
+    chev:'<svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3.5 5 6.5 8 3.5"/></svg>',
+    chevR:'<svg width="9" height="14" viewBox="0 0 9 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 1.5 7.5 7 2 12.5"/></svg>',
+    cal:'<svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2" width="12" height="11" rx="2"/><path d="M1 5.5h12"/></svg>',
+    check:'<svg width="14" height="12" viewBox="0 0 14 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 6.5 5 10l7.5-8.5"/></svg>',
+    share:'<svg width="17" height="19" viewBox="0 0 17 19" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 12V1.5M5 5l3.5-3.5L12 5M5.5 8H3.5A1.5 1.5 0 0 0 2 9.5v7A1.5 1.5 0 0 0 3.5 18h10a1.5 1.5 0 0 0 1.5-1.5v-7A1.5 1.5 0 0 0 13.5 8h-2"/></svg>',
+    bell:'<svg width="16" height="18" viewBox="0 0 16 18" fill="currentColor"><path d="M8 1.5a5 5 0 0 1 5 5v3.6l1.6 2.6H1.4L3 10.1V6.5a5 5 0 0 1 5-5zM6 14.5h4a2 2 0 0 1-4 0z"/></svg>',
+    tick:'<svg width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="#22C55E"/><path d="M11.5 20.5 17.5 26.5 29 14" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+  };
+  var TAB={panel:'<svg width="22" height="20" viewBox="0 0 22 20" fill="currentColor"><rect x="1" y="1" width="9" height="8" rx="2"/><rect x="12" y="1" width="9" height="8" rx="2"/><rect x="1" y="11" width="9" height="8" rx="2"/><rect x="12" y="11" width="9" height="8" rx="2"/></svg>',
+    stats:'<svg width="22" height="20" viewBox="0 0 22 20" fill="currentColor"><rect x="1" y="9" width="5" height="10" rx="1.5"/><rect x="8.5" y="5" width="5" height="14" rx="1.5"/><rect x="16" y="1" width="5" height="18" rx="1.5"/></svg>',
+    plan:'<svg width="22" height="20" viewBox="0 0 22 20" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1.5" y="2" width="19" height="16.5" rx="3"/><path d="M1.5 7h19" /><path d="M6 11h1M10.5 11h1M15 11h1M6 14.5h1M10.5 14.5h1M15 14.5h1" stroke-linecap="round" stroke-width="2"/></svg>',
+    more:'<svg width="22" height="20" viewBox="0 0 22 20" fill="currentColor"><circle cx="4" cy="10" r="2.2"/><circle cx="11" cy="10" r="2.2"/><circle cx="18" cy="10" r="2.2"/></svg>'};
+
+  /* ---------- Piezas ---------- */
+  function sb(){return '<div class="sb"><span>9:41</span><i>●●●● ▮</i></div>';}
+  function tabbar(label){return '<div class="tabbar">'+
+    '<div class="tab">'+TAB.panel+'Panel</div><div class="tab">'+TAB.stats+'Estadísticas</div><div class="tab">'+TAB.plan+'Planificación</div>'+
+    '<div class="tab on">'+I.groups+'<b>'+label+'</b></div><div class="tab">'+TAB.more+'Más</div></div>';}
+  function toolbar(first,firstNew){return '<div class="tb"><div class="r">'+
+    '<div class="circ acc'+(firstNew?' nw':'')+'">'+first+'</div><div class="circ acc">'+I.gear+'</div><div class="circ av">'+I.person+'</div></div></div>';}
+  function chips(sel){return '<div class="chips"><div class="nw l" style="display:flex;gap:8px;border-radius:20px">'+
+    '<div class="chip'+(sel==='g'?' on':'')+'">'+I.groups.replace('width="24" height="18"','width="20" height="15"')+'Grupos</div>'+
+    '<div class="chip'+(sel==='p'?' on':'')+'">'+I.pfill+'Personas</div></div></div>';}
+  function summary(o){o=o||{};var t=o.total||'S/ 535.81';return '<div class="pad sum'+(o.cls||'')+'"><div class="l">Te deben en total · en S/</div><div class="big">'+t+'</div>'+
+    '<div class="bar"><i class="o" style="width:22px"></i><i class="d"></i></div>'+
+    '<div class="two"><div><span><span class="arrow arr-o">↗</span> Debes</span><b>'+(o.debes||'S/ 40.00')+'</b></div>'+
+    '<div class="rt"><span>Te deben <span class="arrow arr-d">↙</span></span><b>'+(o.teDeben||'S/ 405.00')+'</b><b>$ 46.67</b></div></div></div>';}
+  function qa(cls){return '<div class="pad"><div class="qa'+(cls||'')+'"><div class="ng">'+I.edit+'Nuevo gasto</div>'+
+    '<div class="mini">'+I.wave+'Voz</div><div class="mini">'+I.photo+'Foto</div><div class="ia">'+I.spark+'Yala IA</div></div></div>';}
+  function gcard(icon,color,name,sub,rows,more,extra){var r='';(rows||[]).forEach(function(x){r+='<div class="dr"><span>'+x[0]+'</span><b class="'+x[2]+'">'+x[1]+'</b></div>';});
+    return '<div class="card'+(extra||'')+'"><div class="gh"><div class="gi" style="background:'+color+'">'+icon+'</div><div><b>'+name+'</b><span>'+sub+'</span></div></div>'+r+(more?'<div class="more">'+more+'</div>':'')+'</div>';}
+  function ini(n,c){return '<span style="font:600 16px -apple-system,system-ui">'+n+'</span>';}
+  var PC={B:'#8B5CF6',A:'#EC4899',C:'#F59E0B',M:'#14B8A6',L:'#64748B',D:'#0EA5E9',S:'#84CC16'};
+
+  /* ---------- Pantallas ---------- */
+  var S={};
+  S.grupos1=function(){return sb()+toolbar(I.p2plus)+'<div class="lt nw l" style="width:max-content;margin-left:16px;padding:8px 6px 0">Compartido</div>'+chips('g')+summary()+qa()+
+    '<div class="pad list">'+gcard(I.pgroup,'#8B5CF6','Grupo sin gastos','2 miembros activos')+
+    gcard(I.house,'#8B5CF6','Piso compartido','3 miembros activos',[['Le debes a Ana','S/ 40.00','owe'],['Beto te debe','S/ 30.00','owed']])+
+    gcard(I.plane,'#8B5CF6','Viaje a Cusco','3 miembros activos',[['Beto te debe','S/ 110.00','owed'],['Ana te debe','S/ 80.00','owed'],['Beto te debe','$ 40.00','owed']],'y 1 más')+
+    '</div>'+tabbar(NAME);};
+  S.grupos2=function(){return sb()+'<div class="tb" style="justify-content:flex-start;gap:10px"><b style="font:600 17px -apple-system,system-ui;margin-left:4px">'+NAME+'</b><div class="r">'+
+    '<div class="circ acc">'+I.p2plus+'</div><div class="circ acc">'+I.gear+'</div><div class="circ av">'+I.person+'</div></div></div>'+chips('g')+
+    '<div class="pad list" style="margin-top:10px">'+gcard(I.plane,'#8B5CF6','Viaje a Cusco','3 miembros activos',[['Beto te debe','S/ 110.00','owed'],['Ana te debe','S/ 80.00','owed'],['Beto te debe','$ 40.00','owed']],'y 1 más')+
+    gcard(I.plane,'#8B5CF6','Viaje a Lima','2 miembros activos',[['Caro te debe','S/ 140.00','owed']])+
+    gcard('<span style="font:700 18px -apple-system,system-ui">↔</span>','#64748B','Sin grupo','Con 2 personas · Ver en Personas',[['Marta te debe','S/ 25.00','owed'],['Beto te debe','S/ 20.00','owed']],'',' nw')+
+    '<div class="arch">'+I.chevR+' Ver archivados (1)</div></div>'+tabbar(NAME);};
+  function pcard(L,name,sub,rows,extra){return gcard(ini(L),PC[L],name,sub,rows,'',extra);}
+  S.personas1=function(){return sb()+toolbar(I.pplus,true)+'<div class="lt">'+NAME+'</div>'+chips('p')+summary()+qa()+
+    '<div class="pad list">'+pcard('B','Beto','Viaje a Cusco · Piso compartido · Sin grupo',[['Te debe','S/ 160.00','owed'],['Te debe','$ 40.00','owed']],' nw')+
+    pcard('C','Caro','Viaje a Lima',[['Te debe','S/ 140.00','owed']])+'</div>'+tabbar(NAME);};
+  S.personas2=function(){return sb()+'<div class="tb" style="gap:10px"><b style="font:600 17px -apple-system,system-ui;margin-left:4px">'+NAME+'</b><div class="r">'+
+    '<div class="circ acc">'+I.pplus+'</div><div class="circ acc">'+I.gear+'</div><div class="circ av">'+I.person+'</div></div></div>'+chips('p')+
+    '<div class="pad list" style="margin-top:10px">'+pcard('A','Ana','Viaje a Cusco · Piso compartido',[['Te debe','S/ 40.00','owed'],['Te debe','$ 6.67','owed']])+
+    pcard('M','Marta','Sin grupo · sin cuenta en Yala',[['Te debe','S/ 25.00','owed']])+
+    '<div class="nw" style="display:flex;flex-direction:column;gap:12px;border-radius:18px"><div class="arch">'+I.chev+' Ocultar liquidadas</div>'+
+    '<div class="dim" style="display:flex;flex-direction:column;gap:12px">'+pcard('L','Lucía','Depa Miraflores · al día',[])+pcard('D','Diego','Sin grupo · al día',[])+pcard('S','Sofía','Viaje a Lima · al día',[])+'</div></div>'+
+    '</div>'+tabbar(NAME);};
+
+  function detTop(sel,label){return sb()+'<div class="tb"><div class="circ">'+I.back+'</div><div class="r"><div class="caps">'+I.share+I.gearO+'</div></div></div>'+
+    '<div class="lt">Beto</div><div class="chips">'+
+    '<div class="chip'+(sel==='g'?' on':' ico')+'">'+I.list+(sel==='g'?'Gastos':'')+'</div>'+
+    '<div class="chip'+(sel==='s'?' on':' ico')+'">'+I.arrows+(sel==='s'?'Saldos':'')+'</div>'+
+    '<div class="chip'+(sel==='e'?' on':' ico')+'">'+I.pie+(sel==='e'?'Estadísticas':'')+'</div></div>';}
+  function hero(label,amt,sub,filter){return '<div class="pad"><div class="hl"><span>'+label+'</span><span class="fcap nw">'+(filter||'Todos los grupos')+' '+I.chev+'</span></div>'+
+    '<div class="hero"><small>S/</small>'+amt+'<small>.00</small></div><div class="hs">'+sub+'</div></div>';}
+  function tag(name,col){return '<span class="gt nw" style="outline-offset:1px">'+(col?'<i style="background:'+col+'"></i>':'')+name+'</span>';}
+  function erow(icon,col,name,sub,amt,cur,state,tg){var td=state==='td';return '<div class="er"><div class="gi" style="background:'+col+'">'+icon+'</div><div class="t"><b>'+name+'</b><span>'+sub+'</span>'+(tg||'')+'</div>'+
+    '<div class="a"><b><small>'+cur+'</small> '+amt.split('.')[0]+'<small>.'+amt.split('.')[1]+'</small></b><br><span class="st'+(td?' td':'')+'"><i></i>'+(td?'Te debe':'Debes')+'</span></div></div>';}
+  var EQ='<span style="font:700 16px -apple-system,system-ui">≡</span>';
+  S['det-gastos']=function(){return detTop('g')+hero('Con Beto te deben','160','+ $ 40.00 · Tú no le debes nada.')+qa()+
+    '<div class="pad"><div class="dh">26 de noviembre</div>'+erow(EQ,'#6063F1','Taxi al aeropuerto','Pagaste S/ 40.00','20.00','S/','td',tag('Sin grupo'))+
+    '<div class="dh">20 de noviembre</div>'+erow(I.house,'#F59E0B','Luz de noviembre','Pagaste S/ 90.00','30.00','S/','td',tag('Piso compartido','#8B5CF6'))+
+    '<div class="dh">15 de noviembre</div>'+erow(EQ,'#6063F1','Transporte','Beto pagó S/ 90.00','30.00','S/','d',tag('Viaje a Cusco','#8B5CF6'))+'</div>';};
+  function scard(name,verb,amt,brk,extra){var b='';if(brk){b='<div class="brk">';brk.forEach(function(x){b+='<div><span>'+x[0]+'</span><b>'+x[1]+'</b></div>';});b+='</div>';}
+    return '<div class="sc'+(extra||'')+'"><div class="who"><span class="ini">B</span>'+name+' <span>'+verb+'</span></div><div class="amt"><b>'+amt+'</b><div class="saldar">'+(brk?'Saldar todo':'Saldar')+'</div></div>'+b+'</div>';}
+  S['det-saldos']=function(){return detTop('s')+hero('Con Beto te deben','160','+ $ 40.00 · Tú no le debes nada.')+
+    '<div class="pad"><div class="sh">Para quedar a mano</div>'+scard('Beto','te paga','S/ 160.00 + $ 40.00',[['Viaje a Cusco','S/ 110.00 + $ 40.00'],['Piso compartido','S/ 30.00'],['Sin grupo','S/ 20.00']],' nw')+
+    '<div class="arch" style="margin-top:6px"><span style="font-size:18px">⊕</span> Añadir saldo inicial</div></div>';};
+  S['det-saldos-menu']=function(){return detTop('s')+hero('En Viaje a Cusco te deben','110','+ $ 40.00 · Solo este grupo.','Viaje a Cusco')+
+    '<div class="pad"><div class="sh">Para quedar a mano</div>'+scard('Beto','te paga','S/ 110.00 + $ 40.00')+'</div>'+
+    '<div class="scrim"></div><div class="menu nw" style="top:248px">'+
+    '<div><span class="ck"></span>Todos los grupos</div><div><span class="ck">'+I.check+'</span>Viaje a Cusco</div><div><span class="ck"></span>Piso compartido</div><div><span class="ck"></span>Sin grupo</div></div>';};
+  S['det-stats']=function(){return detTop('e')+'<div class="pad"><div class="hl" style="margin-top:14px"><span>Total gastado juntos</span><span style="display:flex;gap:6px"><span class="fcap">Todas</span><span class="fcap">'+I.cal+'Todo</span></span></div>'+
+    '<div style="display:flex;justify-content:flex-end;margin-top:8px"><span class="fcap nw">Todos los grupos '+I.chev+'</span></div>'+
+    '<div class="hero" style="margin-top:2px"><small>S/</small>640<small>.00</small></div><div class="hs">+ $ 160.00</div>'+
+    '<div style="font-size:16px;margin-top:8px">Mi parte: S/ 320.00 + $ 80.00</div><div style="font-size:13px;color:var(--p-fg2)">lo que te tocaba</div>'+
+    '<div class="sh nw l" style="width:max-content">Por grupo</div><div class="sc nw" style="padding:6px 16px 14px">'+
+    '<div class="barrow"><div class="lbl"><span>Viaje a Cusco</span><b>te debe S/ 110.00 + $ 40.00</b></div><div class="tr"><i style="width:82%"></i></div></div>'+
+    '<div class="barrow"><div class="lbl"><span>Piso compartido</span><b>te debe S/ 30.00</b></div><div class="tr"><i style="width:22%"></i></div></div>'+
+    '<div class="barrow"><div class="lbl"><span>Sin grupo</span><b>te debe S/ 20.00</b></div><div class="tr"><i style="width:15%;background:#94A3B8"></i></div></div></div>'+
+    '<div class="sh">¿Quién puso más?</div></div>';};
+
+  S['inv-hoja']=function(){return S.personas1().replace(/ nw/g,'')+'<div class="dimbg"></div><div class="sheet" style="top:250px">'+
+    '<div class="big-ic" style="background:'+PC.M+'">M</div><h4 class="nw" style="padding:2px 6px">Marta ya está en '+NAME+'</h4>'+
+    '<p class="nw" style="padding:4px 6px;margin-top:6px">Invítala para que vea lo que te debe y apunte gastos contigo. Le llega un enlace y entra con un toque.</p>'+
+    '<div style="height:16px"></div><div class="cta">'+I.share+' Invitar por WhatsApp u otra app</div>'+
+    '<div class="opt"><span style="color:var(--p-acc-t)">'+I.bell+'</span><div><b>Avisos</b><span>Te avisamos cuando Marta apunte un gasto o te pague.</span></div></div>'+
+    '<div class="ghost">Más tarde</div></div>';};
+  S['inv-tarjeta']=function(){return sb()+'<div class="invcard"><div class="big-ic" style="width:64px;height:64px;border-radius:50%;background:'+PC.B+';display:grid;place-items:center;color:#fff;font:600 24px -apple-system,system-ui">J</div>'+
+    '<b class="nw" style="padding:2px 8px">Jürgen te invita a Yala</b><span>Para seguir juntos los gastos que comparten</span></div>'+
+    '<div class="invsub nw" style="margin:16px 26px 0;padding:6px">Te están invitando a unirte a Yala para seguir sus gastos compartidos aquí. Ya te apuntó 2 gastos.</div>'+
+    '<div class="field">Tu nombre</div><div class="bot"><div class="cta nw">Unirme a Yala</div></div>';};
+  S['inv-listo']=function(){return sb()+'<div style="display:flex;flex-direction:column;align-items:center;margin-top:120px;gap:10px;padding:0 24px;text-align:center">'+I.tick+
+    '<b class="nw" style="font:600 22px -apple-system,system-ui;padding:2px 8px">Ya están conectados</b><span style="color:var(--p-fg2);font-size:15px">Jürgen y tú · Le debes S/ 25.00</span></div>'+
+    '<div class="card" style="margin:22px 20px 0;display:flex;gap:10px"><span style="color:var(--p-acc-t)">'+I.bell+'</span><div><b style="display:block;font-size:16px">Avisos</b><span style="font-size:12.5px;color:var(--p-fg2)">Te avisamos cuando Jürgen apunte un gasto o te pague.</span>'+
+    '<div class="cta2" style="margin-top:12px;height:42px;font-size:15px">Activar avisos</div></div></div>'+
+    '<div class="bot"><div class="cta">+ Apuntar un gasto</div><div class="cta2 nw">Ver a Jürgen</div></div>';};
+
+  S['vacio-grupos']=function(){return sb()+toolbar(I.p2plus)+'<div class="lt">'+NAME+'</div>'+chips('g')+
+    '<div class="nw" style="margin:10px 12px 0;border-radius:18px;padding-bottom:4px">'+qa()+'</div>'+
+    '<div class="pad" style="margin-top:26px"><div class="empty"><div class="gi" style="background:#8B5CF6;width:52px;height:52px">'+I.pgroup+'</div><b>Aún no tienes grupos</b>'+
+    '<span>Para viajes, la casa o la oficina: todos ven los gastos al día.</span><span class="lnk">Crear grupo</span></div></div>'+tabbar(NAME);};
+  S['vacio-personas']=function(){return sb()+toolbar(I.pplus,true)+'<div class="lt">'+NAME+'</div>'+chips('p')+
+    '<div style="margin-top:10px">'+qa()+'</div>'+
+    '<div class="pad" style="margin-top:26px"><div class="empty nw"><div class="gi" style="background:'+PC.M+';width:52px;height:52px">'+I.pfill+'</div><b>Apunta un gasto con alguien</b>'+
+    '<span>Un almuerzo a medias o un taxi. Escribe su nombre y Yala lleva la cuenta: no hace falta crear un grupo.</span><span class="lnk">Nuevo gasto</span></div></div>'+tabbar(NAME);};
+  S['primer-gasto']=function(){return sb()+'<div class="form-h"><div class="circ">✕</div><b>Nuevo gasto</b><div class="circ" style="background:var(--p-acc);color:#fff">'+I.check+'</div></div>'+
+    '<div class="card" style="margin:14px 16px 0;text-align:right;font:700 40px ui-rounded,-apple-system,system-ui">50.00<div style="font:400 15px -apple-system,system-ui;color:var(--p-fg2);text-align:left;margin-top:-4px">Almuerzo</div></div>'+
+    '<div style="font:600 19px -apple-system,system-ui;color:var(--p-fg2);padding:22px 24px 8px">Gasto compartido</div>'+
+    '<div class="fl" style="margin-top:0"><div class="nw" style="outline-offset:-3px"><span style="color:var(--p-fg)">¿Con quién?</span><b style="font-weight:500;color:var(--p-acc-t);display:flex;gap:6px;align-items:center">Marta · nueva '+I.chevR+'</b></div>'+
+    '<div><span style="color:var(--p-fg)">Pagó</span><b style="font-weight:500">Tú</b></div><div><span style="color:var(--p-fg)">Moneda</span><b style="font-weight:500;color:var(--p-fg2)">PEN</b></div><div><span style="color:var(--p-fg)">División</span><b style="font-weight:500">A partes iguales</b></div></div>'+
+    '<div class="nw" style="margin:22px 16px 0;border-radius:18px;padding:10px 4px"><div style="font:600 13px -apple-system,system-ui;color:var(--p-fg2);padding:0 4px">Al tocar «¿Con quién?»</div>'+
+    '<div class="pp" style="padding:10px 4px 0"><div class="pchip"><span class="ini">C</span>Caro</div><div class="pchip" style="padding-left:12px">'+I.plane.replace('width="20" height="20"','width="15" height="15"')+' Viaje a Cusco</div><div class="pchip add">+ Escribir un nombre</div></div>'+
+    '<div style="font-size:12.5px;color:var(--p-fg2);padding:10px 4px 0">Marta no tiene Yala todavía. Puedes invitarla después.</div></div>';};
+  S['primer-listo']=function(){return sb()+toolbar(I.pplus)+'<div class="lt">'+NAME+'</div>'+chips('p')+
+    summary({total:'S/ 25.00',debes:'S/ 0.00',teDeben:'S/ 25.00'}).replace('<b>$ 46.67</b>','')+qa()+
+    '<div class="pad list">'+pcard('M','Marta','Sin grupo · sin cuenta en Yala',[['Te debe','S/ 25.00','owed']],' nw')+
+    '<div class="arch" style="gap:6px">'+I.share+' Invitar a Marta</div></div>'+tabbar(NAME);};
+
+  /* ---------- Estado y pintado ---------- */
+  var NAME='Compartido', THEME='dark';
+  try{var t=localStorage.getItem('cmp-theme');if(t==='light'||t==='dark')THEME=t;}catch(e){}
+  function paint(){
+    document.querySelectorAll('[data-ph]').forEach(function(el){
+      var f=S[el.getAttribute('data-ph')];if(!f)return;
+      el.innerHTML='<div class="scr p-'+THEME+'">'+f()+'</div>';
+    });
+    document.querySelectorAll('img[data-cap]').forEach(function(img){img.src='capturas/'+(THEME==='dark'?'oscuro':'claro')+'-'+img.getAttribute('data-cap')+'.jpg';});
+    document.querySelectorAll('.tbwrap').forEach(function(w){
+      var l=w.getAttribute('data-label');
+      var k=Math.min(1,(w.clientWidth||300)/390);
+      w.innerHTML='<div style="position:relative;height:'+Math.round(96*k)+'px;width:100%;overflow:hidden;border-radius:14px"><div class="scr p-'+THEME+'" style="height:96px;width:390px;transform:scale('+k+');background:'+(THEME==='dark'?'#05050F':'#EFF1FE')+'">'+tabbar(l).replace('bottom:22px','bottom:17px')+'</div></div>';
+    });
+    document.querySelectorAll('#ph-theme button').forEach(function(b){b.setAttribute('aria-pressed',String(b.getAttribute('data-t')===THEME));});
+  }
+  document.getElementById('ph-theme').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;THEME=b.getAttribute('data-t');try{localStorage.setItem('cmp-theme',THEME);}catch(x){}paint();});
+  document.getElementById('ph-new').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;
+    document.body.classList.toggle('hide-new',b.getAttribute('data-n')==='off');
+    this.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed',String(x===b));});});
+
+  /* ---------- Decisión (base del artifact) ---------- */
+  var state={nombre:null,grupos:null,personas:null,detalle:null,invitar:null,entrada:null};
+  var statusEl=document.getElementById('status'),db=null,KEY='decisiones/compartido-v2';
+  function setName(n){state.nombre=n;document.querySelectorAll('.nopt').forEach(function(b){b.setAttribute('aria-pressed',String(b.getAttribute('data-name')===n));});
+    document.getElementById('namepick').textContent='Nombre elegido: '+(n||'ninguno todavía (toca una opción arriba)')+'.';}
+  function setV(k,v){state[k]=v;var box=document.querySelector('.verdict[data-k="'+k+'"]');if(!box)return;
+    box.querySelectorAll('button').forEach(function(b){b.setAttribute('aria-pressed',String(b.getAttribute('data-v')===v));});}
+  document.getElementById('names').addEventListener('click',function(e){var b=e.target.closest('.nopt');if(b)setName(b.getAttribute('data-name'));});
+  document.querySelectorAll('.verdict').forEach(function(box){box.addEventListener('click',function(e){var b=e.target.closest('button');if(b)setV(box.getAttribute('data-k'),b.getAttribute('data-v'));});});
+  var LBL={si:'Sí',ajustar:'Ajustar',no:'No'};
+  function shown(v){var p=[];['grupos','personas','detalle','invitar','entrada'].forEach(function(k){if(v[k])p.push(k+': '+LBL[v[k]]);});
+    return 'Guardado'+(v.nombre?' · nombre «'+v.nombre+'»':'')+(p.length?' · '+p.join(', '):'')+'.';}
+  function offline(){statusEl.textContent='Para guardar, ábrelo en claude.ai con tu cuenta.';}
+  if(window.claude&&window.claude.use){
+    window.claude.use('db').then(function(d){
+      db=d;if(!db){offline();return;}
+      var t=setTimeout(function(){statusEl.textContent='Sin respuesta de la base todavía. Puedes elegir y guardar igual.';},10000);
+      db.doc(KEY).get().then(function(s){clearTimeout(t);
+        if(s.exists){var v=s.data()||{};setName(v.nombre||null);['grupos','personas','detalle','invitar','entrada'].forEach(function(k){if(v[k])setV(k,v[k]);});
+          document.getElementById('notes').value=v.nota||'';statusEl.textContent=shown(v);}
+        else statusEl.textContent='Aún no hay decisión guardada.';
+      }).catch(function(){clearTimeout(t);statusEl.textContent='No se pudo leer la decisión guardada.';});
+    });
+  } else offline();
+  document.getElementById('save').addEventListener('click',function(){
+    if(!db){offline();return;}
+    var v={nombre:state.nombre,grupos:state.grupos,personas:state.personas,detalle:state.detalle,invitar:state.invitar,entrada:state.entrada,
+      nota:document.getElementById('notes').value.slice(0,4000),guardado:new Date().toISOString()};
+    statusEl.textContent='Guardando…';
+    db.doc(KEY).set(v).then(function(){statusEl.textContent=shown(v);}).catch(function(err){statusEl.textContent='No se pudo guardar: '+((err&&err.code)||'error')+'. Vuelve a intentarlo.';});
+  });
+
+  paint();
+})();
+</script>
