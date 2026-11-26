@@ -20,6 +20,7 @@
 - [La build espera su contenido](feedback_la_build_espera_su_contenido.md) — PR atascado en cola del CI: se espera y se adelanta el archivado; no se sube sin él.
 - [Sesión de rediseño](feedback_sesion_de_rediseno.md) — si el QA se vuelve producto, se sigue: acta en docs/sessions.
 - [Diseña en lienzo antes de construir](feedback_disena_en_lienzo_antes_de_construir.md) — cita vaga de UI: 3-4 propuestas, elige él; el alcance crece.
+- [Lo compartido habla en tercera persona](feedback_lo_que_se_comparte_habla_en_tercera_persona.md) — imagen a otros: su nombre, nunca «Yo» ni «Me deben».
 - [«Creo que» no es aprobación](feedback_creo_que_no_es_aprobacion.md) — si no reconoce el componente, explicar antes de borrar.
 - [Push: solo lo de la sesión](feedback_push_solo_lo_de_la_sesion.md) — lo pendiente de otros se deja y lo sube su agente.
 - [La memoria no se mueve a mano al principal](feedback_la_memoria_no_se_mueve_a_mano_al_principal.md) — se queda en el worktree; viaja con memoria_al_pr.py.
