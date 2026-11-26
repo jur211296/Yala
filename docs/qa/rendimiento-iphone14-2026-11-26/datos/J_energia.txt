@@ -1,0 +1,8 @@
+== J1 hoy
+reposo en el Panel           CPU  1.87  GPU -0.00  pantalla  1.96  (impacto medio por segundo, 45 muestras)
+10 s tras volver             CPU 25.15  GPU -0.00  pantalla  1.56  (impacto medio por segundo, 27 muestras)
+fuera (otra app delante)     CPU  3.73  GPU -0.00  pantalla  0.14  (impacto medio por segundo, 43 muestras)
+== J2 con -perfTempSinPulso y -perfTempSinRecargaAlVolver
+reposo en el Panel           CPU  0.04  GPU -0.00  pantalla  2.00  (impacto medio por segundo, 45 muestras)
+10 s tras volver             CPU  5.90  GPU -0.00  pantalla  1.56  (impacto medio por segundo, 27 muestras)
+fuera (otra app delante)     CPU  0.30  GPU -0.00  pantalla  0.09  (impacto medio por segundo, 43 muestras)

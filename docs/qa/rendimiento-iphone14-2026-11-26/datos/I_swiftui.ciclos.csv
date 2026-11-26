@@ -1,0 +1,10 @@
+ciclo,evento,hora_lima,epoch_ms,detalle
+1,sale,10:30:46,1795707046696,com.apple.mobilesafari
+1,vuelve,10:30:55,1795707055105,fuera=8s
+1,scroll_inicio,10:30:57,1795707057546,flicks=6
+1,scroll_fin,10:30:59,1795707059297,
+2,sale,10:31:03,1795707063357,com.apple.Preferences
+2,vuelve,10:31:25,1795707085762,fuera=22s
+2,scroll_inicio,10:31:28,1795707088086,flicks=6
+2,scroll_fin,10:31:29,1795707089828,
+fin,fin,10:31:33,1795707094027,

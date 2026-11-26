@@ -1,0 +1,8 @@
+Panel|64,790|
+Registros|190,790|
+Estadisticas-Resumen|t:Más;w;t:Resumen;w;w;w|
+Estadisticas-Tendencias|t:Tendencias;w;w|
+Estadisticas-Distribucion|t:Distribución;w;w|
+Pagos-planificados|t:Más;w;t:Pagos planificados;w;w|
+Grupos|125,790|
+Bandeja|64,790;w;27,70;w|39,86

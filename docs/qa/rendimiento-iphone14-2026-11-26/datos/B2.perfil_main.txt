@@ -1,0 +1,230 @@
+
+=== fuera: 176.4 s, 101759 muestras hilo principal (≈57.7 % de un núcleo)
+  -- inclusivo, funciones de Yala --
+  100515  static YalaApp.$main()
+  100515  main
+    7765  thunk for @escaping @callee_guaranteed @Sendable () -> (@out ())
+    6823  static WidgetDataCache.buildSnapshot(context:now:)
+    6823  closure #1 in static WidgetDataCache.updateCacheNow(context:)
+    6823  specialized static LoadTimeMarks.measure<A>(_:_:)
+    6823  static WidgetDataCache.updateCacheNow(context:)
+    6823  static WidgetDataCache.flushPendingUpdate()
+    6823  YalaApp.handleScenePhase(_:)
+    6823  partial apply for closure #2 in YalaApp.body.getter
+    4742  TrendChartView.body.getter
+    4741  TrendChartView.liquidTrendChart.getter
+    4566  static WidgetDataCache.buildPeriodSummary(transactions:periodStart:periodEnd:currencyCode:allTransactionsForBalance:adjustment:converter:)
+    4566  closure #8 in static WidgetDataCache.buildSnapshot(context:now:stages:)
+    4538  specialized static WidgetDataCache.buildPeriodSummary(transactions:periodStart:periodEnd:currencyCode:allTransactionsForBalance:adjustment:converter:)
+    3769  specialized _ArrayProtocol.filter<A>(_:)
+    3229  closure #1 in TrendChartView.liquidTrendChart.getter
+    1592  closure #2 in closure #1 in TrendChartView.liquidTrendChart.getter
+    1562  <deduplicated_symbol>
+    1560  closure #1 in closure #1 in TrendChartView.liquidTrendChart.getter
+    1526  static LiveBalanceCalculator.entersBalance(_:)
+    1283  TrendChartView.spokenSummary.getter
+    1228  static ChartSpokenSummary.trend(points:grouping:format:locale:calendar:)
+    1227  specialized static ChartSpokenSummary.trend(points:grouping:format:locale:calendar:)
+    1141  Account.sumsInBalance.getter
+    1071  static LiveBalanceCalculator.addNative(_:to:)
+    1061  specialized static LiveBalanceCalculator.addNative(_:to:)
+     983  TransactionItem.date.getter
+     942  static WidgetDataCache.rebuildPendingInStages()
+     808  static TransactionClassificationLogic.isIncome(_:)
+  -- exclusivo (hoja) --
+    4561  AG::Graph::UpdateStack::update()  [AttributeGraph]
+    3495  _platform_memmove  [libsystem_platform.dylib]
+    3391  AG::Subgraph::update(unsigned int)  [AttributeGraph]
+    2397  AG::Graph::propagate_dirty(AG::AttributeID)  [AttributeGraph]
+    1894  swift_retain  [libswiftCore.dylib]
+    1872  swift_release  [libswiftCore.dylib]
+    1672  objc_msgSend  [libobjcMsgSend.dylib]
+    1550  bool swift::RefCounts<swift::RefCountBitsT<(swift::RefCountInlinedness)1>>::doDecrementSlow<(swift::PerformDeinit)1>(swift::RefCountBitsT<(swift::RefC
+    1481  swift::RefCounts<swift::RefCountBitsT<(swift::RefCountInlinedness)1>>::incrementSlow(swift::RefCountBitsT<(swift::RefCountInlinedness)1>, unsigned int
+    1267  CA::Layer::insert_sublayer(CA::Transaction*, CALayer*, unsigned long)  [QuartzCore]
+    1263  <deduplicated_symbol>  [SwiftUICore]
+    1247  swift_beginAccess  [libswiftCore.dylib]
+
+=== volver (hasta el scroll): 24.1 s, 22355 muestras hilo principal (≈92.8 % de un núcleo)
+  -- inclusivo, funciones de Yala --
+   18734  static YalaApp.$main()
+   18734  main
+    3765  <deduplicated_symbol>
+    3339  closure #1 in PanelViewModel.scheduleRecalculation(reload:)
+    3338  PanelViewModel.fetchTransactionsInSlices()
+    2487  TrendChartView.body.getter
+    2486  TrendChartView.liquidTrendChart.getter
+    1744  specialized _ArrayProtocol.filter<A>(_:)
+    1714  closure #1 in TrendChartView.liquidTrendChart.getter
+     843  closure #2 in closure #1 in TrendChartView.liquidTrendChart.getter
+     834  closure #1 in closure #1 in TrendChartView.liquidTrendChart.getter
+     662  TrendChartView.spokenSummary.getter
+     639  specialized static ChartSpokenSummary.trend(points:grouping:format:locale:calendar:)
+     639  static ChartSpokenSummary.trend(points:grouping:format:locale:calendar:)
+     584  YalaApp.handleScenePhase(_:)
+     584  partial apply for closure #2 in YalaApp.body.getter
+     329  TrendChartView.chartDescriptor.getter
+     325  static ChartSpokenSummary.rangeText(from:to:grouping:locale:calendar:)
+     315  specialized _VariadicView.Tree.init(_:content:)
+     308  AppBootstrapper.handleBecameActive(context:)
+     275  static WidgetDataCache.updateCacheNow(context:)
+     275  static WidgetDataCache.flushPendingUpdate()
+     256  closure #1 in static WidgetDataCache.updateCacheNow(context:)
+     256  specialized static LoadTimeMarks.measure<A>(_:_:)
+     255  static WidgetDataCache.buildSnapshot(context:now:)
+     254  closure #10 in static WidgetDataCache.buildSnapshot(context:now:stages:)
+     254  partial apply for closure #10 in static WidgetDataCache.buildSnapshot(context:now:stages:)
+     254  thunk for @escaping @callee_guaranteed @Sendable () -> (@out ())
+     253  specialized static ProjectedFlowBuilder.othersRemaining(_:occurrences:)
+     253  static ProjectedFlowBuilder.othersRemaining(_:occurrences:)
+  -- exclusivo (hoja) --
+    1141  _platform_memmove  [libsystem_platform.dylib]
+     470  AG::Graph::UpdateStack::update()  [AttributeGraph]
+     433  handleRefCountsDestroy(swift::TargetMetadata<swift::InProcess> const*, swift::LayoutStringReader1&, unsigned long&, unsigned char*)  [libswiftCore.dyl
+     425  handleRefCountsInitWithCopy(swift::TargetMetadata<swift::InProcess> const*, swift::LayoutStringReader1&, unsigned long&, unsigned char*, unsigned char
+     385  AG::Graph::propagate_dirty(AG::AttributeID)  [AttributeGraph]
+     375  ___chkstk_darwin  [libsystem_pthread.dylib]
+     366  _CalendarGregorian.dateComponents(_:from:in:)  [Foundation]
+     336  find(_:key:filter:)  [SwiftUICore]
+     317  swift_release  [libswiftCore.dylib]
+     284  swift_cvw_destroyImpl(swift::OpaqueValue*, swift::TargetMetadata<swift::InProcess> const*)  [libswiftCore.dylib]
+     273  swift_cvw_initWithCopyImpl(swift::OpaqueValue*, swift::OpaqueValue*, swift::TargetMetadata<swift::InProcess> const*)  [libswiftCore.dylib]
+     251  AG::Subgraph::update(unsigned int)  [AttributeGraph]
+
+=== scroll: 343.6 s, 313032 muestras hilo principal (≈91.1 % de un núcleo)
+  -- inclusivo, funciones de Yala --
+  170512  <deduplicated_symbol>
+  146906  closure #1 in PanelViewModel.scheduleRecalculation(reload:)
+  142691  static YalaApp.$main()
+  142691  main
+  140263  PanelViewModel.performCalculation()
+  140263  PanelViewModel.finishRecalculation()
+   61800  PanelViewModel.calculateTrendData(accounts:transactions:defaultCurrencyCode:context:sessionState:)
+   58464  TransactionItem.date.getter
+   56339  specialized _ArrayProtocol.filter<A>(_:)
+   56018  PanelViewModel.calculateHealthWidget(paidAmounts:)
+   56015  static FinancialScoreCalculator.calculate(transactions:budgets:scheduledPayments:accounts:paidAmounts:period:customRange:preferredCurrencyCode:convert
+   55985  specialized static FinancialScoreCalculator.calculate(transactions:budgets:scheduledPayments:accounts:paidAmounts:period:customRange:preferredCurrency
+   39218  static BudgetsViewModel.calculateSpending(budget:transactions:interval:adjustment:converter:)
+   39216  specialized static BudgetsViewModel.calculateSpending(budget:transactions:interval:adjustment:converter:)
+   39186  static BudgetsViewModel.filterTransactions(_:forBudget:in:adjustment:)
+   38582  specialized static BudgetsViewModel.filterTransactions(_:forBudget:in:adjustment:)
+   29901  specialized Sequence.compactMap<A>(_:)
+   28458  closure #1 in static BudgetsViewModel.filterTransactions(_:forBudget:in:adjustment:)
+   21116  static FinancialScoreCalculator.calculateRhythm(transactions:lastRecordDate:interval:period:now:calendar:)
+   21109  specialized static FinancialScoreCalculator.calculateRhythm(transactions:lastRecordDate:interval:period:now:calendar:)
+   20737  specialized Sequence.sorted(by:)
+   20736  specialized MutableCollection<>.sort(by:)
+   20716  specialized closure #1 in MutableCollection<>.sort(by:)
+   20665  specialized closure #1 in UnsafeMutableBufferPointer._stableSortImpl(by:)
+   19991  specialized ContiguousArray.withUnsafeMutableBufferPointer<A, B>(_:)
+   19991  specialized ContiguousArray.withContiguousMutableStorageIfAvailable<A>(_:)
+   19991  specialized protocol witness for MutableCollection.withContiguousMutableStorageIfAvailable<A>(_:) in conformance ContiguousArray<A>
+   19979  specialized closure #1 in ContiguousArray.withContiguousMutableStorageIfAvailable<A>(_:)
+   19931  specialized UnsafeMutableBufferPointer._stableSortImpl(by:)
+   19930  specialized ContiguousArray.init<A>(unsafeUninitializedCapacity:initializingWith:)
+  -- exclusivo (hoja) --
+   11091  AG::Graph::UpdateStack::update()  [AttributeGraph]
+    8416  bool swift::RefCounts<swift::RefCountBitsT<(swift::RefCountInlinedness)1>>::doDecrementSlow<(swift::PerformDeinit)1>(swift::RefCountBitsT<(swift::RefC
+    8347  AG::Graph::propagate_dirty(AG::AttributeID)  [AttributeGraph]
+    8300  swift_getTypeByMangledName  [libswiftCore.dylib]
+    7701  AG::Subgraph::update(unsigned int)  [AttributeGraph]
+    7277  swift::RefCounts<swift::RefCountBitsT<(swift::RefCountInlinedness)1>>::incrementSlow(swift::RefCountBitsT<(swift::RefCountInlinedness)1>, unsigned int
+    7025  _platform_memmove  [libsystem_platform.dylib]
+    5810  tryCast(swift::OpaqueValue*, swift::TargetMetadata<swift::InProcess> const*, swift::OpaqueValue*, swift::TargetMetadata<swift::InProcess> const*, swif
+    5149  swift_beginAccess  [libswiftCore.dylib]
+    4701  swift::Demangle::__runtime::Demangler::demangleType(__swift::__runtime::llvm::StringRef, std::__1::function<swift::Demangle::__runtime::Node* (swift::
+    4525  objc_msgSend  [libobjcMsgSend.dylib]
+    3585  swift_conformsToProtocolMaybeInstantiateSuperclasses(swift::TargetMetadata<swift::InProcess> const*, swift::TargetProtocolDescriptor<swift::InProcess>
+
+=== quieta tras scroll: 41.8 s, 25571 muestras hilo principal (≈61.1 % de un núcleo)
+  -- inclusivo, funciones de Yala --
+   25570  static YalaApp.$main()
+   25570  main
+     143  closure #1 in TrendChartView.liveAnchorOverlay(proxy:)
+     102  ls(_:comment:)
+      45  static LanguageManager.resolved.getter
+      39  specialized _VariadicView.Tree.init(_:content:)
+      36  <deduplicated_symbol>
+      28  specialized closure #1 in ZStack.init(alignment:content:)
+      28  specialized ZStack.init(alignment:content:)
+      28  closure #1 in VerticalFoldReader.body(content:)
+      26  closure #2 in static LanguageManager.resolved.getter
+      23  @objc UIApplication.getKeyWindow()
+      22  specialized SentryApplication.internal_getKeyWindow()
+      20  SentryDispatchQueueWrapper.dispatchSyncOnMainQueue(_:timeout:)
+      20  TodayHintGlassPill.body.getter
+      19  -[_SentryDispatchQueueWrapperInternal dispatchSyncOnMainQueue:timeout:]
+      18  specialized closure #1 in SentryApplication.internal_getKeyWindow()
+      17  @objc UIApplication.getWindows()
+      16  static LanguageManager.overrideLanguage.getter
+      15  closure #1 in closure #1 in TrendChartView.liveAnchorOverlay(proxy:)
+      15  specialized SentryApplication.internal_getWindows()
+      13  specialized closure #1 in SentryApplication.internal_getWindows()
+      13  static L10n.Widget.today.getter
+      12  closure #1 in TrendChartView.todayHintPillOverlay(proxy:)
+      11  closure #1 in TodayHintGlassPill.label(showsInfo:)
+      11  specialized closure #1 in HStack.init(alignment:spacing:content:)
+      11  specialized HStack.init(alignment:spacing:content:)
+      11  TodayHintGlassPill.label(showsInfo:)
+       8  closure #2 in FadesTowardVerticalBar271.body(content:)
+       7  closure #5 in TrendChartView.liquidTrendChart.getter
+  -- exclusivo (hoja) --
+    1129  AG::Graph::UpdateStack::update()  [AttributeGraph]
+    1079  AG::Subgraph::update(unsigned int)  [AttributeGraph]
+     948  objc_msgSend  [libobjcMsgSend.dylib]
+     781  AG::Graph::propagate_dirty(AG::AttributeID)  [AttributeGraph]
+     666  mach_msg2_trap  [libsystem_kernel.dylib]
+     403  _platform_memmove  [libsystem_platform.dylib]
+     368  objc_msgSend  [libobjcMsgSend1.dylib]
+     302  objc_msgSend  [libobjcMsgSend7.dylib]
+     297  swift::RefCounts<swift::RefCountBitsT<(swift::RefCountInlinedness)1>>::incrementSlow(swift::RefCountBitsT<(swift::RefCountInlinedness)1>, unsigned int
+     293  swift_retain  [libswiftCore.dylib]
+     283  bool swift::RefCounts<swift::RefCountBitsT<(swift::RefCountInlinedness)1>>::doDecrementSlow<(swift::PerformDeinit)1>(swift::RefCountBitsT<(swift::RefC
+     260  swift_release  [libswiftCore.dylib]
+
+=== reposo inicial (incluye arranque): 30.1 s, 28601 muestras hilo principal (≈95.1 % de un núcleo)
+  -- inclusivo, funciones de Yala --
+   19585  <deduplicated_symbol>
+   13935  closure #1 in PanelViewModel.scheduleRecalculation(reload:)
+   12429  PanelViewModel.finishRecalculation()
+   12428  PanelViewModel.performCalculation()
+   10114  thunk for @escaping @callee_guaranteed @Sendable () -> (@out ())
+    8790  static YalaApp.$main()
+    8790  main
+    6864  YalaApp.handleScenePhase(_:)
+    6864  partial apply for closure #2 in YalaApp.body.getter
+    6823  static WidgetDataCache.buildSnapshot(context:now:)
+    6823  closure #1 in static WidgetDataCache.updateCacheNow(context:)
+    6823  specialized static LoadTimeMarks.measure<A>(_:_:)
+    6823  static WidgetDataCache.updateCacheNow(context:)
+    6823  static WidgetDataCache.flushPendingUpdate()
+    6093  PanelViewModel.calculateTrendData(accounts:transactions:defaultCurrencyCode:context:sessionState:)
+    5969  TransactionItem.date.getter
+    5313  specialized _ArrayProtocol.filter<A>(_:)
+    5087  static WidgetDataCache.buildPeriodSummary(transactions:periodStart:periodEnd:currencyCode:allTransactionsForBalance:adjustment:converter:)
+    5087  closure #8 in static WidgetDataCache.buildSnapshot(context:now:stages:)
+    5054  specialized static WidgetDataCache.buildPeriodSummary(transactions:periodStart:periodEnd:currencyCode:allTransactionsForBalance:adjustment:converter:)
+    4529  PanelViewModel.calculateHealthWidget(paidAmounts:)
+    4528  static FinancialScoreCalculator.calculate(transactions:budgets:scheduledPayments:accounts:paidAmounts:period:customRange:preferredCurrencyCode:convert
+    4527  specialized static FinancialScoreCalculator.calculate(transactions:budgets:scheduledPayments:accounts:paidAmounts:period:customRange:preferredCurrency
+    3629  specialized static BudgetsViewModel.calculateSpending(budget:transactions:interval:adjustment:converter:)
+    3629  static BudgetsViewModel.calculateSpending(budget:transactions:interval:adjustment:converter:)
+    3624  static BudgetsViewModel.filterTransactions(_:forBudget:in:adjustment:)
+    3557  specialized static BudgetsViewModel.filterTransactions(_:forBudget:in:adjustment:)
+    3291  static WidgetDataCache.rebuildPendingInStages()
+    2405  static LiveBalanceCalculator.entersBalance(_:)
+    2401  specialized Sequence.compactMap<A>(_:)
+  -- exclusivo (hoja) --
+    1121  swift_getTypeByMangledName  [libswiftCore.dylib]
+     938  bool swift::RefCounts<swift::RefCountBitsT<(swift::RefCountInlinedness)1>>::doDecrementSlow<(swift::PerformDeinit)1>(swift::RefCountBitsT<(swift::RefC
+     803  tryCast(swift::OpaqueValue*, swift::TargetMetadata<swift::InProcess> const*, swift::OpaqueValue*, swift::TargetMetadata<swift::InProcess> const*, swif
+     793  _platform_memmove  [libsystem_platform.dylib]
+     753  swift::RefCounts<swift::RefCountBitsT<(swift::RefCountInlinedness)1>>::incrementSlow(swift::RefCountBitsT<(swift::RefCountInlinedness)1>, unsigned int
+     681  swift::Demangle::__runtime::Demangler::demangleType(__swift::__runtime::llvm::StringRef, std::__1::function<swift::Demangle::__runtime::Node* (swift::
+     640  0x1a1633098  [libsqlite3.dylib]
+     568  swift_conformsToProtocolMaybeInstantiateSuperclasses(swift::TargetMetadata<swift::InProcess> const*, swift::TargetProtocolDescriptor<swift::InProcess>
+     558  swift_beginAccess  [libswiftCore.dylib]
+     461  specialized static AnyKeyPath.== infix(_:_:)  [libswiftCore.dylib]
+     392  specialized _pop<A>(from:as:count:)  [libswiftCore.dylib]
+     386  swift::MetadataResponse performOnMetadataCache<swift::MetadataResponse, swift_checkMetadataState::CheckStateCallbacks>(swift::TargetMetadata<swift::In

@@ -1,0 +1,70 @@
+
+Panel: 13 s, hilo ppal 100%
+    49.6%  DetailContainerView
+    48.6%  StatisticsRecalculation
+    34.5%  StatisticsViewModel
+    33.0%  WidgetDataCache
+    13.1%  SpotlightIndexService.reconcile
+    12.7%  RecordsViewModel
+     8.8%  CashFlow
+
+Registros: 13 s, hilo ppal 99%
+    54.1%  PanelViewModel.performCalculation()
+    21.0%  WidgetDataCache
+    18.7%  CashFlow
+     4.6%  PanelViewModel.fetchTransactionsInSlices
+     3.5%  PanelViewModel.loadData
+     2.5%  TrendChartView.body
+     1.6%  SpotlightIndexService.reconcile
+
+Estadisticas-Resumen: 13 s, hilo ppal 39%
+    43.7%  ViewGraphDisplayLink.displayLinkTimer
+     3.7%  TrendChartView.body
+     0.7%  InboxView
+     0.7%  InboxViewModel
+     0.2%  SpotlightIndexService.reconcile
+     0.1%  CategoriesTabView
+
+Estadisticas-Tendencias: 13 s, hilo ppal 100%
+    48.8%  PanelViewModel.performCalculation()
+    45.8%  FinancialScoreCalculator
+    31.1%  DetailContainerView
+    31.1%  StatisticsRecalculation
+    15.9%  BudgetsViewModel
+    14.5%  StatisticsViewModel
+    11.9%  CashFlow
+
+Estadisticas-Distribucion: 13 s, hilo ppal 64%
+    27.9%  ViewGraphDisplayLink.displayLinkTimer
+    17.2%  CategoriesTabView
+     9.3%  Sankey
+     8.8%  StatisticsViewModel
+     4.0%  CashFlow
+     1.1%  TrendChartView.body
+     0.1%  SpotlightIndexService.reconcile
+
+Pagos-planificados: 13 s, hilo ppal 45%
+    21.7%  ViewGraphDisplayLink.displayLinkTimer
+     1.3%  TrendChartView.body
+     0.3%  SpotlightIndexService.reconcile
+     0.0%  CategoriesTabView
+     0.0%  CashFlow
+     0.0%  BudgetsViewModel
+
+Grupos: 13 s, hilo ppal 51%
+    14.1%  BudgetsViewModel
+     5.8%  TrendChartView.body
+     0.1%  SpotlightIndexService.reconcile
+     0.1%  ViewGraphDisplayLink.displayLinkTimer
+     0.1%  CategoriesTabView
+     0.0%  DetailContainerView
+     0.0%  CashFlow
+
+Bandeja: 13 s, hilo ppal 84%
+    29.8%  PanelViewModel.performCalculation()
+    15.6%  ViewGraphDisplayLink.displayLinkTimer
+     4.2%  PanelViewModel.loadData
+     4.0%  TrendChartView.body
+     3.3%  PanelViewModel.fetchTransactionsInSlices
+     2.6%  CashFlow
+     0.1%  CategoriesTabView

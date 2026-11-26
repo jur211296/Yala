@@ -1,0 +1,27 @@
+Duración traza: 231 s · CPU por proceso (s de CPU en toda la traza, % de un núcleo):
+     50.08 s   21.7 %  backboardd (73)   mem 169→157 MiB
+     36.86 s   15.9 %  kernel (0)   mem 194→194 MiB
+     28.62 s   12.4 %  avconferenced (610)   mem 247→247 MiB
+     25.01 s   10.8 %  sysmond (2623)   mem 3→2 MiB
+     16.95 s    7.3 %  remotepairingdeviced (67)   mem 8→8 MiB
+     13.01 s    5.6 %  com.apple.DriverKit-AppleBCMWLAN (119)   mem 21→21 MiB
+      9.64 s    4.2 %  Yala (2663)   mem 29→40 MiB
+      9.44 s    4.1 %  searchd (217)   mem 17→17 MiB
+      7.56 s    3.3 %  SpringBoard (37)   mem 166→166 MiB
+      4.92 s    2.1 %  hybridsearchd (2597)   mem 6→8 MiB
+      4.62 s    2.0 %  audiomxd (116)   mem 42→42 MiB
+      4.01 s    1.7 %  DTServiceHub (631)   mem 10→23 MiB
+      3.98 s    1.7 %  dtdeviceinfod (608)   mem 5→5 MiB
+      3.61 s    1.6 %  com.apple.WebKit.WebContent (701)   mem 121→120 MiB
+      3.34 s    1.4 %  PerfPowerServices (2131)   mem 15→16 MiB
+Procesos Yala: ['Yala (2649)']
+
+Yala (2649): ciclo, CPU desde volver hasta irse (s), duración (s), % núcleo, CPU en fondo previo (s), mem al volver (MiB)
+   1    6.80    7.9   85.6   1.70     238
+   2    7.56    8.0   94.8  12.34     241
+   3    7.23    7.9   91.7  10.64     266
+   4    7.49    8.0   93.6  13.69     319
+   5    7.20    7.8   92.0   5.25     340
+   6    0.00    7.9    0.0  -136.00       0
+   7    0.00    7.8    0.0   0.00       0
+   8    0.00    7.9    0.0   0.00       0

@@ -1,0 +1,5 @@
+panel_arriba                 27 s  hilo ppal  38.1%  todos los hilos  38.8%  | ViewGraphDisplayLink.displayLinkTimer 90%, GlassContainer 12%, Spotlight 0%
+panel_tendencia_visible      27 s  hilo ppal  35.6%  todos los hilos  36.0%  | ViewGraphDisplayLink.displayLinkTimer 91%, GlassContainer 13%, Spotlight 0%
+registros                    27 s  hilo ppal  34.9%  todos los hilos  35.3%  | ViewGraphDisplayLink.displayLinkTimer 91%, GlassContainer 13%, Spotlight 0%
+mas                          22 s  hilo ppal  35.4%  todos los hilos  35.9%  | ViewGraphDisplayLink.displayLinkTimer 92%, GlassContainer 14%, Spotlight 0%
+panel_vuelta                 27 s  hilo ppal  35.3%  todos los hilos  35.8%  | ViewGraphDisplayLink.displayLinkTimer 92%, GlassContainer 13%, Spotlight 0%
