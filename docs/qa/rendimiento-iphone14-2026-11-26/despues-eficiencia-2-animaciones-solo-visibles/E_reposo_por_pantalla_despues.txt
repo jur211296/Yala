@@ -1,0 +1,5 @@
+panel_arriba                 27 s  hilo ppal   0.4%  todos los hilos   0.4%  | 
+panel_tendencia_visible      27 s  hilo ppal   0.0%  todos los hilos   0.0%  | 
+registros                    27 s  hilo ppal   0.0%  todos los hilos   0.0%  | 
+mas                          22 s  hilo ppal   0.0%  todos los hilos   0.0%  | 
+panel_vuelta                 27 s  hilo ppal   0.0%  todos los hilos   0.1%  | 

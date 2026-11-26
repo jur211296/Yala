@@ -110,10 +110,9 @@ struct VoiceListeningOrb: View {
             orb
             timeLabel
         }
-        .onAppear {
-            isPulsing = true
-            isSpinning = true
-        }
+        // El punto rojo y el anillo se mueven solo a la vista y con la app activa (lote 2 de eficiencia, 26-nov-2026).
+        .animaSoloVisible($isPulsing, si: !reduceMotion && !isTranscribing)
+        .animaSoloVisible($isSpinning, si: !reduceMotion && isTranscribing)
     }
 
     // MARK: - Orbe
@@ -135,7 +134,8 @@ struct VoiceListeningOrb: View {
                         .stroke(accent, style: StrokeStyle(lineWidth: 3, lineCap: .round))
                         .frame(width: haloSize - ringInset, height: haloSize - ringInset)
                         .rotationEffect(.degrees(isSpinning ? 360 : 0))
-                        .animation(.linear(duration: 0.9).repeatForever(autoreverses: false), value: isSpinning)
+                        .animation(isSpinning ? .linear(duration: 0.9).repeatForever(autoreverses: false) : nil,
+                                   value: isSpinning)
                 }
             } else {
                 Circle()
@@ -178,7 +178,7 @@ struct VoiceListeningOrb: View {
                     .frame(width: 8, height: 8) // A11Y-DT: punto de «grabando»
                     .opacity(reduceMotion || !isPulsing ? 1 : 0.35)
                     .animation(
-                        reduceMotion ? nil : .easeInOut(duration: 0.6).repeatForever(autoreverses: true),
+                        isPulsing ? .easeInOut(duration: 0.6).repeatForever(autoreverses: true) : nil,
                         value: isPulsing
                     )
             }

@@ -271,12 +271,9 @@ struct GroupCaptureReadingPhoto: View {
                 }
             }
             .shadow(color: .black.opacity(0.25), radius: 12, y: 6)
-            .onAppear {
-                guard !reduceMotion else { return }
-                withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) {
-                    sweepDown = true
-                }
-            }
+            // La línea recorre la foto solo con la app activa (lote 2 de eficiencia, 26-nov-2026).
+            .animation(sweepDown ? .easeInOut(duration: 1.6).repeatForever(autoreverses: true) : nil, value: sweepDown)
+            .animaSoloVisible($sweepDown, si: !reduceMotion)
             .accessibilityHidden(true)
     }
 }

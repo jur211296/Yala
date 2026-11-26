@@ -130,15 +130,9 @@ struct YalaSpark: View {
         .frame(width: size.dimension, height: size.dimension)
         .rotationEffect(.degrees(isAnimating ? 15 : -15))
         .scaleEffect(isAnimating ? 1.05 : 1.0)
-        .onAppear {
-            guard shouldAnimate else { return }
-            withAnimation(
-                .easeInOut(duration: 3.0)
-                .repeatForever(autoreverses: true)
-            ) {
-                isAnimating = true
-            }
-        }
+        // Implícita y encendida solo a la vista con la app activa (lote 2 de eficiencia, 26-nov-2026).
+        .animation(isAnimating ? .easeInOut(duration: 3.0).repeatForever(autoreverses: true) : nil, value: isAnimating)
+        .animaSoloVisible($isAnimating, si: shouldAnimate)
     }
 }
 

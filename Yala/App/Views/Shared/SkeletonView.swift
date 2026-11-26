@@ -153,9 +153,9 @@ struct CategoriesPieSkeleton: View {
 
 struct ShimmerModifier: ViewModifier {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var phase: CGFloat = 0
-    /// Una pasada del brillo de izquierda a derecha, sin fin.
-    static let sweep: Animation = .linear(duration: 1.5).repeatForever(autoreverses: false)
+    /// El brillo corre solo con el esqueleto a la vista y la app activa (`animaSoloVisible`, lote 2 de eficiencia):
+    /// Estadísticas monta su esqueleto desde el arranque, aunque nunca se abra.
+    @State private var sweeping = false
 
     func body(content: Content) -> some View {
         content
@@ -175,18 +175,16 @@ struct ShimmerModifier: ViewModifier {
                                 )
                             )
                             .frame(width: geometry.size.width * 0.5)
-                            .offset(x: phase * geometry.size.width * 1.5 - geometry.size.width * 0.25)
+                            .offset(x: (sweeping ? 1 : 0) * geometry.size.width * 1.5 - geometry.size.width * 0.25)
                     }
                 }
                 .mask(content)
                 // Card ehsu: implícita. El esqueleto vive casi siempre dentro de una pestaña, donde `ContentView` apaga
                 // las transacciones y el `withAnimation` de antes dejaba el brillo quieto en su posición final.
-                .animation(reduceMotion ? nil : Self.sweep, value: phase)
+                // Una pasada del brillo de izquierda a derecha, sin fin mientras se vea.
+                .animation(sweeping ? .linear(duration: 1.5).repeatForever(autoreverses: false) : nil, value: sweeping)
             )
-            .onAppear {
-                guard !reduceMotion else { return }
-                phase = 1
-            }
+            .animaSoloVisible($sweeping, si: !reduceMotion)
     }
 }
 
