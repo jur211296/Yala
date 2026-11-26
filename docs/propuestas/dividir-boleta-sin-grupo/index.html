@@ -1,0 +1,497 @@
+<title>Dividir boleta sin grupo</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+/* Layout: columna de lectura con la recomendación arriba; filas de iPhones 14 por opción que se deslizan en el celular;
+   las imágenes para compartir en su propia fila; la decisión al pie. */
+:root{
+  --bg:#F5F5FA; --surface:#FFFFFF; --fg:#16152B; --muted:#5D5B78; --line:#E2E1EE;
+  --accent:#4E4BD8; --accent-soft:#ECEBFD; --good:#1D7A4A; --warn:#A35A00;
+  --f-display:"Space Grotesk",system-ui,sans-serif; --f-body:"Inter",system-ui,-apple-system,sans-serif;
+  --pw:250px; --s:.6410;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0E0D1C; --surface:#18172B; --fg:#ECEBF7; --muted:#A3A1BF; --line:#2B2945;
+  --accent:#8F8CFF; --accent-soft:#25234A; --good:#5BD08F; --warn:#F2B35A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E0D1C; --surface:#18172B; --fg:#ECEBF7; --muted:#A3A1BF; --line:#2B2945;
+  --accent:#8F8CFF; --accent-soft:#25234A; --good:#5BD08F; --warn:#F2B35A; color-scheme:dark}
+@media (min-width:720px){:root{--pw:272px; --s:.6974}}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 64px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:36px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:clamp(26px,5vw,38px)} h2{font-size:clamp(21px,3.6vw,27px)} h3{font-size:17px}
+p{margin:0;max-width:70ch}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.lead{color:var(--muted)}
+.reco{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.reco div{display:flex;flex-direction:column;gap:6px;min-width:0}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent);width:fit-content}
+.pill.v24{background:transparent;border:1px solid var(--line);color:var(--muted)}
+.controls{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:10px;display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;border-bottom:1px solid var(--line)}
+.seg{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px}
+.seg button{font:600 13px var(--f-body);border:0;background:transparent;color:var(--muted);padding:6px 12px;border-radius:999px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#fff}
+.seg button:focus-visible,.btn:focus-visible,.opt:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.ctl-label{font-size:12px;color:var(--muted);font-weight:600;margin-right:6px}
+section{display:flex;flex-direction:column;gap:14px}
+.opthead{display:flex;flex-direction:column;gap:6px}
+.opthead .t{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.k{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:9px;background:var(--accent);color:#fff;font:700 16px var(--f-display);flex:0 0 auto}
+.rec{font:600 11px var(--f-body);color:var(--good);border:1px solid currentColor;border-radius:999px;padding:1px 8px}
+.pc{font-size:14px;display:flex;flex-direction:column;gap:3px}
+.pc .p::before{content:"+ ";color:var(--good);font-weight:700}
+.pc .c::before{content:"– ";color:var(--warn);font-weight:700}
+.size{font-size:13px;color:var(--muted)} .size b{color:var(--fg)}
+.row{display:flex;gap:18px;overflow-x:auto;padding-bottom:10px;scroll-snap-type:x mandatory}
+.col{flex:0 0 auto;width:calc(var(--pw) + 2px);display:flex;flex-direction:column;gap:8px;scroll-snap-align:start}
+.cap{font:600 13px var(--f-body);min-height:20px}
+.cap small{display:block;font-weight:400;color:var(--muted);font-size:12.5px;line-height:1.4}
+.btn{font:600 13px var(--f-body);border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:10px;padding:8px 14px;cursor:pointer;width:fit-content}
+.btn:disabled{opacity:.5;cursor:default}
+.measured{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.measured div{display:flex;flex-direction:column;gap:4px;min-width:0;font-size:14px}
+.measured code{font-size:12px;color:var(--muted);word-break:break-word}
+
+/* ---------- iPhone 14 (390 × 844 pt) escalado ---------- */
+.phone{width:var(--pw);height:calc(var(--pw) * 2.1641);border-radius:calc(var(--pw) * 0.12);border:1px solid var(--line);overflow:hidden;position:relative;background:#000}
+.screen{width:390px;height:844px;transform:scale(var(--s));transform-origin:0 0;position:absolute;left:0;top:0;
+  font-family:-apple-system,"SF Pro Text",system-ui,sans-serif;color:var(--p-fg);background:var(--p-bg);overflow:hidden;font-size:16px;line-height:1.3}
+.m-dark{--p-bg:#100E28;--p-card:#1D1A42;--p-card2:#26235A;--p-fg:#FFFFFF;--p-fg2:#A9A6CF;--p-acc:#5E5CE6;--p-acc-text:#A9A7FF;--p-line:#2E2B5C;--p-glass:rgba(40,38,80,.85);--p-scrim:rgba(0,0,0,.55);--p-paper:#E9E6DD;--p-sheet:#17153A;--p-paid:#5BD0A7}
+.m-light{--p-bg:#F4F4F6;--p-card:#FFFFFF;--p-card2:#F0F0F5;--p-fg:#111018;--p-fg2:#6B6A80;--p-acc:#5E5CE6;--p-acc-text:#4C4AD0;--p-line:#E3E2EE;--p-glass:rgba(255,255,255,.92);--p-scrim:rgba(20,18,40,.35);--p-paper:#FBFAF6;--p-sheet:#F4F4F6;--p-paid:#0F7A5F}
+.m-dark .screen{background:linear-gradient(#1B1840 0,#100E28 360px)}
+.sb{height:50px;display:flex;justify-content:space-between;align-items:flex-end;padding:0 30px 6px 36px;font:600 16px -apple-system,system-ui}
+.nav{height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;gap:8px}
+.nav .ttl{font:600 17px -apple-system,system-ui;flex:1;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.circ{width:40px;height:40px;border-radius:50%;background:var(--p-glass);display:grid;place-items:center;border:1px solid var(--p-line);font-size:17px;color:var(--p-fg);flex:0 0 auto}
+.circ.ok{background:var(--p-acc);color:#fff;border-color:var(--p-acc)}
+.large{font:700 32px -apple-system,system-ui;padding:2px 16px 8px}
+.content{padding:0 16px;display:flex;flex-direction:column;gap:14px}
+.sheet{position:absolute;inset:58px 0 0;background:var(--p-sheet);border-radius:34px 34px 0 0;z-index:6;display:flex;flex-direction:column}
+.grab{width:38px;height:5px;border-radius:3px;background:var(--p-fg2);opacity:.45;margin:8px auto 2px}
+.scrim{position:absolute;inset:0;background:var(--p-scrim);z-index:5}
+.shead{font:700 24px -apple-system,system-ui;padding:6px 20px 2px}
+.ssub{font-size:15px;color:var(--p-fg2);padding:0 20px 14px}
+.tiles{display:flex;gap:10px;padding:0 20px}
+.tile{flex:1;height:112px;border-radius:20px;background:var(--p-card);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;font:600 14px -apple-system,system-ui}
+.tile i{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:20px;background:rgba(94,92,230,.15);color:var(--p-acc-text)}
+.tile.prim{background:var(--p-acc);color:#fff} .tile.prim i{background:rgba(255,255,255,.18);color:#fff}
+.thin{margin:12px 20px 0;height:56px;border-radius:18px;background:var(--p-card);display:flex;align-items:center;gap:12px;padding:0 16px;border:1.5px solid var(--p-acc)}
+.thin i{font-style:normal;width:30px;height:30px;border-radius:9px;background:var(--p-acc);color:#fff;display:grid;place-items:center;font-size:15px;flex:0 0 auto}
+.thin b{font:600 16px -apple-system,system-ui;flex:1}
+.thin span{color:var(--p-fg2);font-size:20px}
+.thinhint{font-size:13px;color:var(--p-fg2);padding:6px 22px 0}
+.qa{display:flex;gap:8px}
+.qa .new{flex:1;height:48px;border-radius:24px;background:var(--p-acc);color:#fff;font:600 16px -apple-system,system-ui;display:flex;align-items:center;justify-content:center}
+.qa .mini{width:58px;height:48px;border-radius:24px;background:var(--p-glass);border:1px solid var(--p-line);font-size:11px;color:var(--p-fg);display:grid;place-items:center;text-align:center;line-height:1.1}
+.thin.inline{margin:0}
+.gcard{background:var(--p-card);border-radius:20px;padding:14px 16px;display:flex;gap:12px;align-items:center}
+.gcard .dot{width:42px;height:42px;border-radius:12px;flex:0 0 auto;display:grid;place-items:center;color:#fff;font-weight:700}
+.gcard b{display:block;font-size:16px} .gcard span{font-size:13px;color:var(--p-fg2)}
+.gcard .amt{margin-left:auto;text-align:right;font:600 15px ui-rounded,"SF Pro Rounded",-apple-system,system-ui;white-space:nowrap}
+.gcard .amt.paid{color:var(--p-paid)}
+.sect{font:600 13px -apple-system,system-ui;color:var(--p-fg2);text-transform:uppercase;letter-spacing:.03em;padding:0 4px}
+.foot{font-size:12.5px;color:var(--p-fg2);padding:0 4px;line-height:1.35}
+.list{background:var(--p-card);border-radius:18px;overflow:hidden}
+.li{display:flex;align-items:center;gap:10px;padding:11px 14px;border-top:1px solid var(--p-line);min-height:46px}
+.li:first-child{border-top:0}
+.li .d{flex:1;min-width:0}
+.li .d b{display:block;font-weight:500;font-size:15.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.li .d span{font-size:12.5px;color:var(--p-fg2);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.li .m{font:500 15.5px ui-rounded,"SF Pro Rounded",-apple-system,system-ui;font-variant-numeric:tabular-nums;white-space:nowrap}
+.li .m.big{font-weight:700;font-size:17px}
+.av{width:26px;height:26px;border-radius:50%;display:inline-grid;place-items:center;color:#fff;font:700 11px -apple-system,system-ui;flex:0 0 auto}
+.av.lg{width:34px;height:34px;font-size:13px}
+.avs{display:flex;gap:3px;margin-top:4px}
+.avs .av{width:20px;height:20px;font-size:9px}
+.allp{font-size:12px;color:var(--p-fg2);border:1px solid var(--p-line);border-radius:10px;padding:1px 8px;margin-top:4px;display:inline-block}
+.photo{display:flex;gap:12px;align-items:center;background:var(--p-card);border-radius:18px;padding:10px 12px}
+.thumb{width:52px;height:68px;border-radius:8px;background:var(--p-paper);flex:0 0 auto;position:relative;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.thumb::before{content:"";position:absolute;inset:9px 8px;background:repeating-linear-gradient(#9A978C 0 2px,transparent 2px 7px);opacity:.55}
+.photo b{display:block;font-size:15.5px} .photo span{font-size:13px;color:var(--p-fg2)}
+.photo .ok{margin-left:auto;font-size:12px;font-weight:600;color:var(--p-acc-text);white-space:nowrap}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 12px 0 5px;border-radius:18px;background:var(--p-card);border:1px solid var(--p-line);font:500 15px -apple-system,system-ui}
+.chip .x{color:var(--p-fg2);font-size:13px;margin-left:2px}
+.chip.add{padding:0 14px;border-style:dashed;color:var(--p-acc-text)}
+.field{height:44px;border-radius:12px;background:var(--p-card);border:1px solid var(--p-line);display:flex;align-items:center;padding:0 14px;color:var(--p-fg2);font-size:15px}
+.recent{font-size:13px;color:var(--p-fg2);padding:0 4px} .recent b{color:var(--p-acc-text);font-weight:600}
+.segp{display:flex;background:var(--p-card2);border-radius:12px;padding:3px}
+.segp span{flex:1;text-align:center;padding:8px 0;border-radius:9px;font:600 14px -apple-system,system-ui;color:var(--p-fg2)}
+.segp span.on{background:var(--p-card);color:var(--p-fg);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.m-dark .segp span.on{background:#3A3680}
+.phrase{background:var(--p-card);border-radius:14px;padding:12px 14px;font-size:14.5px;line-height:1.35;display:flex;gap:10px}
+.phrase .mic{width:30px;height:30px;border-radius:50%;background:rgba(94,92,230,.15);color:var(--p-acc-text);display:grid;place-items:center;flex:0 0 auto;font-size:14px}
+.bottom{position:absolute;left:0;right:0;bottom:0;padding:12px 16px 30px;background:linear-gradient(to bottom,transparent,var(--p-bg) 26%);display:flex;flex-direction:column;gap:10px;z-index:3}
+.cta{height:52px;border-radius:26px;background:var(--p-acc);color:#fff;font:600 17px -apple-system,system-ui;display:flex;align-items:center;justify-content:center;gap:8px}
+.cta2{height:50px;border-radius:25px;background:var(--p-card);border:1px solid var(--p-line);color:var(--p-fg);font:600 16px -apple-system,system-ui;display:flex;align-items:center;justify-content:center;gap:8px}
+.link{text-align:center;color:var(--p-acc-text);font:600 15px -apple-system,system-ui}
+.tot{display:flex;justify-content:space-between;align-items:baseline;padding:0 4px}
+.tot b{font:700 17px -apple-system,system-ui} .tot span{font:700 17px ui-rounded,"SF Pro Rounded",-apple-system,system-ui}
+.hero{padding:4px 4px 0}
+.hero .l{font-size:15px;color:var(--p-fg2)}
+.hero .amt{font:700 44px ui-rounded,"SF Pro Rounded",-apple-system,system-ui;letter-spacing:-.5px}
+.hero .s{font-size:14px;color:var(--p-fg2)}
+.mine{background:rgba(94,92,230,.12)}
+.stepper{display:flex;align-items:center;justify-content:space-between;background:var(--p-card);border-radius:18px;padding:12px 14px}
+.stepper .b{display:flex;gap:8px;align-items:center} .stepper .b i{width:40px;height:34px;border-radius:10px;background:var(--p-card2);display:grid;place-items:center;font-size:20px;font-style:normal}
+.stepper .n{font:700 22px ui-rounded,"SF Pro Rounded",-apple-system,system-ui;min-width:28px;text-align:center}
+.tipchips{display:flex;gap:8px}
+.tipchips span{flex:1;text-align:center;height:36px;line-height:36px;border-radius:18px;background:var(--p-card);border:1px solid var(--p-line);font:500 14px -apple-system,system-ui}
+.tipchips span.on{background:var(--p-acc);color:#fff;border-color:var(--p-acc)}
+.each{background:var(--p-card);border-radius:22px;padding:18px;text-align:center}
+.each .l{color:var(--p-fg2);font-size:15px}
+.each .amt{font:700 48px ui-rounded,"SF Pro Rounded",-apple-system,system-ui}
+.each .s{color:var(--p-fg2);font-size:13px}
+.shareprev{position:absolute;left:28px;right:28px;top:96px;z-index:6;border-radius:18px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.35)}
+.sharesheet{position:absolute;left:0;right:0;bottom:0;z-index:7;background:var(--p-card);border-radius:28px 28px 0 0;padding:16px 18px 34px}
+.apps{display:flex;justify-content:space-between;margin-top:12px}
+.apps span{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:11px;color:var(--p-fg2)}
+.apps i{width:54px;height:54px;border-radius:14px;display:block}
+.badge{font:600 12px -apple-system,system-ui;padding:3px 9px;border-radius:10px;white-space:nowrap}
+.badge.paid{background:rgba(15,122,95,.14);color:var(--p-paid)}
+.badge.pend{background:var(--p-card2);color:var(--p-fg2)}
+.tab{position:absolute;left:14px;right:14px;bottom:24px;height:62px;border-radius:31px;background:var(--p-glass);border:1px solid var(--p-line);display:flex;justify-content:space-around;align-items:center;font-size:10px;color:var(--p-fg2);z-index:4}
+.tab span{display:flex;flex-direction:column;align-items:center;gap:3px}
+.tab span::before{content:"";width:22px;height:18px;border-radius:5px;background:currentColor;opacity:.75}
+.tab span.on{color:var(--p-acc-text)}
+
+/* ---------- Imagen para compartir: colores fijos en claro, como el resumen de Grupos ---------- */
+.share{background:#FFFFFF;color:#111827;font-family:-apple-system,"SF Pro Text",system-ui,sans-serif;width:var(--pw);display:flex;flex-direction:column;border-radius:16px;overflow:hidden;border:1px solid var(--line)}
+.share .in{padding:18px 18px 14px;display:flex;flex-direction:column;gap:12px}
+.share .mer{font:600 12px -apple-system,system-ui;color:#6B7280;text-transform:uppercase;letter-spacing:.04em}
+.share .big{font:700 30px ui-rounded,"SF Pro Rounded",-apple-system,system-ui;line-height:1.05;font-variant-numeric:tabular-nums}
+.share .sub{font-size:12.5px;color:#6B7280}
+.share .hr{height:1px;background:#E5E7EB}
+.share .p{display:flex;gap:10px;align-items:flex-start}
+.share .p .av{width:28px;height:28px;font-size:11px}
+.share .p .n{flex:1;min-width:0}
+.share .p .n b{display:block;font-size:14px}
+.share .p .n span{display:block;font-size:11.5px;color:#6B7280;line-height:1.35}
+.share .p .a{font:700 15px ui-rounded,"SF Pro Rounded",-apple-system,system-ui;font-variant-numeric:tabular-nums;white-space:nowrap}
+.share .ft{display:flex;align-items:center;gap:8px;padding:10px 18px 12px;border-top:1px solid #E5E7EB;font-size:11.5px;color:#6B7280}
+.share .ft .logo{width:18px;height:18px;border-radius:5px;background:linear-gradient(135deg,#5E5CE6,#E8508F);flex:0 0 auto}
+.share .ft b{color:#111827;font-weight:600}
+.share .ln{display:grid;grid-template-columns:1fr auto;gap:2px 8px;font-size:12.5px;align-items:center}
+.share .ln .w{grid-column:1/-1;display:flex;gap:3px;margin-bottom:4px}
+.share .ln .w .av{width:16px;height:16px;font-size:8px}
+.share .ln .am{font-family:ui-rounded,"SF Pro Rounded",-apple-system,system-ui;font-variant-numeric:tabular-nums}
+.share.story{background:#111827;color:#fff;border-color:transparent}
+.share.story .mer,.share.story .sub{color:#B8BCC8}
+.share.story .pcard{border-radius:14px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;color:#fff}
+.share.story .pcard b{font-size:15px;display:block} .share.story .pcard span{font-size:11px;opacity:.92}
+.share.story .pcard .a{font:700 20px ui-rounded,"SF Pro Rounded",-apple-system,system-ui;white-space:nowrap}
+.share.story .ft{border-top-color:#2A3142;color:#B8BCC8} .share.story .ft b{color:#fff}
+
+.decide{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:18px}
+.decide fieldset{border:0;padding:0;margin:0;display:flex;flex-direction:column;gap:8px}
+.decide legend{font:600 15px var(--f-display);margin-bottom:6px}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opt{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:12px;padding:8px 12px;cursor:pointer;font-size:14px;background:var(--bg)}
+.opt input{accent-color:var(--accent)}
+textarea{width:100%;min-height:80px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font:14px var(--f-body);padding:10px}
+#status{font-size:13px;color:var(--muted)}
+</style>
+
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:10px">
+    <span class="eyebrow">Yala · propuesta para decidir · 26 de noviembre de 2026</span>
+    <h1>Dividir una boleta sin crear grupo</h1>
+    <p class="lead">Tomas foto a la boleta, dices entre quiénes y Yala saca cuánto le toca a cada uno, aunque los demás no usen Yala. Registras solo tu parte y mandas una imagen por WhatsApp. Tres caminos para elegir, con maquetas en iPhone 14 y dos ejemplos reales.</p>
+  </header>
+
+  <div class="reco" aria-label="Recomendación">
+    <div><span class="pill">Recomiendo</span><h3>A · «Dividir una boleta» con la imagen «Me deben»</h3><p>Reutiliza lo que 2.3 ya tiene para repartir recibos en un grupo: la lectura con IA, «¿quién comió qué?», propina y servicio sin incluir hasta que eliges, y el reparto exacto al céntimo. Lo nuevo es escribir nombres al vuelo, el modo «por igual» y la imagen.</p></div>
+    <div><span class="pill">Versión</span><h3>A en 2.3 · C en 2.4</h3><p>A no toca la base de datos ni la nube: cabe en 2.3 con unas 2 sesiones y una ronda de prueba en el iPhone. C guarda la cuenta y sigue quién ya pagó; eso sí toca la nube y conviene en 2.4, encima de A.</p></div>
+    <div><span class="pill">Si 2.3 está apretada</span><h3>B ahora, A en 2.4</h3><p>B es solo «entre N» y se hace en una sesión. Deja fuera lo que más valor tiene, el reparto por líneas, así que queda como plan de respaldo.</p></div>
+  </div>
+
+  <div class="controls" role="group" aria-label="Opciones de las maquetas">
+    <span><span class="ctl-label">Maquetas</span><span class="seg"><button type="button" id="thLight" aria-pressed="true">Claro</button><button type="button" id="thDark" aria-pressed="false">Oscuro</button></span></span>
+    <span><span class="ctl-label">Ejemplo</span><span class="seg"><button type="button" id="exA" aria-pressed="true">Almuerzo de 4</button><button type="button" id="exP" aria-pressed="false">Pareja</button></span></span>
+  </div>
+
+  <section>
+    <div class="opthead">
+      <div class="t"><span class="k">A</span><h2>Dividir una boleta, por igual o por líneas</h2><span class="rec">Recomendada</span><span class="pill">2.3</span></div>
+      <p class="lead">Un botón largo «Dividir una boleta» bajo Cámara, Fotos y Archivo. Después de la foto: ¿entre quiénes? (nombres escritos; tú siempre estás), ¿por igual o por líneas?, la revisión y el resultado con la imagen.</p>
+      <div class="pc"><span class="p">Cubre los dos ejemplos de Jürgen y el caso difícil (una línea para uno, otra entre dos), con propina y servicio.</span><span class="c">Es lo más grande que entraría en 2.3: dos pantallas nuevas, la imagen y «Registrar mi parte».</span></div>
+      <p class="size"><b>Tamaño:</b> mediano, unas 2 sesiones. Sin cambio de base de datos ni de nube. Usa el cupo de recibos de Grupos (5 al día gratis, 50 con Pro).</p>
+    </div>
+    <div class="row" id="rowA"></div>
+  </section>
+
+  <section>
+    <div class="opthead">
+      <div class="t"><span class="k">B</span><h2>Entre N, rápido</h2><span class="pill">2.3 · respaldo</span></div>
+      <p class="lead">La foto lee el total; eliges cuántos son y la propina, y listo: «S/ 65.18 cada uno». Los nombres son opcionales. Sin reparto por líneas.</p>
+      <div class="pc"><span class="p">El más chico: una sesión. Resuelve el almuerzo de oficina en tres toques.</span><span class="c">Deja fuera el reparto por líneas, que es lo que a mano cuesta y lo que más valor tiene.</span></div>
+      <p class="size"><b>Tamaño:</b> chico, 1 sesión. Sin cambio de base de datos ni de nube.</p>
+    </div>
+    <div class="row" id="rowB"></div>
+  </section>
+
+  <section>
+    <div class="opthead">
+      <div class="t"><span class="k">C</span><h2>Cuenta del día, con quién ya pagó</h2><span class="pill v24">2.4</span></div>
+      <p class="lead">Encima de A: el reparto se guarda como una «cuenta del día» en Grupos, sin crear grupo. Marcas quién ya te pagó, mandas un recordatorio y la imagen lleva un enlace para que cada uno vea su parte en la web.</p>
+      <div class="pc"><span class="p">Cierra el ciclo (cobrar, no solo calcular), y el enlace es el mejor gancho para que bajen Yala.</span><span class="c">Guarda datos nuevos que viajan por la nube y pide una página web de «tu parte»: grande, mejor en 2.4.</span></div>
+      <p class="size"><b>Tamaño:</b> grande, 3 a 4 sesiones además de A. Toca la nube de Grupos y la web.</p>
+    </div>
+    <div class="row" id="rowC"></div>
+  </section>
+
+  <section>
+    <div class="opthead">
+      <h2>La imagen para compartir: tres formatos</h2>
+      <p class="lead">4:5 para WhatsApp y el feed de Instagram; 9:16 para historias. Colores fijos en claro, como el resumen de grupo que ya existe, y un pie discreto de Yala como gancho.</p>
+    </div>
+    <div class="row" id="rowShare"></div>
+  </section>
+
+  <section>
+    <h2>Lo que medí en el código de 2.3</h2>
+    <div class="measured">
+      <div><b>Leer la boleta y calcular no dependen de un grupo.</b><span>La lectura devuelve nombres tal como se dijeron, y el cálculo se hace sin IA, en céntimos: la suma de las partes siempre da el total.</span><code>ReceiptSplitService.readPhoto · ReceiptSplitLogic.shares</code></div>
+      <div><b>La pantalla de revisión sí pide miembros de un grupo.</b><span>Hoy recibe personas guardadas en un grupo. Para nombres al vuelo tiene que aceptar personas temporales: es el cambio principal de A.</span><code>GroupCaptureModel(members: [SplitMember]) · SplitMember es un modelo guardado</code></div>
+      <div><b>Propina, servicio e impuestos llegan sin incluir.</b><span>Decisión del 5 de noviembre que A mantiene: eliges si van según lo que consumió cada uno, a partes iguales o solo para alguien.</span><code>ReceiptExtraShare: excluded · proportional · equal · people</code></div>
+      <div><b>Ya hay una imagen compartible en Grupos.</b><span>«Resumen del grupo» se arma con colores fijos y el pie «Hecho con Yala». La imagen nueva sigue ese molde.</span><code>GroupShareableSummaryCard · GroupShareableSummarySheet</code></div>
+      <div><b>La hoja de foto personal tiene Cámara, Fotos y Archivo.</b><span>El botón largo va justo debajo. En Grupos va bajo la fila Nuevo gasto, Voz, Foto y Yala IA.</span><code>ImageSelectionView.sourceTiles · GroupQuickActionsRow</code></div>
+      <div><b>El cupo de recibos ya existe y es gratis.</b><span>5 recibos al día en Free y 50 en Pro, aparte de las fotos de personal. Dividir una boleta usaría ese cupo, también desde Yala completo.</span><code>gateway: receipt.photo · receipt.voice</code></div>
+    </div>
+  </section>
+
+  <section class="decide" aria-labelledby="decTitle">
+    <h2 id="decTitle">Tu decisión</h2>
+    <fieldset><legend>Camino</legend><div class="opts">
+      <label class="opt"><input type="radio" name="flujo" value="A" id="f-a">A · Dividir una boleta (recomendada)</label>
+      <label class="opt"><input type="radio" name="flujo" value="B" id="f-b">B · Entre N, rápido</label>
+      <label class="opt"><input type="radio" name="flujo" value="A+C" id="f-ac">A ahora y C después</label>
+    </div></fieldset>
+    <fieldset><legend>Imagen</legend><div class="opts">
+      <label class="opt"><input type="radio" name="imagen" value="1" id="i-1">1 · Me deben (recomendada)</label>
+      <label class="opt"><input type="radio" name="imagen" value="2" id="i-2">2 · Detalle de la boleta</label>
+      <label class="opt"><input type="radio" name="imagen" value="3" id="i-3">3 · Historia, una por persona</label>
+    </div></fieldset>
+    <fieldset><legend>Versión</legend><div class="opts">
+      <label class="opt"><input type="radio" name="version" value="2.3" id="v-23">Entra en 2.3</label>
+      <label class="opt"><input type="radio" name="version" value="2.4" id="v-24">Va en 2.4</label>
+    </div></fieldset>
+    <label for="notes" style="font-weight:600">Nota (opcional)</label>
+    <textarea id="notes" maxlength="1000" placeholder="Por ejemplo: A, pero que el botón diga «Dividir cuenta»"></textarea>
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><button class="btn" id="save" type="button">Guardar decisión</button><span id="status" role="status"></span></div>
+  </section>
+</div>
+
+<script>
+(function(){
+  var C={yo:"#5E5CE6",pink:"#D6246E",teal:"#0B7F85",amber:"#A86400"};
+  var EX={
+    almuerzo:{merchant:"Cevichería El Muelle",owner:"Diego",
+      people:[{n:"Yo",c:C.yo},{n:"Carla",c:C.pink},{n:"Martín",c:C.teal},{n:"Rocío",c:C.amber}],
+      lines:[["Ceviche clásico",42,[0]],["Lomo saltado",48,[2]],["Ají de gallina",36,[1]],["Arroz con mariscos",45,[3]],["Chicha morada 1 L",24,[]],["Gaseosa 500 ml ×2",14,[1,2]],["Leche de tigre para compartir",28,[0,3]]],
+      extras:[["Propina 10 %",23.70]],
+      phrase:"Yo el ceviche, Martín el lomo, Carla el ají y Rocío el arroz. Las gaseosas, Carla y Martín; la leche de tigre, Rocío y yo."},
+    pareja:{merchant:"Café La Esquina",owner:"Sebastián",
+      people:[{n:"Yo",c:C.yo},{n:"Daniela",c:C.pink}],
+      lines:[["Cappuccino",14,[0]],["Matcha latte",16,[1]],["Torta de chocolate",18,[]]],
+      extras:[],
+      phrase:"Yo el cappuccino, Daniela el matcha y la torta a medias."}
+  };
+  var state={theme:"m-light",ex:"almuerzo"};
+  try{var sv=JSON.parse(localStorage.getItem("dbsg")||"null");if(sv&&(sv.theme==="m-light"||sv.theme==="m-dark")&&EX[sv.ex]){state=sv;}}catch(e){}
+
+  function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];});}
+  function money(c){return "S/ "+(c/100).toFixed(2);}
+  function even(total,n){var b=Math.floor(total/n),r=total-b*n,o=[];for(var i=0;i<n;i++)o.push(b+(i<r?1:0));return o;}
+  // El mismo criterio que ReceiptSplitLogic: céntimos enteros, el céntimo que sobra al primero, propina según lo consumido.
+  function split(ex){
+    var n=ex.people.length,per=ex.people.map(function(){return {c:0,items:[]};});
+    ex.lines.forEach(function(l){var who=l[2].length?l[2]:ex.people.map(function(_,i){return i;});var parts=even(Math.round(l[1]*100),who.length);
+      who.forEach(function(w,k){per[w].c+=parts[k];per[w].items.push(l[0]+(who.length===n&&n>2?" (entre todos)":who.length>1?" (a medias)":""));});});
+    var consumed=per.map(function(p){return p.c;}),sum=consumed.reduce(function(a,b){return a+b;},0);
+    ex.extras.forEach(function(x){var t=Math.round(x[1]*100),acc=0,parts=consumed.map(function(c){var v=Math.floor(t*c/sum);acc+=v;return v;});
+      for(var i=0;acc<t;i++,acc++)parts[i%n]++;parts.forEach(function(v,i){per[i].c+=v;});});
+    var total=per.reduce(function(a,p){return a+p.c;},0);
+    return {per:per,total:total,sub:sum,owed:total-per[0].c};
+  }
+  function av(p,cls){var ini=p.n==="Yo"?"Yo":p.n.slice(0,1);return '<span class="av'+(cls?" "+cls:"")+'" style="background:'+p.c+'">'+esc(ini)+'</span>';}
+  function phone(html){return '<div class="phone '+state.theme+'"><div class="screen">'+html+'</div></div>';}
+  function col(cap,sub,html){return '<div class="col"><div class="cap">'+cap+'<small>'+sub+'</small></div>'+html+'</div>';}
+  var SB='<div class="sb"><span>9:41</span><span>●●● ▮</span></div>';
+  function nav(t,left,right){return '<div class="nav"><span class="circ">'+(left||"‹")+'</span><span class="ttl">'+t+'</span>'+(right?'<span class="circ ok">'+right+'</span>':'<span style="width:40px"></span>')+'</div>';}
+  function photoStrip(ex,r){return '<div class="photo"><span class="thumb"></span><div><b>'+esc(ex.merchant)+'</b><span>'+ex.lines.length+' líneas · '+money(r.sub)+'</span></div><span class="ok">Esto leí ✓</span></div>';}
+  function pending(ex,r){return ex.people.length>2?r.owed-r.per[1].c:r.owed;}
+
+  // ---------- A ----------
+  function aEntryPersonal(){
+    return phone(SB+'<div class="content" style="opacity:.35"><div class="large" style="padding:0">Panel</div></div><div class="scrim"></div><div class="sheet"><div class="grab"></div>'+
+      '<div class="nav" style="height:44px"><span class="circ">✕</span><span></span></div>'+
+      '<div class="shead">Registrar con foto o archivo</div><div class="ssub">Yala lee el recibo y lo deja listo para revisar.</div>'+
+      '<div class="tiles"><div class="tile prim"><i>◉</i>Cámara</div><div class="tile"><i>▦</i>Fotos</div><div class="tile"><i>▤</i>Archivo</div></div>'+
+      '<div class="thin"><i>÷</i><b>Dividir una boleta</b><span>›</span></div>'+
+      '<div class="thinhint">Reparte con quien sea, aunque no use Yala. Registras solo tu parte.</div></div>');
+  }
+  function aEntryGroups(){
+    return phone(SB+'<div class="nav"><span></span><span class="circ">+</span></div><div class="large">Grupos</div><div class="content">'+
+      '<div class="qa"><div class="new">+ Nuevo gasto</div><div class="mini">Voz</div><div class="mini">Foto</div><div class="mini">Yala IA</div></div>'+
+      '<div class="thin inline"><i>÷</i><b>Dividir una boleta</b><span>›</span></div>'+
+      '<div class="sect" style="margin-top:6px">Tus grupos</div>'+
+      '<div class="gcard"><span class="dot" style="background:#0B7F85"></span><div><b>Viaje a Cusco</b><span>5 personas</span></div><div class="amt">Te deben<br>S/ 84.00</div></div>'+
+      '<div class="gcard"><span class="dot" style="background:#D6246E"></span><div><b>Depa Miraflores</b><span>3 personas</span></div><div class="amt">Debes<br>S/ 35.50</div></div>'+
+      '</div><div class="tab"><span class="on">Grupos</span><span>Buscar</span></div>');
+  }
+  function aWho(ex,r){
+    var chips=ex.people.map(function(p,i){return '<span class="chip">'+av(p)+esc(p.n)+(i?'<span class="x">✕</span>':'')+'</span>';}).join("")+'<span class="chip add">+ Añadir</span>';
+    return phone(SB+nav("Dividir una boleta")+'<div class="content">'+photoStrip(ex,r)+
+      '<div class="sect">¿Entre quiénes?</div><div class="chips">'+chips+'</div>'+
+      '<div class="field">Escribe un nombre…</div><div class="recent">Recientes: <b>Andrea</b> · <b>Jorge</b> · <b>Mamá</b></div>'+
+      '<div class="sect">¿Cómo lo dividimos?</div><div class="segp"><span>Por igual</span><span class="on">Por líneas</span></div>'+
+      '<div class="sect">¿Quién comió qué? · opcional</div><div class="phrase"><span class="mic">🎙</span><span>'+esc(ex.phrase)+'</span></div>'+
+      '</div><div class="bottom"><div class="cta">Repartir</div></div>');
+  }
+  function aReview(ex,r){
+    var rows=ex.lines.map(function(l){var w=l[2].length?'<div class="avs">'+l[2].map(function(i){return av(ex.people[i]);}).join("")+'</div>':'<span class="allp">Entre todos</span>';
+      return '<div class="li"><div class="d"><b>'+esc(l[0])+'</b>'+w+'</div><span class="m">'+money(Math.round(l[1]*100))+'</span></div>';}).join("");
+    var extras=ex.extras.length?ex.extras.map(function(x){return '<div class="li"><div class="d"><b>'+esc(x[0])+'</b><span>Según lo que consumió cada uno ▾</span></div><span class="m">'+money(Math.round(x[1]*100))+'</span></div>';}).join(""):
+      '<div class="li"><div class="d"><b style="color:var(--p-acc-text)">+ Añadir propina o servicio</b></div></div>';
+    var per=r.per.map(function(p,i){return '<span style="display:flex;flex-direction:column;align-items:center;gap:3px">'+av(ex.people[i])+'<b style="font:600 13px ui-rounded,-apple-system,system-ui">'+(p.c/100).toFixed(2)+'</b></span>';}).join("");
+    return phone(SB+nav("Revisa el reparto","‹","✓")+'<div class="content" style="gap:8px">'+
+      '<div class="sect">Lo que se pidió</div><div class="list">'+rows+'</div>'+
+      '<div class="foot">Toca una línea para elegir quién la comió.</div>'+
+      '<div class="sect" style="margin-top:4px">Propina, servicio e impuestos</div><div class="list">'+extras+'</div>'+
+      '</div><div class="bottom" style="padding-top:24px"><div class="list" style="display:flex;justify-content:space-around;padding:10px 6px">'+per+'</div><div class="tot"><b>Total</b><span>'+money(r.total)+'</span></div></div>');
+  }
+  function resultRows(ex,r){
+    return r.per.map(function(p,i){var pp=ex.people[i];return '<div class="li'+(i===0?" mine":"")+'">'+av(pp,"lg")+'<div class="d"><b>'+(i===0?"Tu parte":esc(pp.n))+'</b><span>'+esc(p.items.join(" · "))+'</span></div><span class="m big">'+money(p.c)+'</span></div>';}).join("");
+  }
+  function aResult(ex,r,solo){
+    var lbl=ex.people.length===2?esc(ex.people[1].n)+" te debe":"Te deben";
+    var btns=solo?'<div class="cta">Compartir imagen</div><div class="cta2">Guardar como grupo</div>':
+      '<div class="cta">Compartir imagen</div><div class="cta2">Registrar mi parte · '+money(r.per[0].c)+'</div><div class="link">o mándala a la Bandeja</div>';
+    return phone(SB+nav("Listo","‹")+'<div class="content" style="gap:10px">'+
+      '<div class="hero"><div class="l">'+lbl+'</div><div class="amt">'+money(r.owed)+'</div><div class="s">'+esc(ex.merchant)+' · total '+money(r.total)+' · pagaste tú</div></div>'+
+      '<div class="list">'+resultRows(ex,r)+'</div>'+
+      (solo?'<div class="foot">En «solo grupos» no se registra nada: ves el reparto y lo compartes. Si salen seguido, lo guardas como grupo con estos nombres.</div>':'<div class="foot">Tu parte se registra como un gasto tuyo. Lo de los demás no entra en tus registros.</div>')+
+      '</div><div class="bottom">'+btns+'</div>');
+  }
+
+  // ---------- B ----------
+  function bSplit(ex,r){
+    var n=ex.people.length,parts=even(r.total,n),sameAll=parts.every(function(v){return v===parts[0];});
+    return phone(SB+nav("Dividir una boleta")+'<div class="content">'+photoStrip(ex,r)+
+      '<div class="segp"><span class="on">Por igual</span><span style="opacity:.5">Por líneas</span></div>'+
+      '<div class="stepper"><span>Personas</span><span class="b"><i>−</i><span class="n">'+n+'</span><i>+</i></span></div>'+
+      '<div class="sect">Propina</div><div class="tipchips"><span'+(ex.extras.length?'':' class="on"')+'>Sin propina</span><span'+(ex.extras.length?' class="on"':'')+'>10 %</span><span>Otra</span></div>'+
+      '<div class="each"><div class="l">Cada uno</div><div class="amt">'+money(parts[0])+'</div><div class="s">Total '+money(r.total)+(sameAll?'':' · dos pagan un céntimo menos')+'</div></div>'+
+      '<div class="recent">Nombres (opcional): '+ex.people.slice(1).map(function(p){return "<b>"+esc(p.n)+"</b>";}).join(" · ")+' · <b>+ Añadir</b></div>'+
+      '</div><div class="bottom"><div class="cta">Compartir imagen</div><div class="cta2">Registrar mi parte · '+money(parts[0])+'</div></div>');
+  }
+  function bShare(ex,r){
+    var n=ex.people.length,parts=even(r.total,n);
+    var img='<div class="share" style="width:auto;border:0;border-radius:0"><div class="in"><span class="mer">'+esc(ex.merchant)+'</span><div class="sub">Somos '+n+' · total '+money(r.total)+'</div><div class="big" style="font-size:44px">'+money(parts[0])+'</div><div class="sub">cada uno · me lo pasan por Yape o Plin</div></div><div class="ft"><span class="logo"></span><span><b>Dividido con Yala</b> · reparte tu cuenta gratis</span></div></div>';
+    return phone(SB+'<div class="scrim"></div><div class="shareprev">'+img+'</div>'+
+      '<div class="sharesheet"><b style="font-size:15px">Compartir imagen</b><div class="apps"><span><i style="background:#25A35A"></i>Chat</span><span><i style="background:linear-gradient(135deg,#F5A623,#D6246E,#7B3FE4)"></i>Historias</span><span><i style="background:#34C759"></i>Mensajes</span><span><i style="background:#8E8E93"></i>Guardar</span></div></div>');
+  }
+
+  // ---------- C ----------
+  function cList(ex,r){
+    var others=ex.people.length-1;
+    return phone(SB+'<div class="nav"><span></span><span class="circ">+</span></div><div class="large">Grupos</div><div class="content">'+
+      '<div class="sect">Cuentas del día</div>'+
+      '<div class="gcard"><span class="dot" style="background:#5E5CE6">÷</span><div><b>'+esc(ex.merchant)+'</b><span>Hoy · '+(others>1?"1 de "+others+" ya pagó":"pendiente")+'</span></div><div class="amt">Te deben<br>'+money(pending(ex,r))+'</div></div>'+
+      '<div class="gcard"><span class="dot" style="background:#9C9AC4">÷</span><div><b>Pizza del viernes</b><span>22 nov · todos pagaron</span></div><div class="amt paid">Saldada</div></div>'+
+      '<div class="sect" style="margin-top:6px">Tus grupos</div>'+
+      '<div class="gcard"><span class="dot" style="background:#0B7F85"></span><div><b>Viaje a Cusco</b><span>5 personas</span></div><div class="amt">Te deben<br>S/ 84.00</div></div>'+
+      '</div><div class="tab"><span class="on">Grupos</span><span>Buscar</span></div>');
+  }
+  function cDetail(ex,r){
+    var rows=r.per.map(function(p,i){if(i===0)return "";var pp=ex.people[i];var paid=i===1&&ex.people.length>2;
+      return '<div class="li">'+av(pp,"lg")+'<div class="d"><b>'+esc(pp.n)+'</b><span>'+(paid?"Pagó hoy, 3:40 p. m.":"Toca para marcar que pagó")+'</span></div><span class="m">'+money(p.c)+'</span><span class="badge '+(paid?"paid":"pend")+'">'+(paid?"Pagó":"Pendiente")+'</span></div>';}).join("");
+    return phone(SB+nav(esc(ex.merchant),"‹")+'<div class="content" style="gap:10px">'+
+      '<div class="hero"><div class="l">Te falta cobrar</div><div class="amt">'+money(pending(ex,r))+'</div><div class="s">de '+money(r.owed)+' · tu parte, '+money(r.per[0].c)+', ya está en tus registros</div></div>'+
+      '<div class="list">'+rows+'</div>'+
+      '<div class="foot">Cada uno ve su parte con el enlace de la imagen, sin bajar Yala. Si la bajan, la cuenta se vuelve un grupo con ellos.</div>'+
+      '</div><div class="bottom"><div class="cta">Mandar recordatorio</div><div class="cta2">Compartir enlace</div></div>');
+  }
+
+  // ---------- Imágenes ----------
+  var FT='<div class="ft"><span class="logo"></span><span><b>Dividido con Yala</b> · reparte tu cuenta gratis</span></div>';
+  function shareMeDeben(ex,r){
+    var others=r.per.map(function(p,i){if(i===0)return "";var pp=ex.people[i];return '<div class="p">'+av(pp)+'<div class="n"><b>'+esc(pp.n)+'</b><span>'+esc(p.items.join(" · "))+'</span></div><span class="a">'+money(p.c)+'</span></div>';}).join("");
+    var one=ex.people.length===2;
+    return '<div class="share"><div class="in"><span class="mer">'+esc(ex.merchant)+' · hoy</span><div><div class="sub">'+(one?esc(ex.people[1].n)+" me debe":"Me deben")+'</div><div class="big">'+money(r.owed)+'</div><div class="sub">Pagó '+esc(ex.owner)+' · total '+money(r.total)+(ex.extras.length?' con propina':'')+'</div></div><div class="hr"></div>'+others+
+      '<div class="hr"></div><div class="sub">Mi parte: '+money(r.per[0].c)+' · '+esc(r.per[0].items.join(" · "))+'</div></div>'+FT+'</div>';
+  }
+  function shareDetalle(ex,r){
+    var ln=ex.lines.map(function(l){var who=l[2].length?l[2]:ex.people.map(function(_,i){return i;});return '<div class="ln"><span>'+esc(l[0])+'</span><span class="am">'+l[1].toFixed(2)+'</span><span class="w">'+who.map(function(i){return av(ex.people[i]);}).join("")+'</span></div>';}).join("");
+    var ext=ex.extras.map(function(x){return '<div class="ln"><span>'+esc(x[0])+' · según consumo</span><span class="am">'+x[1].toFixed(2)+'</span></div>';}).join("");
+    var tot=r.per.map(function(p,i){var pp=ex.people[i];return '<div class="p" style="align-items:center">'+av(pp)+'<div class="n"><b>'+(i===0?esc(ex.owner)+" (pagó)":esc(pp.n))+'</b></div><span class="a">'+money(p.c)+'</span></div>';}).join("");
+    return '<div class="share"><div class="in" style="gap:8px"><span class="mer">'+esc(ex.merchant)+' · hoy</span>'+ln+ext+'<div class="hr"></div>'+tot+'</div>'+FT+'</div>';
+  }
+  function shareStory(ex,r){
+    var cards=r.per.map(function(p,i){if(i===0)return "";var pp=ex.people[i];return '<div class="pcard" style="background:'+pp.c+'"><div><b>'+esc(pp.n)+'</b><span>'+esc(p.items.join(" · "))+'</span></div><span class="a">'+money(p.c)+'</span></div>';}).join("");
+    return '<div class="share story" style="min-height:calc(var(--pw) * 1.6)"><div class="in" style="flex:1"><span class="mer">'+esc(ex.merchant)+'</span><div class="big" style="font-size:26px">'+(ex.people.length===2?"Me debes":"Cada uno me debe")+'</div><div class="sub">Pagó '+esc(ex.owner)+' · total '+money(r.total)+'</div>'+cards+'</div>'+
+      '<div class="ft"><span class="logo"></span><span><b>Dividido con Yala</b> · reparte tu cuenta gratis</span></div></div>';
+  }
+
+  function render(){
+    var ex=EX[state.ex],r=split(ex);
+    document.getElementById("rowA").innerHTML=
+      col("1 · Entrada en Yala completo","Botón largo bajo Cámara, Fotos y Archivo, en la hoja de foto de siempre.",aEntryPersonal())+
+      col("1b · Entrada en «solo grupos»","Bajo la fila de Grupos. Mismo flujo, sin elegir grupo.",aEntryGroups())+
+      col("2 · ¿Entre quiénes?","Tú siempre estás. Nombres escritos o recientes; por igual o por líneas; la frase es opcional y se puede dictar.",aWho(ex,r))+
+      col("3 · Revisa el reparto","La revisión de Grupos de hoy, con nombres sueltos. La propina no entra hasta que eliges cómo.",aReview(ex,r))+
+      col("4 · Listo, en Yala completo","Lo que te deben, con tu parte resaltada. «Registrar mi parte» abre Nuevo registro ya relleno.",aResult(ex,r,false))+
+      col("4b · Listo, en «solo grupos»","No se registra nada. Compartir, o guardarlo como grupo si salen seguido.",aResult(ex,r,true));
+    document.getElementById("rowB").innerHTML=
+      col("1 · Entre N","Misma entrada que A. La foto da el total; eliges personas y propina.",bSplit(ex,r))+
+      col("2 · Imagen simple","Solo el monto por persona: se lee de un vistazo en el chat.",bShare(ex,r));
+    document.getElementById("rowC").innerHTML=
+      col("1 · Cuentas del día","Tras «Listo» de A, la cuenta queda en Grupos sin ser un grupo.",cList(ex,r))+
+      col("2 · Quién ya pagó","Marcas pagos, mandas un recordatorio y el enlace enseña a cada uno su parte.",cDetail(ex,r));
+    document.getElementById("rowShare").innerHTML=
+      col("1 · Me deben · recomendada","Lo que Jürgen describió: cuánto debe cada uno y por qué. 4:5.",shareMeDeben(ex,r))+
+      col("2 · Detalle de la boleta","Cada línea con quién la comió y los totales. Para quien pregunta «¿y eso por qué?». 4:5.",shareDetalle(ex,r))+
+      col("3 · Historia, una por persona","Tarjetas de color para historias de Instagram. 9:16, más vistosa y con menos detalle.",shareStory(ex,r));
+    document.getElementById("thLight").setAttribute("aria-pressed",String(state.theme==="m-light"));
+    document.getElementById("thDark").setAttribute("aria-pressed",String(state.theme==="m-dark"));
+    document.getElementById("exA").setAttribute("aria-pressed",String(state.ex==="almuerzo"));
+    document.getElementById("exP").setAttribute("aria-pressed",String(state.ex==="pareja"));
+    try{localStorage.setItem("dbsg",JSON.stringify(state));}catch(e){}
+  }
+  document.getElementById("thLight").onclick=function(){state.theme="m-light";render();};
+  document.getElementById("thDark").onclick=function(){state.theme="m-dark";render();};
+  document.getElementById("exA").onclick=function(){state.ex="almuerzo";render();};
+  document.getElementById("exP").onclick=function(){state.ex="pareja";render();};
+  render();
+
+  // Decisión en la base del artifact (solo el dueño escribe).
+  var statusEl=document.getElementById("status"),saveBtn=document.getElementById("save"),db=null;
+  function pick(n){var r=document.querySelector('input[name="'+n+'"]:checked');return r?r.value:"";}
+  function setPick(n,v){var r=document.querySelector('input[name="'+n+'"][value="'+v+'"]');if(r)r.checked=true;}
+  function offline(){statusEl.textContent="Para guardar, ábrelo en claude.ai con tu cuenta.";}
+  function shown(v){return "Guardada: camino "+(v.flujo||"—")+", imagen "+(v.imagen||"—")+", versión "+(v.version||"—")+".";}
+  if(window.claude&&window.claude.use){
+    window.claude.use("db").then(function(d){
+      db=d;if(!db){offline();return;}
+      var t=setTimeout(function(){statusEl.textContent="No se pudo leer la decisión guardada; puedes guardar igual.";},10000);
+      db.doc("decisiones/dividir-boleta").get().then(function(s){clearTimeout(t);if(s.exists){var v=s.data();setPick("flujo",v.flujo);setPick("imagen",v.imagen);setPick("version",v.version);document.getElementById("notes").value=v.nota||"";statusEl.textContent=shown(v);}}).catch(function(){clearTimeout(t);});
+    });
+  } else offline();
+  saveBtn.addEventListener("click",function(){
+    if(!db){offline();return;}
+    var v={flujo:pick("flujo"),imagen:pick("imagen"),version:pick("version"),nota:document.getElementById("notes").value.slice(0,1000),cuando:new Date().toISOString()};
+    if(!v.flujo&&!v.imagen&&!v.version){statusEl.textContent="Elige al menos una opción.";return;}
+    saveBtn.disabled=true;statusEl.textContent="Guardando…";
+    db.doc("decisiones/dividir-boleta").set(v)
+      .then(function(){statusEl.textContent=shown(v)+" Frank la lee desde aquí.";})
+      .catch(function(){statusEl.textContent="No se pudo guardar. Solo Jürgen puede guardar la decisión.";})
+      .finally(function(){saveBtn.disabled=false;});
+  });
+})();
+</script>
