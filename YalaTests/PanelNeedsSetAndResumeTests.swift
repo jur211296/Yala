@@ -144,10 +144,18 @@ struct ForegroundResumeTests {
             ("Yala/App/Views/Groups/GroupDetailView.swift", "detalle-grupo"),
             ("Yala/App/Views/Reports/FinancialReportView.swift", "informes"),
         ]
+        // Desde el lote 1 de eficiencia (26-nov-2026) las seis vuelven por `VueltaAPrimerPlano.alVolver`, que suelta el freno
+        // por `ForegroundResume` y luego comprueba la firma de la pantalla.
+        let vuelta = try repoSource("Yala/App/Logic/FrescuraAlVolver/VueltaAPrimerPlano.swift")
+        #expect(vuelta.contains("ForegroundResume.whenApplicationActive(site) {"), "VueltaAPrimerPlano no suelta por ForegroundResume")
         for (path, site) in screens {
             let source = try repoSource(path)
-            let start = try #require(source.range(of: "ForegroundResume.whenApplicationActive(\"\(site)\")"), "\(path)")
-            let before = source[..<start.lowerBound].suffix(300)
+            let viaVuelta = try Regex("VueltaAPrimerPlano\\.alVolver\\(\\s*\"\(site)\"")
+            let start = try #require(
+                source.firstMatch(of: viaVuelta)?.range ?? source.range(of: "ForegroundResume.whenApplicationActive(\"\(site)\")"),
+                "\(path)")
+            // 600: el comentario que explica la vuelta por la firma va entre el `case` y la llamada.
+            let before = source[..<start.lowerBound].suffix(600)
             #expect(before.contains("case .active:"), "\(path): cuelga del case .active del scenePhase")
             #expect(!before.contains("guard UIApplication.shared.applicationState == .active else { return }"), "\(path)")
         }

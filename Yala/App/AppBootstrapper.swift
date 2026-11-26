@@ -2565,7 +2565,12 @@ final class AppBootstrapper {
         }
 
         // Lo que llegó sincronizado mientras la app no estaba delante entra (o sale) del índice de Spotlight (card ste6).
-        SpotlightIndexService.scheduleReconcile(context: context)
+        // Solo si algo cambió desde la última reconciliación (lote 1 de eficiencia, `SpotlightAlVolver`): leer todos
+        // los movimientos en cada vuelta costaba ~1,8 s con 16 k. Va detrás de `applyPendingChangesIfNeeded`, así que lo
+        // que bajó CloudKit ya subió `dataVersion`.
+        if SpotlightAlVolver.debeReconciliar(ahora: SpotlightIndexService.currentFirma()) {
+            SpotlightIndexService.scheduleReconcile(context: context)
+        }
 
         // «Comercios en común» (2.3): el aviso de una vez, la lista común una vez al día y el lote semanal. Sin red en
         // XCUITest: ahí la lista la siembra `-uitest-comercios-comun-lista` (vacía si no se pasa).

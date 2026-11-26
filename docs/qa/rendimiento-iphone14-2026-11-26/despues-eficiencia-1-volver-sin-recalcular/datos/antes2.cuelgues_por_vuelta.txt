@@ -1,0 +1,11 @@
+ciclo 1 cuelgues 2 máx 8565 ms suma 10187 ms
+ciclo 2 cuelgues 1 máx 7637 ms suma 7637 ms
+ciclo 3 cuelgues 1 máx 7739 ms suma 7739 ms
+ciclo 4 cuelgues 1 máx 7535 ms suma 7535 ms
+ciclo 5 cuelgues 1 máx 7783 ms suma 7783 ms
+ciclo 6 cuelgues 1 máx 7570 ms suma 7570 ms
+ciclo 7 cuelgues 1 máx 7398 ms suma 7398 ms
+ciclo 8 cuelgues 1 máx 7575 ms suma 7575 ms
+ciclo 9 cuelgues 1 máx 7649 ms suma 7649 ms
+ciclo 10 cuelgues 1 máx 7319 ms suma 7319 ms
+TOTAL 11 cuelgues, máx 8565 ms, suma 78394 ms

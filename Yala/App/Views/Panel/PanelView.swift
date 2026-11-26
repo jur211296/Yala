@@ -518,12 +518,18 @@ struct PanelView: View {
             case .background, .inactive:
                 viewModel.setBackground(true)
             case .active:
-                // Con la app aún sin activar, espera a que lo esté en vez de dejar el freno puesto (`ForegroundResume`).
-                ForegroundResume.whenApplicationActive("panel") {
-                    viewModel.setBackground(false)
-                    viewModel.reloadAndRecalculate()
-                    refreshCloudAdoptMarker()
-                }
+                // Volver no recalcula lo que no cambió (lote 1 de eficiencia, `VueltaAPrimerPlano`): con el Panel a la
+                // vista, su firma decide (`reloadOnAppearIfStale`); oculto, no calcula y su `onAppear` lo hará al volver
+                // a él. Recargar siempre costaba 7-16 s de hilo principal por vuelta con 16 k movimientos.
+                VueltaAPrimerPlano.alVolver(
+                    "panel",
+                    paginaVisible: isRootPageShown,
+                    soltarFreno: { viewModel.setBackground(false) },
+                    comprobar: {
+                        viewModel.reloadOnAppearIfStale()
+                        refreshCloudAdoptMarker()
+                    }
+                )
             @unknown default:
                 break
             }

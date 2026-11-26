@@ -152,6 +152,14 @@ paths:
   `ForegroundResume`): esa línea es la medida de si pasa en un aparato. Una pantalla nueva con freno lo usa; lo fija
   `ForegroundResumeTests`. Y el freno del Panel deja calcular con la app `.inactive` en primer plano (el arranque en
   frío antes de la primera activación); el paso a segundo plano lo sigue frenando `setBackground(true)` en `.inactive`.
+  **Y volver a `.active` ya no recarga por costumbre (2026-11-26, lote 1 de eficiencia):** las seis pantallas pasan por
+  `VueltaAPrimerPlano.alVolver` (`Logic/FrescuraAlVolver/`), que suelta el freno y, solo con la página a la vista y una
+  vuelta del main actor después, comprueba la firma de la pantalla; oculta, no calcula y lo hace al aparecer. Medido en el
+  iPhone 14 con 16 k: el bloqueo tras volver pasó de 9 s a 0 s. ⇒ **una pantalla nueva con freno vuelve por ahí, con su
+  firma** (la suya, o `FrescuraAlVolver` tomada al irse), y **lo que el freno descarta o corta con la app fuera se apunta**
+  (`PanelViewModel.hasInterruptedWork`, `RecalculationDebouncer.hasUnfinishedWork`): sin la recarga incondicional, un
+  recálculo de filtros o de tasas pedido con la app fuera se perdería. Pin: `YalaTests/EficienciaVolverSinRecalcular/`
+  (ningún `onChange(of: scenePhase)` de `Yala/App` recarga a pelo).
 
 - **«Solo grupos» tiene dos orígenes desde el 2026-10-26 (card p0iu), y la shell los lee juntos.** Sin sesión privada
   (`!hasPrivateSession`, el eje) o con sesión privada y «Solo grupos» elegido en «Cómo usas Yala» (`GroupsOnlyViewMark`,

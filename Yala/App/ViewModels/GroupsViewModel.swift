@@ -278,6 +278,10 @@ final class GroupsViewModel {
         debouncer.setBackground(value)
     }
 
+    /// Un recálculo pedido que no llegó a correr (en su espera, cortado o descartado por el freno): la vuelta a primer
+    /// plano recarga aunque la firma no haya cambiado (lote 1 de eficiencia, `FrescuraAlVolver`).
+    var hasUnfinishedRecalculation: Bool { debouncer.hasUnfinishedWork }
+
     /// Debounce compartido (150ms, `RecalculationDebouncer`): un reload pedido dentro de la ventana no
     /// se pierde, y la espera la suprimen el segundo plano y la app inactiva.
     private func scheduleRecalculation(reload: Bool) {

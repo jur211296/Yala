@@ -21,6 +21,8 @@ struct DetailContainerView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.yalaTheme) private var theme
     @Environment(\.scenePhase) private var scenePhase
+    /// `false` con Estadísticas montada detrás de otra pestaña: al volver a primer plano no calcula (lote 1 de eficiencia).
+    @Environment(\.isRootPageShown) private var isRootPageShown
     /// Size class de la ventana: en ancha el chip Registros abre el registro en un panel al lado de la lista.
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -302,11 +304,15 @@ struct DetailContainerView: View {
                     isInBackground = true
                     recalculateTask?.cancel()
                 case .active:
-                    // Con la app aún sin activar, espera a que lo esté en vez de dejar el freno puesto (`ForegroundResume`).
-                    ForegroundResume.whenApplicationActive("estadisticas") {
-                        isInBackground = false
-                        reloadAndRecalculate()
-                    }
+                    // Volver no recalcula lo que no cambió (lote 1 de eficiencia, `VueltaAPrimerPlano`): a la vista, la
+                    // firma de la entrada decide (`requestCalculationOnEntry`, que también ve una pasada cortada por el
+                    // freno); oculta, no calcula y su `onAppear` lo hará al volver a ella.
+                    VueltaAPrimerPlano.alVolver(
+                        "estadisticas",
+                        paginaVisible: isRootPageShown,
+                        soltarFreno: { isInBackground = false },
+                        comprobar: { requestCalculationOnEntry() }
+                    )
                 @unknown default:
                     break
                 }

@@ -66,6 +66,7 @@ enum SpotlightIndexService {
         pendingReconcile?.cancel()
         pendingReconcile = nil
         SpotlightIndexState.remove()
+        SpotlightAlVolver.olvidar()
         enqueue {
             do {
                 try await index.deleteAllSearchableItems()
@@ -81,10 +82,14 @@ enum SpotlightIndexService {
 
     private static func reconcile(context: ModelContext) {
         guard !WidgetDataCache.isWipeArmed else { return }
+        // Lo que lee esta reconciliación: la vuelta a primer plano no repite si nada cambió desde aquí (lote 1 de
+        // eficiencia, `SpotlightAlVolver`). Se toma antes de leer: un guardado durante la lectura cuenta como cambio.
+        SpotlightAlVolver.anotarReconciliacion(currentFirma())
         let desired: [SpotlightEntry]
         do {
             desired = try desiredEntries(context: context)
         } catch {
+            SpotlightAlVolver.olvidar()
             #if DEBUG
             print("SpotlightIndexService: Error: \(error)")
             #endif
@@ -113,6 +118,7 @@ enum SpotlightIndexService {
             } catch {
                 // Sin estado guardado, la próxima vez se vacía y se indexa entero: un índice a medias no se queda.
                 SpotlightIndexState.remove()
+                SpotlightAlVolver.olvidar()
                 #if DEBUG
                 print("SpotlightIndexService: Error: \(error)")
                 #endif
@@ -157,6 +163,18 @@ enum SpotlightIndexService {
         }
         return SpotlightIndexLogic.entries(
             accounts: accounts, transactions: inputs, context: spotlightContext, presentation: presentation())
+    }
+
+    /// Lo que decide si la vuelta a primer plano reconcilia (`SpotlightAlVolver`): lo que puede cambiar el índice.
+    static func currentFirma() -> SpotlightFirma {
+        let context = currentContext()
+        return SpotlightFirma(
+            dataVersion: SessionState.shared.dataVersion,
+            storeSaves: StoreSaveCounter.shared.count,
+            isGroupsFocusedShell: context.isGroupsFocusedShell,
+            isExpensesOnlyMode: context.isExpensesOnlyMode,
+            includeGroupTransactions: context.includeGroupTransactions
+        )
     }
 
     static func currentContext() -> SpotlightIndexLogic.Context {

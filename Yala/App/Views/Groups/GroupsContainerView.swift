@@ -29,6 +29,8 @@ struct GroupsContainerView: View {
     // MARK: - State
 
     @State private var viewModel = GroupsViewModel()
+    /// Lo que tenía el mundo al irse la app: volver solo recarga si cambió (`FrescuraAlVolver`, lote 1 de eficiencia).
+    @State private var frescura = FrescuraAlVolver()
     /// El «+» flotante, solo cuando el scroll se lleva los botones de arriba (card kzhe).
     @State private var showFloatingActions = false
     /// La primera carga llegó en el `onAppear` de la pestaña, sin que el indicador se pintara: no se funde (card hsqm).
@@ -474,22 +476,7 @@ struct GroupsContainerView: View {
                 showNudgeBanner = false
                 viewModel.cancelRecalculation()
             }
-            .onChange(of: scenePhase) { _, newPhase in
-                switch newPhase {
-                case .background, .inactive:
-                    viewModel.setBackground(true)
-                case .active:
-                    // Con la app aún sin activar, espera a que lo esté en vez de dejar el freno puesto (`ForegroundResume`).
-                    ForegroundResume.whenApplicationActive("grupos") {
-                        viewModel.setBackground(false)
-                        viewModel.reloadAndRecalculate()
-                        // Volver de background es el salto de reloj que hace terminal a una racha de ayer.
-                        refreshAttestTerminalNotice()
-                    }
-                @unknown default:
-                    break
-                }
-            }
+            .onChange(of: scenePhase) { _, newPhase in handleScenePhase(newPhase) }
             .onChange(of: sessionState.dataVersion) {
                 // Sync remoto: debounced para coalescer ráfagas de cambios de CloudKit.
                 viewModel.reloadAndRecalculate()
@@ -1168,6 +1155,47 @@ struct GroupsContainerView: View {
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.top, DS.Spacing.xs)
         }
+    }
+
+    // MARK: - Vuelta a primer plano (lote 1 de eficiencia)
+
+    /// Irse pone el freno y apunta la firma; volver solo recarga si algo cambió mientras la app estaba fuera (un guardado
+    /// —también las páginas que baja la nube de Grupos sin subir `dataVersion`—, `dataVersion`, el día, o un recálculo que
+    /// el freno cortó). Oculta no calcula: su `onAppear` carga al volver a la pestaña. Antes cada vuelta recargaba todos
+    /// los grupos con sus gastos, repartos y liquidaciones.
+    private func handleScenePhase(_ newPhase: ScenePhase) {
+        switch newPhase {
+        case .background, .inactive:
+            frescura.alIrse(currentFirma())
+            viewModel.setBackground(true)
+        case .active:
+            VueltaAPrimerPlano.alVolver(
+                "grupos",
+                paginaVisible: isRootPageShown,
+                // Volver de background es el salto de reloj que hace terminal a una racha de ayer: el aviso se relee
+                // siempre, también con la pestaña oculta.
+                soltarFreno: {
+                    viewModel.setBackground(false)
+                    refreshAttestTerminalNotice()
+                },
+                comprobar: {
+                    let reload = frescura.alVolverVisible(
+                        ahora: currentFirma(),
+                        trabajoSinTerminar: viewModel.hasUnfinishedRecalculation,
+                        cambiosSinGuardar: modelContext.hasChanges)
+                    if reload { viewModel.reloadAndRecalculate() }
+                },
+                // Su `onAppear` ya carga siempre al volver a la pestaña: no hace falta apuntar nada, solo soltar la firma.
+                alQuedarOculta: { frescura = FrescuraAlVolver() }
+            )
+        @unknown default:
+            break
+        }
+    }
+
+    private func currentFirma() -> FirmaAlVolver {
+        FirmaAlVolver.tomar(
+            dataVersion: sessionState.dataVersion, storeSaves: StoreSaveCounter.shared.count, now: .now, calendar: .current)
     }
 
     /// ¿Se enseña el aviso? El veredicto viene del `@State` —es lo único que no se puede leer reactivamente— y las

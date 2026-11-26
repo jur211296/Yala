@@ -139,11 +139,14 @@ struct FinancialReportView: View {
                 recalculateTask?.cancel()
                 recalculateTask = nil
             case .active:
-                // Con la app aún sin activar, espera a que lo esté en vez de dejar el freno puesto (`ForegroundResume`).
-                ForegroundResume.whenApplicationActive("informes") {
-                    isInBackground = false
-                    scheduleRecalculate()
-                }
+                // Volver no recalcula lo que no cambió (lote 1 de eficiencia, `VueltaAPrimerPlano`): con la Comparativa a
+                // la vista, su frescura decide (pendiente, guardados, día); oculta, la calcula al aparecer.
+                VueltaAPrimerPlano.alVolver(
+                    "informes",
+                    paginaVisible: isRootPageShown && effectiveReportTab == .comparativa,
+                    soltarFreno: { isInBackground = false },
+                    comprobar: { recalculateComparativaIfNeeded() }
+                )
             @unknown default:
                 break
             }

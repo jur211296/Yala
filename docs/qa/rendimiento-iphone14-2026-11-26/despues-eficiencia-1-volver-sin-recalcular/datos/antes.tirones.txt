@@ -1,0 +1,11 @@
+ciclo 1: tirones 11 (>250 ms: 0, máx 33 ms) · cuelgues 3 (máx 8156 ms, suma 17472 ms)
+ciclo 2: tirones 18 (>250 ms: 0, máx 33 ms) · cuelgues 4 (máx 7637 ms, suma 19020 ms)
+ciclo 3: tirones 10 (>250 ms: 0, máx 17 ms) · cuelgues 2 (máx 7566 ms, suma 9454 ms)
+ciclo 4: tirones 17 (>250 ms: 0, máx 33 ms) · cuelgues 4 (máx 7716 ms, suma 18605 ms)
+ciclo 5: tirones 17 (>250 ms: 0, máx 17 ms) · cuelgues 3 (máx 7716 ms, suma 16979 ms)
+ciclo 6: tirones 12 (>250 ms: 0, máx 17 ms) · cuelgues 2 (máx 7437 ms, suma 9218 ms)
+ciclo 7: tirones 16 (>250 ms: 0, máx 33 ms) · cuelgues 4 (máx 7442 ms, suma 18113 ms)
+ciclo 8: tirones 19 (>250 ms: 0, máx 33 ms) · cuelgues 4 (máx 7500 ms, suma 18505 ms)
+ciclo 9: tirones 10 (>250 ms: 0, máx 33 ms) · cuelgues 2 (máx 7500 ms, suma 9355 ms)
+ciclo 10: tirones 15 (>250 ms: 0, máx 17 ms) · cuelgues 2 (máx 7249 ms, suma 8770 ms)
+TOTAL tras volver: tirones 145, >250 ms 0, máx 33 ms; cuelgues 30, máx 8156 ms, suma 145491 ms

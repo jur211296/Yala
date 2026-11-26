@@ -66,6 +66,41 @@ struct GroupDetailView: View {
         Task { await GroupService.shared.performRemovedSelfCleanup(zoneName: zoneID, context: modelContext) }
     }
 
+    // MARK: - Vuelta a primer plano (lote 1 de eficiencia)
+
+    /// Irse pone el freno y apunta la firma; volver solo recarga si algo cambió mientras la app estaba fuera (un guardado,
+    /// `dataVersion`, el día, o un recálculo que el freno cortó). Con la pestaña de Grupos oculta no calcula: su
+    /// `onAppear` carga al volver a ella. Antes cada vuelta recargaba gastos, repartos y liquidaciones del grupo.
+    private func handleScenePhase(_ newPhase: ScenePhase) {
+        switch newPhase {
+        case .background, .inactive:
+            frescura.alIrse(currentFirma())
+            viewModel.setBackground(true)
+        case .active:
+            VueltaAPrimerPlano.alVolver(
+                "detalle-grupo",
+                paginaVisible: isRootPageShown,
+                soltarFreno: { viewModel.setBackground(false) },
+                comprobar: {
+                    let reload = frescura.alVolverVisible(
+                        ahora: currentFirma(),
+                        trabajoSinTerminar: viewModel.hasUnfinishedRecalculation,
+                        cambiosSinGuardar: modelContext.hasChanges)
+                    if reload { viewModel.reloadAndRecalculate() }
+                },
+                // Su `onAppear` ya carga siempre: no hace falta apuntar nada, solo soltar la firma.
+                alQuedarOculta: { frescura = FrescuraAlVolver() }
+            )
+        @unknown default:
+            break
+        }
+    }
+
+    private func currentFirma() -> FirmaAlVolver {
+        FirmaAlVolver.tomar(
+            dataVersion: sessionState.dataVersion, storeSaves: StoreSaveCounter.shared.count, now: .now, calendar: .current)
+    }
+
     // MARK: - Environment
 
     @Environment(\.dismiss) private var dismiss
@@ -73,6 +108,8 @@ struct GroupDetailView: View {
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
     @Environment(\.scenePhase) private var scenePhase
+    /// `false` con la pestaña de Grupos detrás de otra: al volver a primer plano no calcula (lote 1 de eficiencia).
+    @Environment(\.isRootPageShown) private var isRootPageShown
     @Environment(SceneNavigation.self) private var navigation
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(AppPreferences.self) private var appPreferences
@@ -92,6 +129,8 @@ struct GroupDetailView: View {
     // MARK: - State
 
     @State private var viewModel: GroupDetailViewModel
+    /// Lo que tenía el mundo al irse la app: volver solo recarga si cambió (`FrescuraAlVolver`, lote 1 de eficiencia).
+    @State private var frescura = FrescuraAlVolver()
     /// Las pestañas montadas y la que se ve. Chip y página cambian juntos (`StagedTabPages`, card pjum): la nueva se
     /// monta invisible debajo y, ya montada, la fila y la página cambian en el mismo movimiento.
     @State private var pages = StagedTabSelection<GroupDetailTab>(.records)
@@ -239,20 +278,7 @@ struct GroupDetailView: View {
             showNudgeBanner = false
             viewModel.cancelRecalculation()
         }
-        .onChange(of: scenePhase) { _, newPhase in
-            switch newPhase {
-            case .background, .inactive:
-                viewModel.setBackground(true)
-            case .active:
-                // Con la app aún sin activar, espera a que lo esté en vez de dejar el freno puesto (`ForegroundResume`).
-                ForegroundResume.whenApplicationActive("detalle-grupo") {
-                    viewModel.setBackground(false)
-                    viewModel.reloadAndRecalculate()
-                }
-            @unknown default:
-                break
-            }
-        }
+        .onChange(of: scenePhase) { _, newPhase in handleScenePhase(newPhase) }
         // Card th4n: el aviso de ESTE grupo con el detalle ya abierto (en segundo plano o delante) no lo vuelve a montar;
         // sin esto se quedaba con lo de antes hasta tirar para refrescar.
         .modifier(GroupNotificationEntryObserver(entry: navigation.groupOpenedFromNotification, onChange: {
