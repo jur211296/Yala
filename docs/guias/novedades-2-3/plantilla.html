@@ -80,7 +80,7 @@ summary::-webkit-details-marker{display:none}
 .todavia_no{background:var(--no-bg);color:var(--no)}
 .fuera,.retirado{background:var(--out-bg);color:var(--out)}
 .bld{background:transparent;border:1px solid var(--line);color:var(--muted)}
-.bld.b10{border-color:var(--accent);color:var(--accent);font-weight:700}
+.bld.b11{border-color:var(--accent);color:var(--accent);font-weight:700}
 .bld.bno{border-style:dashed}
 .nv{background:var(--accent);color:#fff}
 .chg{font-size:.82rem;color:var(--accent);font-weight:600}
@@ -125,9 +125,9 @@ footer{color:var(--muted);font-size:.8rem}
 
 <main>
   <header>
-    <p class="eyebrow">Yala · TestFlight 2.3 (10) · actualizada el 25 nov 2026</p>
+    <p class="eyebrow">Yala · TestFlight 2.3 (11) · actualizada el 26 nov 2026</p>
     <h1>Lo nuevo de la 2.3, para recorrerlo como usuario</h1>
-    <p class="lede">Todo lo que cambió desde la 2.2 de la App Store hasta la 2.3 (10) de TestFlight, y lo que todavía no llegó. Arriba, primero, lo nuevo desde la guía de la mañana del 25-nov (la de la 2.3 (9)): lo que trajo la build 10. Toca un ítem para ver dónde está, en qué build, cómo probarlo y dejar tu nota. Tus notas se guardan solas y al final las copias en un bloque para Frank.</p>
+    <p class="lede">Todo lo que cambió desde la 2.2 de la App Store hasta la 2.3 (11) de TestFlight, y lo que todavía no llegó. Arriba, primero, lo nuevo desde la guía del 25-nov (la de la 2.3 (10)): lo que trajo la build 11, casi todo de Primeros pasos. Toca un ítem para ver dónde está, en qué build, cómo probarlo y dejar tu nota. Tus notas se guardan solas y al final las copias en un bloque para Frank.</p>
   </header>
 
   <section aria-labelledby="h-res" style="display:grid;gap:10px">
@@ -144,9 +144,9 @@ footer{color:var(--muted);font-size:.8rem}
   </section>
 
   <section class="note" aria-label="Antes de empezar">
-    <p><b>Probar como usuario nuevo sin perder tus datos:</b> instala la 2.3 (10) desde TestFlight en el iPhone 14 de pruebas (u otro teléfono con otro Apple ID) y entra con una cuenta de prueba; tu iPhone personal no se toca.</p>
-    <p><b>Usuario antiguo:</b> en tu iPhone, actualiza a la 2.3 (10) desde TestFlight encima de la 2.2 (o de la build que tengas); tus datos se quedan.</p>
-    <p><b>Medido en producción el 25-nov:</b> Yala IA está al 100 %, Yala web responde en app.yala-app.pe y el conector de tu IA en mcp.yala-app.pe (el arreglo para conectar Grok aún espera su despliegue). «Otra cuenta de Apple» sigue al 0 %: solo en pruebas.</p>
+    <p><b>Probar como usuario nuevo sin perder tus datos:</b> instala la 2.3 (11) desde TestFlight en el iPhone 14 de pruebas (u otro teléfono con otro Apple ID) y entra con una cuenta de prueba; tu iPhone personal no se toca.</p>
+    <p><b>Usuario antiguo:</b> en tu iPhone, actualiza a la 2.3 (11) desde TestFlight encima de la 2.2 (o de la build que tengas); tus datos se quedan.</p>
+    <p><b>Medido en producción el 26-nov:</b> Yala IA está al 100 %, Yala web responde en app.yala-app.pe y el conector de tu IA en mcp.yala-app.pe (el despliegue del arreglo para conectar Grok no se volvió a comprobar). «Otra cuenta de Apple» sigue al 0 %: solo en pruebas.</p>
   </section>
 
   <section aria-label="Lista completa" style="display:grid;gap:6px">
@@ -170,7 +170,7 @@ footer{color:var(--muted);font-size:.8rem}
   </section>
 
   <footer>
-    <p>Fuentes: los PR mergeados en la rama 2.3 desde la 2.2 hasta el corte de la 2.3 (10), el tablero de 2.3, las notas de TestFlight y lo medido en producción el 25-nov. Las capturas viejas son del iPhone 14 de pruebas (barridos del 14 y 15-nov); las nuevas, del simulador con datos de prueba (23 y 24-nov). <span id="store-state"></span></p>
+    <p>Fuentes: los PR mergeados en la rama 2.3 desde la 2.2 hasta el corte de la 2.3 (11), el tablero de 2.3, las notas de TestFlight y lo medido en producción el 26-nov. Las capturas viejas son del iPhone 14 de pruebas (barridos del 14 y 15-nov); las nuevas, del simulador con datos de prueba (23 y 24-nov, y las de Primeros pasos del 25 y 26-nov). <span id="store-state"></span></p>
   </footer>
 </main>
 
@@ -194,8 +194,8 @@ const SECS = [
   {k:"todo",label:"Todo",test:x=>true},
 ];
 const ST = {listo:"Listo para probar",activable:"Se puede activar",todavia_no:"Todavía no en producción",retirado:"Reemplazado después",fuera:"No está en TestFlight"};
-const BLD = {"1":"2.3 (1)","2":"2.3 (2)","3":"2.3 (3)","4":"2.3 (4)","5":"2.3 (5)","6":"2.3 (6)","7":"2.3 (7)","8":"2.3 (8)","9":"2.3 (9)","10":"2.3 (10)","web":"Yala web","no":"Aún no en TestFlight"};
-const BCLS = {"1":"b1","2":"b2","3":"b3","4":"b4","5":"b5","6":"b6","7":"b7","8":"b8","9":"b9","10":"b10","web":"bweb","no":"bno"};
+const BLD = {"1":"2.3 (1)","2":"2.3 (2)","3":"2.3 (3)","4":"2.3 (4)","5":"2.3 (5)","6":"2.3 (6)","7":"2.3 (7)","8":"2.3 (8)","9":"2.3 (9)","10":"2.3 (10)","11":"2.3 (11)","web":"Yala web","no":"Aún no en TestFlight"};
+const BCLS = {"1":"b1","2":"b2","3":"b3","4":"b4","5":"b5","6":"b6","7":"b7","8":"b8","9":"b9","10":"b10","11":"b11","web":"bweb","no":"bno"};
 const TIPO = {funcion:"Función nueva",mejora:"Mejora",visual:"Visual",texto:"Textos",accesibilidad:"Accesibilidad",rendimiento:"Rendimiento",arreglo:"Arreglo"};
 const VLAB = {gusta:"Me gusta",mejorar:"Mejorar",bug:"Bug"};
 // Recorridos guiados, en el orden en que se pasa por la app.
@@ -220,6 +220,8 @@ const ROUTES = {
     ["1178-1","«Esto leí»: cambia la moneda ahí mismo"],
     ["1178-2","Hoja de varios: lo incompleto se queda en la Bandeja"],
     ["1170-1","Bandeja: el cargo de un pago planificado"],
+    ["1183-3","Widget de pagos: el próximo, aunque sea el mes que viene"],
+    ["1185-3","Presupuestos: el nombre entero, en dos líneas"],
     ["921-1","Repite un favorito con el monto listo"],
     ["1093-1","Lee una foto: la cuenta se elige sola"],
     ["922-1","Registros › Calendario: toca un día"],
@@ -263,8 +265,11 @@ const ROUTES = {
     ["992-1","El Panel espera tus datos, sin S/ 0"],
     ["933-1","Las pestañas Panel · Grupos · Registros"],
     ["933-2","Abre «Primeros pasos»"],
+    ["1186-1","Paso 1: el mazo centrado con «Hola, <nombre>»"],
+    ["1183-1","«Solo gastos»: también creas tu cuenta"],
     ["1079-1","Las intros son historias"],
     ["938-1","Paso 1: tu primera cuenta"],
+    ["1185-1","«Otra moneda» con sus nombres"],
     ["1111-3","El saldo aparece con tu primera cuenta"],
     ["1002-1","Tu cuenta aparece como tarjeta"],
     ["938-2","Paso 2: aprende a registrar"],
@@ -272,10 +277,15 @@ const ROUTES = {
     ["1086-1","La oferta de un mes de Pro"],
     ["939-1","Paso 3: tu primer presupuesto"],
     ["1079-3","«No deseo crear ningún presupuesto»"],
+    ["1184-2","«Viven en Más»: la barra desplegada"],
     ["939-2","Paso 4: tus pagos fijos"],
     ["939-3","Paso 5: divide gastos con tu grupo"],
     ["951-1","Paso 6: tu dirección de Yala"],
+    ["1184-3","Paso 6: «Entendido» te devuelve al Panel"],
     ["1080-1","Paso 7: tutoriales tipo historia"],
+    ["1183-4","Pasos 5 y 7 quedan hechos"],
+    ["1186-2","El mes gratis dentro de «¡Primeros pasos completos!»"],
+    ["1185-4","«¡Listo por ahora!» si dejaste pasos"],
     ["1139-3","«Tu IA», la sexta manera de anotar"],
     ["1080-2","El progreso vive en el mazo"],
     ["1078-2","El Panel crece con cada paso"],
@@ -404,7 +414,7 @@ function renderRoute(){
 function exportText(){
   const ids = DATA.map(x=>x.id).filter(id=>notes[id]&&(notes[id].v||notes[id].c));
   if(!ids.length) return "";
-  const lines = ["Notas de Jürgen sobre Yala 2.3 (10) — "+ids.length+" ítems",""];
+  const lines = ["Notas de Jürgen sobre Yala 2.3 (11) — "+ids.length+" ítems",""];
   AREAS.forEach(a=>{
     const xs = ids.map(i=>byId[i]).filter(x=>x.area===a);
     if(!xs.length) return;
