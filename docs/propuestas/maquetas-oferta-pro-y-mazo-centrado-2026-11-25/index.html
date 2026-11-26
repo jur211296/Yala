@@ -1,0 +1,328 @@
+<title>Oferta Pro y mazo centrado</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+/* Layout: columna de lectura, filas de iPhones comparables que se deslizan en el celular; decisión al pie. */
+:root{
+  --bg:#F5F5FA; --surface:#FFFFFF; --fg:#16152B; --muted:#5D5B78; --line:#E2E1EE;
+  --accent:#4E4BD8; --accent-soft:#ECEBFD; --good:#1D7A4A; --warn:#A35A00;
+  --f-display:"Space Grotesk",system-ui,sans-serif; --f-body:"Inter",system-ui,-apple-system,sans-serif;
+  --pw:250px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0E0D1C; --surface:#18172B; --fg:#ECEBF7; --muted:#A3A1BF; --line:#2B2945;
+  --accent:#8F8CFF; --accent-soft:#25234A; --good:#5BD08F; --warn:#F2B35A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E0D1C; --surface:#18172B; --fg:#ECEBF7; --muted:#A3A1BF; --line:#2B2945;
+  --accent:#8F8CFF; --accent-soft:#25234A; --good:#5BD08F; --warn:#F2B35A; color-scheme:dark}
+@media (min-width:720px){:root{--pw:272px}}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 64px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:36px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:clamp(26px,5vw,38px)} h2{font-size:clamp(21px,3.6vw,27px)} h3{font-size:17px;margin-bottom:8px}
+p{margin:0;max-width:68ch}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.lead{color:var(--muted)}
+.reco{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.reco div{display:flex;flex-direction:column;gap:6px;min-width:0}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent);width:fit-content}
+.note{border-left:3px solid var(--warn);padding:4px 0 4px 14px}
+.note b{color:var(--warn)}
+.controls{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:10px;display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;border-bottom:1px solid var(--line)}
+.seg{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px}
+.seg button{font:600 13px var(--f-body);border:0;background:transparent;color:var(--muted);padding:6px 12px;border-radius:999px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#fff}
+.seg button:focus-visible,.btn:focus-visible,.opt:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.ctl-label{font-size:12px;color:var(--muted);font-weight:600;margin-right:6px}
+section{display:flex;flex-direction:column;gap:16px}
+.row{display:flex;gap:18px;overflow-x:auto;padding-bottom:10px;scroll-snap-type:x mandatory}
+.col{flex:0 0 auto;width:calc(var(--pw) + 2px);display:flex;flex-direction:column;gap:10px;scroll-snap-align:start}
+.tag{font:700 14px var(--f-display);display:flex;gap:8px;align-items:center;white-space:nowrap;min-height:24px}
+.tag .k{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:7px;background:var(--accent);color:#fff;font-size:13px}
+.tag .k.today{background:var(--muted)}
+.tag .rec{font:600 11px var(--f-body);color:var(--good);border:1px solid currentColor;border-radius:999px;padding:1px 8px}
+.meta{font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:5px}
+.meta b{color:var(--fg);font-weight:600}
+.pc{font-size:13px;display:flex;flex-direction:column;gap:3px}
+.pc .p::before{content:"+ ";color:var(--good);font-weight:700}
+.pc .c::before{content:"– ";color:var(--warn);font-weight:700}
+.btn{font:600 13px var(--f-body);border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:10px;padding:7px 12px;cursor:pointer;width:fit-content}
+.btn:disabled{opacity:.5;cursor:default}
+
+/* ---------- iPhone 14 (390 × 844 pt), escalado por script ---------- */
+.phone{width:var(--pw);height:calc(var(--pw) * 2.1641);border-radius:calc(var(--pw) * 0.12);border:1px solid var(--line);overflow:hidden;position:relative;background:#000}
+.screen{width:390px;height:844px;transform-origin:0 0;position:absolute;left:0;top:0;
+  font-family:-apple-system,"SF Pro Text",system-ui,sans-serif;color:var(--p-fg);background:var(--p-bg);overflow:hidden}
+.m-dark{--p-bg:#100E28;--p-card:#1D1A42;--p-fg:#FFFFFF;--p-fg2:#A9A6CF;--p-acc:#5E5CE6;--p-acc-text:#A9A7FF;--p-info:#1C1A3E;--p-line:#2E2B5C;--p-deck:#5651D4;--p-deck2:#3D3A9A;--p-deck3:#2C2A72;--p-deck3-fg:#FFFFFF;--p-glass:rgba(40,38,80,.85);--p-scrim:rgba(0,0,0,.55)}
+.m-light{--p-bg:#F2F2F7;--p-card:#FFFFFF;--p-fg:#111018;--p-fg2:#6B6A80;--p-acc:#5E5CE6;--p-acc-text:#4C4AD0;--p-info:#E9E8FD;--p-line:#E3E2EE;--p-deck:#5E5CE6;--p-deck2:#8F8DF0;--p-deck3:#C9C8F8;--p-deck3-fg:#2B2970;--p-glass:rgba(255,255,255,.9);--p-scrim:rgba(20,18,40,.35)}
+.m-dark .screen{background:linear-gradient(#1B1840 0,#100E28 340px)}
+.sb{height:50px;display:flex;justify-content:space-between;align-items:flex-end;padding:0 30px 6px 36px;font:600 16px -apple-system,system-ui}
+.nav{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 16px}
+.circ{width:44px;height:44px;border-radius:50%;background:var(--p-glass);display:grid;place-items:center;border:1px solid var(--p-line)}
+.capsule{height:44px;width:104px;border-radius:22px;background:var(--p-glass);border:1px solid var(--p-line);display:flex;align-items:center;justify-content:space-around}
+.ico{width:18px;height:14px;border:2px solid var(--p-fg);border-radius:3px;opacity:.85}
+.avatar{width:40px;height:40px;border-radius:50%;background:#fff;display:grid;place-items:center;border:1px solid var(--p-line)}
+.avatar::after{content:"";width:16px;height:16px;border-radius:50%;background:#5E5CE6}
+.content{padding:0 16px;display:flex;flex-direction:column;gap:14px}
+.hero .l{font-size:15px;color:var(--p-fg2);display:flex;justify-content:space-between;align-items:center}
+.hero .l span.per{font-size:13px;color:var(--p-fg);background:var(--p-glass);border:1px solid var(--p-line);border-radius:16px;padding:5px 12px}
+.hero .amt{font:700 44px ui-rounded,"SF Pro Rounded",-apple-system,system-ui;letter-spacing:-.5px;margin-top:4px}
+.hero .amt small{font-size:20px;color:var(--p-fg2);font-weight:600}
+.qa{display:flex;gap:8px}
+.qa .new{flex:1;height:48px;border-radius:24px;background:var(--p-acc);color:#fff;font:600 16px -apple-system,system-ui;display:flex;align-items:center;justify-content:center}
+.qa .mini{width:56px;height:48px;border-radius:24px;background:var(--p-glass);border:1px solid var(--p-line);font-size:11px;color:var(--p-fg);display:grid;place-items:center}
+.card{background:var(--p-card);border-radius:22px;padding:18px;position:relative;overflow:hidden}
+.done-card{text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px}
+.checkbig{width:44px;height:44px;border-radius:50%;background:var(--p-acc);display:grid;place-items:center;color:#fff;font-size:24px;font-weight:700;flex:0 0 auto}
+.t-title{font:700 21px -apple-system,system-ui}
+.t-body{font-size:15px;color:var(--p-fg2);line-height:1.35}
+.steps{display:flex;gap:10px;justify-content:center;margin:4px 0}
+.steps i{width:28px;height:28px;border-radius:50%;background:var(--p-acc);display:grid;place-items:center;color:#fff;font-style:normal;font-size:14px;font-weight:700}
+.linkbtn{color:var(--p-acc-text);font:600 16px -apple-system,system-ui;padding:6px}
+.confetti{position:absolute;inset:0;pointer-events:none}
+.confetti b{position:absolute;width:7px;height:11px;border-radius:2px}
+@media (prefers-reduced-motion:no-preference){.confetti.fall b{animation:fall 2.8s ease-in infinite}}
+@keyframes fall{0%{transform:translateY(-30px) rotate(0)}100%{transform:translateY(150px) rotate(260deg);opacity:0}}
+.pro{background:var(--p-info);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.pro .top{display:flex;gap:12px;align-items:flex-start}
+.spark{width:24px;height:24px;flex:0 0 auto;background:#F5C518;clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%)}
+.pro h4{margin:0;font:600 17px -apple-system,system-ui;line-height:1.25}
+.pro p{font-size:13px;color:var(--p-fg2);margin-top:2px;line-height:1.35}
+.pro .x{margin-left:auto;color:var(--p-fg2);font-size:15px;padding:0 4px}
+.pro.strong{border:1.5px solid var(--p-acc)}
+.cta{height:44px;border-radius:22px;background:var(--p-acc);color:#fff;font:600 15px -apple-system,system-ui;display:flex;align-items:center;justify-content:center;gap:8px}
+.cta.big{height:52px;border-radius:26px;font-size:17px}
+.cta.full{width:100%}
+.chip{display:inline-block;font:700 11px -apple-system,system-ui;letter-spacing:.04em;color:#fff;background:#D6246E;border-radius:8px;padding:3px 8px;margin-bottom:4px}
+.small{font-size:12px;color:var(--p-fg2);text-align:center}
+.sect{font:700 20px -apple-system,system-ui;display:flex;justify-content:space-between;align-items:center}
+.acct{background:var(--p-card);border-radius:18px;padding:14px 16px;display:flex;justify-content:space-between;font-size:16px}
+.tab{position:absolute;left:14px;right:14px;bottom:24px;height:62px;border-radius:31px;background:var(--p-glass);border:1px solid var(--p-line);display:flex;justify-content:space-around;align-items:center;font-size:10px;color:var(--p-fg2);z-index:4}
+.tab span{display:flex;flex-direction:column;align-items:center;gap:3px}
+.tab span::before{content:"";width:22px;height:18px;border-radius:5px;background:currentColor;opacity:.75}
+.tab span.on{color:var(--p-acc-text)}
+.home-ind{position:absolute;bottom:8px;left:50%;width:134px;height:5px;border-radius:3px;background:var(--p-fg);transform:translateX(-50%);opacity:.8;z-index:4}
+.deck{position:absolute;left:16px;right:16px;transition:top .7s cubic-bezier(.3,.8,.3,1)}
+@media (prefers-reduced-motion:reduce){.deck,.fade{transition:none!important}}
+.deck .front{background:var(--p-deck);color:#fff;border-radius:20px;padding:14px 16px 16px;position:relative;z-index:3}
+.deck .cnt{font:700 12px -apple-system,system-ui;letter-spacing:.06em}
+.deck .bar{display:flex;gap:4px;margin:10px 0 12px}
+.deck .bar i{flex:1;height:5px;border-radius:3px;background:rgba(255,255,255,.3)}
+.deck .bar i.on{background:#fff}
+.deck .st{font:600 20px -apple-system,system-ui}
+.deck .dt{font-size:14px;opacity:.88;margin-top:3px}
+.deck .behind{margin:-12px 10px 0;background:var(--p-deck2);color:#fff;border-radius:0 0 16px 16px;padding:16px 12px 6px;font-size:13px;text-align:center;position:relative;z-index:2}
+.deck .behind2{margin:-10px 22px 0;background:var(--p-deck3);color:var(--p-deck3-fg);border-radius:0 0 14px 14px;padding:14px 12px 5px;font-size:12px;text-align:center}
+.deck .icons{display:flex;justify-content:space-between;margin-top:14px;padding:0 2px}
+.deck .icons span{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10px;color:var(--p-fg2)}
+.deck .icons i{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--p-line);background:var(--p-card);display:grid;place-items:center;font-style:normal;font-size:13px;color:var(--p-fg2)}
+.deck .icons span.cur i{border-color:var(--p-acc);box-shadow:0 0 0 3px rgba(94,92,230,.35);color:var(--p-fg)}
+.deck .icons span.ok i{background:var(--p-acc);border-color:var(--p-acc);color:#fff}
+.deck .sum{font-size:12px;color:var(--p-fg2);margin-top:8px;padding:0 4px}
+.fade{transition:opacity .5s ease .25s}
+.greet{position:absolute;left:20px;right:20px}
+.greet .h{font:700 30px -apple-system,system-ui}
+.greet .s{font-size:16px;color:var(--p-fg2);margin-top:4px}
+.scrim{position:absolute;inset:0;background:var(--p-scrim);z-index:5}
+.modal{position:absolute;left:20px;right:20px;top:140px;z-index:6;background:var(--p-card);border-radius:30px;padding:24px 20px 14px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;overflow:hidden}
+.benefits{width:100%;display:flex;flex-direction:column;gap:10px;text-align:left;margin:6px 0}
+.benefits div{display:flex;gap:12px;align-items:center}
+.benefits i{width:32px;height:32px;border-radius:9px;flex:0 0 auto;display:grid;place-items:center;color:#fff;font-style:normal;font-size:15px}
+.benefits b{display:block;font-size:15px}
+.benefits span{color:var(--p-fg2);font-size:13px}
+.divider{height:1px;background:var(--p-line);width:100%;margin:6px 0}
+
+.decide{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:18px}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opt{display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 12px;cursor:pointer;font-size:14px}
+.opt input{accent-color:var(--accent)}
+textarea{width:100%;min-height:64px;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--bg);color:var(--fg);font:14px var(--f-body)}
+.status{font-size:13px;color:var(--muted)}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.measured{font-size:13px;color:var(--muted)}
+.measured code{font-size:12px;background:var(--accent-soft);padding:1px 5px;border-radius:5px;color:var(--fg)}
+</style>
+
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:10px">
+    <span class="eyebrow">Yala 2.3 · Primeros pasos · propuesta para decidir</span>
+    <h1>Oferta Pro con el mes gratis y mazo centrado</h1>
+    <p class="lead">Dos decisiones que salieron de la prueba en vivo del iPhone 14 (25-nov). Maquetas del Panel a tamaño de iPhone 14, en claro y oscuro, para quien tiene derecho al mes gratis y para quien ya lo usó.</p>
+  </header>
+
+  <div class="reco" aria-label="Recomendación">
+    <div>
+      <span class="pill">Oferta Pro · recomiendo C</span>
+      <p><b>La oferta va dentro de la tarjeta «¡Primeros pasos completos!»</b>: un solo bloque con el confeti, «1 mes gratis» y «Empezar mi mes gratis». Llama más que hoy sin abrir otra ventana, porque la hoja de pago con el mes gratis ya salió al terminar el paso 2. Los días siguientes, la tarjeta de Pro del Panel usa el texto de A.</p>
+    </div>
+    <div>
+      <span class="pill">Mazo · recomiendo A</span>
+      <p><b>Mazo centrado, sin texto nuevo.</b> El mazo ya dice qué hacer («Crea tu primera cuenta»); un saludo encima repite lo mismo y suma traducciones a 16 idiomas. Al crear la cuenta aparece el saldo y el mazo sube a su sitio con una animación.</p>
+    </div>
+  </div>
+
+  <p class="note"><b>Lo que ya existe y no se vio en la prueba.</b> Al terminar el paso 2 (Aprender a registrar) sube la hoja «Prueba Yala Pro 1 mes gratis» con los planes y «Empezar mi mes gratis» (decisión del 20-nov). En Yala Dev no sube porque la App Store no le da precios, así que el 25-nov solo se vio la tarjeta del Panel. Al completar los siete pasos esa hoja no se repite. Por eso B sería la segunda ventana de pago del mismo recorrido.</p>
+
+  <div class="controls" role="group" aria-label="Cómo ver las maquetas">
+    <span><span class="ctl-label">Maquetas</span><span class="seg"><button type="button" id="thDark" aria-pressed="true">Oscuro</button><button type="button" id="thLight" aria-pressed="false">Claro</button></span></span>
+    <span><span class="ctl-label">Persona</span><span class="seg"><button type="button" id="elYes" aria-pressed="true">Tiene el mes gratis</button><button type="button" id="elNo" aria-pressed="false">Ya usó su prueba</button></span></span>
+  </div>
+
+  <section aria-labelledby="s1">
+    <span class="eyebrow">Decisión 1</span>
+    <h2 id="s1">Oferta Pro al terminar Primeros pasos</h2>
+    <p class="lead">El momento: la persona toca «Terminar» en el último paso y vuelve al Panel. Desliza para comparar.</p>
+    <div class="row" id="rowOffer"></div>
+  </section>
+
+  <section aria-labelledby="s2">
+    <span class="eyebrow">Decisión 2</span>
+    <h2 id="s2">Mazo de Primeros pasos centrado durante el paso 1</h2>
+    <p class="lead">Mientras no hay cuenta, el mazo es lo único del Panel. Al crear la cuenta aparecen el saldo y «Tus finanzas», y el mazo sube. Vale igual para «Ingresos y gastos» y para «Solo gastos», que desde el 25-nov también empieza el paso 1 de cero. Toca «Ver la transición» en cada opción.</p>
+    <div class="row" id="rowDeck"></div>
+    <p class="measured">Medido en el código de <code>2.3</code>: hoy el saldo sale al hacer el paso 1, y «Nuevo registro», Voz, Foto y Yala IA vuelven al terminar el paso 2. Ninguna opción cambia eso; solo cambia dónde está el mazo mientras está solo.</p>
+  </section>
+
+  <section class="decide" aria-labelledby="s3">
+    <h2 id="s3">Tu decisión</h2>
+    <div>
+      <h3>Oferta Pro</h3>
+      <div class="opts">
+        <label class="opt"><input type="radio" name="offer" id="offerA" value="A"> A · Tarjeta reescrita</label>
+        <label class="opt"><input type="radio" name="offer" id="offerB" value="B"> B · Ventana con confeti</label>
+        <label class="opt"><input type="radio" name="offer" id="offerC" value="C"> C · Dentro de la tarjeta final (recomendada)</label>
+        <label class="opt"><input type="radio" name="offer" id="offerN" value="ninguna"> Dejarla como hoy</label>
+      </div>
+    </div>
+    <div>
+      <h3>Mazo</h3>
+      <div class="opts">
+        <label class="opt"><input type="radio" name="deck" id="deckA" value="A"> A · Centrado (recomendada)</label>
+        <label class="opt"><input type="radio" name="deck" id="deckB" value="B"> B · Centrado con saludo</label>
+        <label class="opt"><input type="radio" name="deck" id="deckN" value="ninguna"> Dejarlo arriba como hoy</label>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <label for="notes" class="ctl-label">Nota (opcional)</label>
+      <textarea id="notes" placeholder="Por ejemplo: C, pero sin el chip rosa"></textarea>
+    </div>
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      <button type="button" class="btn primary" id="save">Guardar decisión</button>
+      <span class="status" id="status">Se guarda en este artifact; Frank la lee desde aquí.</span>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  var state={theme:"m-dark",elig:true};
+  try{var s=JSON.parse(localStorage.getItem("ofmz")||"{}");if(s.theme)state.theme=s.theme;if(typeof s.elig==="boolean")state.elig=s.elig;}catch(e){}
+
+  var CONF=["#F5C518","#5E5CE6","#FF6B8B","#34C759","#0A84FF","#FF9F0A"];
+  function confetti(n,h){var o='<div class="confetti fall">';for(var i=0;i<n;i++){var x=(i*53)%100,y=(i*37)%(h||70),r=(i*47)%180;o+='<b style="left:'+x+'%;top:'+y+'px;background:'+CONF[i%CONF.length]+';transform:rotate('+r+'deg);animation-delay:'+((i%7)*.35)+'s"></b>';}return o+'</div>';}
+  function chrome(inner){return '<div class="sb"><span>9:41</span><span>▮▮▮ ◔ ▭</span></div><div class="nav"><div class="circ"><div class="ico"></div></div><div style="display:flex;gap:10px;align-items:center"><div class="capsule"><div class="ico"></div><div class="ico"></div></div><div class="avatar"></div></div></div>'+inner+'<div class="tab"><span class="on">Panel</span><span>Grupos</span><span>Registros</span><span>Más</span><span>Buscar</span></div><div class="home-ind"></div>';}
+  function hero(amt){return '<div class="hero"><div class="l">Tu saldo hoy <span class="per">Este mes</span></div><div class="amt">S/ '+amt+'<small>.00</small></div></div>';}
+  var QA='<div class="qa"><div class="new">+ Nuevo registro</div><div class="mini">Voz</div><div class="mini">Foto</div><div class="mini">Yala IA</div></div>';
+  var STEPS='<div class="steps"><i>✓</i><i>✓</i><i>✓</i><i>✓</i><i>✓</i><i>✓</i><i>✓</i></div>';
+  function doneCard(extra){return '<div class="card done-card">'+confetti(22,60)+'<div class="checkbig">✓</div><div class="t-title">¡Primeros pasos completos!</div><div class="t-body">Ya sabes lo esencial de Yala. Lo demás lo vas descubriendo a tu ritmo.</div>'+STEPS+(extra||'<div class="linkbtn">Cerrar</div>')+'</div>';}
+  function proToday(){return '<div class="pro"><div class="top"><div class="spark"></div><div><h4>Lleva tus finanzas al siguiente nivel</h4><p>Desbloquea voz, resumen con IA y cuentas ilimitadas.</p></div><div class="x">✕</div></div><div class="cta">✦ '+(state.elig?'Probar Pro gratis':'Pasarme a Pro')+'</div></div>';}
+  function proA(){if(!state.elig)return proToday();return '<div class="pro strong"><div class="top"><div class="spark"></div><div><span class="chip">1 MES GRATIS</span><h4>Prueba Yala Pro gratis 1 mes</h4><p>Anota hablando o con una foto, pregúntale a Yala IA y suma todas tus cuentas. Hoy no pagas.</p></div><div class="x">✕</div></div><div class="cta">✦ Empezar mes gratis</div></div>';}
+  function panel(inner){return '<div class="content">'+hero("5000")+QA+inner+'</div>';}
+
+  function offerToday(){return chrome(panel(doneCard()+proToday()));}
+  function offerA(){return chrome(panel(doneCard()+proA()));}
+  function offerB(){
+    var base=chrome(panel(doneCard()+proToday()))+'<div class="scrim"></div>';
+    if(!state.elig){return base+'<div class="modal" style="top:220px">'+confetti(26,50)+'<div class="checkbig" style="width:60px;height:60px;font-size:32px">✓</div><div class="t-title" style="font-size:24px">¡Primeros pasos completos!</div><div class="t-body">Ya sabes lo esencial de Yala. Lo demás lo vas descubriendo a tu ritmo.</div><div class="cta big full">Seguir</div></div>';}
+    return base+'<div class="modal">'+confetti(26,40)+'<div class="checkbig" style="width:56px;height:56px;font-size:30px">✓</div><div class="t-title" style="font-size:23px">¡Primeros pasos completos!</div><div class="t-body">Para seguir: prueba Yala Pro 1 mes gratis.</div><div class="benefits"><div><i style="background:#E5246F">◉</i><p style="margin:0"><b>Anota sin teclear</b><span>Dictando, o con una foto o PDF</span></p></div><div><i style="background:#5E5CE6">✦</i><p style="margin:0"><b>Yala IA</b><span>Pregúntale cómo vas</span></p></div><div><i style="background:#0A84FF">∞</i><p style="margin:0"><b>Sin límites</b><span>Todas tus cuentas y presupuestos</span></p></div></div><div class="cta big full">Empezar mi mes gratis</div><div class="small">Hoy no pagas · te avisamos antes de cobrar</div><div class="linkbtn">Ahora no</div></div>';
+  }
+  function offerC(){
+    if(!state.elig)return chrome(panel(doneCard()+proToday()));
+    var extra='<div class="divider"></div><span class="chip">YALA PRO · 1 MES GRATIS</span><div class="t-body" style="color:var(--p-fg)">Anota hablando o con una foto y pregúntale a Yala IA cómo vas.</div><div class="cta big full">✦ Empezar mi mes gratis</div><div class="small">Hoy no pagas · te avisamos antes de cobrar</div><div class="linkbtn">Cerrar</div>';
+    return chrome(panel(doneCard(extra)));
+  }
+
+  function deckHTML(step){
+    var one=step===1;
+    var st=one?"Crea tu primera cuenta":"Aprender a registrar",dt=one?"Dónde está tu dinero y cuánto tienes.":"A mano, con la voz, con una foto y con Yala IA.";
+    var a=one?"Aprender a registrar":"Crea tu primer presupuesto",b=one?"Crea tu primer presupuesto":"Anota tus pagos fijos";
+    var names=["Cuenta","Registrar","Presup.","Pagos","Grupos","Gráficas","Inicio"],ic="",bar="";
+    for(var i=0;i<7;i++){var cls=(i===step-1)?"cur":(i<step-1?"ok":"");ic+='<span class="'+cls+'"><i>'+(i<step-1?"✓":i+1)+'</i>'+names[i]+'</span>';bar+='<i class="'+(i<step-1?"on":"")+'"></i>';}
+    return '<div class="front"><div class="cnt">PRIMEROS PASOS · '+step+' DE 7</div><div class="bar">'+bar+'</div><div class="st">+ '+st+'</div><div class="dt">'+dt+'</div></div><div class="behind">Después: '+a+'</div><div class="behind2">Luego: '+b+'</div><div class="icons">'+ic+'</div><div class="sum">Hechos: '+(step-1)+' · Para después: 0 · Toca un paso para abrirlo</div>';
+  }
+  // Puntos del iPhone 14: arriba (hoy) 112; centrado en el hueco entre la barra y las pestañas ~290; bajo el saldo 228.
+  function deckPhone(kind){
+    var greet=kind==="B"?'<div class="greet fade" data-g style="top:282px"><div class="h">Hola, Jürgen</div><div class="s">Siete pasos cortos para dejar Yala a tu medida.</div></div>':'';
+    var top1=kind==="today"?112:(kind==="B"?372:328);
+    return chrome('<div class="content fade" data-hero style="position:absolute;top:106px;left:0;right:0;opacity:0">'+hero("1250")+'</div>'+greet+'<div class="deck" data-deck data-top1="'+top1+'" style="top:'+top1+'px"><div data-d1>'+deckHTML(1)+'</div><div data-d2 hidden>'+deckHTML(2)+'</div></div><div class="content fade" data-acct style="position:absolute;top:600px;left:0;right:0;opacity:0"><div class="sect">Tus finanzas <span style="font-size:15px;color:var(--p-fg2)">⌄</span></div><div class="acct"><span>BCP Soles</span><b>S/ 1,250.00</b></div></div>');
+  }
+  function setDeckState(ph,s2){
+    var d=ph.querySelector("[data-deck]");
+    d.style.top=(s2?218:+d.getAttribute("data-top1"))+"px";
+    ph.querySelector("[data-hero]").style.opacity=s2?1:0;
+    ph.querySelector("[data-acct]").style.opacity=s2?1:0;
+    var g=ph.querySelector("[data-g]");if(g)g.style.opacity=s2?0:1;
+    ph.querySelector("[data-d1]").hidden=s2;ph.querySelector("[data-d2]").hidden=!s2;
+  }
+
+  function phone(html,id){return '<div class="phone '+state.theme+'"'+(id?' id="'+id+'"':'')+'><div class="screen">'+html+'</div></div>';}
+  function meta(rows){var o='<div class="meta">';rows.forEach(function(r){o+='<span><b>'+r[0]+':</b> '+r[1]+'</span>';});return o+'</div>';}
+  function pc(p,c){return '<div class="pc"><span class="p">'+p+'</span><span class="c">'+c+'</span></div>';}
+  function tag(k,name,rec,today){return '<div class="tag"><span class="k'+(today?' today':'')+'">'+k+'</span>'+name+(rec?' <span class="rec">Recomendada</span>':'')+'</div>';}
+
+  function renderOffer(){
+    var e=state.elig,h="";
+    h+='<div class="col">'+tag("0","Hoy",false,true)+phone(offerToday())+meta([["Qué se ve","la tarjeta de Pro de siempre, debajo de la de «completos». No dice que el primer mes es gratis"],["Al tocar","abre la pantalla de suscripción de Ajustes"]])+'</div>';
+    h+='<div class="col">'+tag("A","Tarjeta reescrita")+phone(offerA())+meta(e?[["Al tocar «Empezar mes gratis»","abre la hoja «Prueba Yala Pro 1 mes gratis» con los dos planes"],["Al tocar ✕","se oculta, como hoy, y vuelve más adelante"]]:[["Sin derecho","el texto y el botón de hoy («Pasarme a Pro»)"]])+pc("Cambio mínimo: textos y un chip; sirve también los días siguientes.","Sigue siendo una tarjeta debajo de otra: llama poco en el momento del logro.")+'</div>';
+    h+='<div class="col">'+tag("B","Ventana con confeti")+phone(offerB())+meta(e?[["Al tocar «Empezar mi mes gratis»","pasa directo a la hoja de pago de Apple con el plan anual"],["Al tocar «Ahora no»","cierra la ventana; debajo queda el Panel con la tarjeta de A"]]:[["Sin derecho","solo la celebración, con «Seguir»; sin oferta"]])+pc("Es lo que más llama: el confeti y la oferta ocupan la pantalla.","Es la segunda ventana de pago del recorrido (la primera sale tras el paso 2) y tapa el logro.")+'</div>';
+    h+='<div class="col">'+tag("C","En la tarjeta final",true)+phone(offerC())+meta(e?[["Al tocar «Empezar mi mes gratis»","abre la hoja «Prueba Yala Pro 1 mes gratis» con los planes"],["Al tocar «Cerrar»","se va la tarjeta entera, como hoy; los días siguientes sale la tarjeta de Pro con el texto de A"]]:[["Sin derecho","la tarjeta de «completos» como hoy y la de Pro de hoy debajo"]])+pc("La oferta comparte el confeti y el logro, sin tapar nada.","La tarjeta final crece: en el iPhone 14 cabe sin bajar, justo.")+'</div>';
+    document.getElementById("rowOffer").innerHTML=h;
+  }
+  function renderDeck(){
+    var h="";
+    h+='<div class="col">'+tag("0","Hoy",false,true)+phone(deckPhone("today"),"dk0")+meta([["Qué se ve","el mazo arriba y dos tercios de pantalla vacíos (iPhone 14, 25-nov, 17:13 y 17:20)"]])+'</div>';
+    h+='<div class="col">'+tag("A","Centrado",true)+phone(deckPhone("A"),"dkA")+'<button class="btn" type="button" data-play="dkA">▶ Ver la transición</button>'+meta([["Durante el paso 1","el mazo, centrado entre la barra de arriba y las pestañas"],["Al crear la cuenta","aparece el saldo, el mazo sube debajo y pasa a «2 de 7»; abajo, «Tus finanzas» con la cuenta"]])+pc("Ningún texto nuevo; la pantalla deja de verse a medio cargar.","El mazo se mueve una vez; con Reducir movimiento cambia sin desplazarse.")+'</div>';
+    h+='<div class="col">'+tag("B","Centrado con saludo")+phone(deckPhone("B"),"dkB")+'<button class="btn" type="button" data-play="dkB">▶ Ver la transición</button>'+meta([["Durante el paso 1","saludo con el nombre (si Yala lo sabe por Apple o Google; si no, «Hola») y el mazo debajo"],["Al crear la cuenta","el saludo se va y queda igual que A"]])+pc("Se siente más de bienvenida.","Dos textos nuevos en 16 idiomas, y repite lo que ya dice el mazo.")+'</div>';
+    document.getElementById("rowDeck").innerHTML=h;
+    ["dkA","dkB"].forEach(function(id){var ph=document.getElementById(id);var g=ph.querySelector("[data-g]");if(g)g.style.opacity=1;});
+    document.querySelectorAll("[data-play]").forEach(function(b){b.addEventListener("click",function(){var ph=document.getElementById(b.getAttribute("data-play"));var on=!ph.classList.contains("s2");ph.classList.toggle("s2",on);setDeckState(ph,on);b.textContent=on?"↺ Volver al paso 1":"▶ Ver la transición";});});
+  }
+  function scale(){var ph=document.querySelector(".phone");if(!ph)return;var s=ph.clientWidth/390;document.querySelectorAll(".screen").forEach(function(sc){sc.style.transform="scale("+s+")";});}
+  function render(){renderOffer();renderDeck();scale();
+    document.getElementById("thDark").setAttribute("aria-pressed",String(state.theme==="m-dark"));document.getElementById("thLight").setAttribute("aria-pressed",String(state.theme==="m-light"));
+    document.getElementById("elYes").setAttribute("aria-pressed",String(state.elig));document.getElementById("elNo").setAttribute("aria-pressed",String(!state.elig));
+    try{localStorage.setItem("ofmz",JSON.stringify(state));}catch(e){}}
+  document.getElementById("thDark").onclick=function(){state.theme="m-dark";render();};
+  document.getElementById("thLight").onclick=function(){state.theme="m-light";render();};
+  document.getElementById("elYes").onclick=function(){state.elig=true;render();};
+  document.getElementById("elNo").onclick=function(){state.elig=false;render();};
+  window.addEventListener("resize",scale);
+  render();
+
+  // Decisión en la base del artifact (solo el dueño escribe).
+  var statusEl=document.getElementById("status"),saveBtn=document.getElementById("save"),db=null;
+  function pick(n){var r=document.querySelector('input[name="'+n+'"]:checked');return r?r.value:"";}
+  function setPick(n,v){var r=document.querySelector('input[name="'+n+'"][value="'+v+'"]');if(r)r.checked=true;}
+  function offline(){statusEl.textContent="Para guardar, ábrelo en claude.ai con tu cuenta.";}
+  if(window.claude&&window.claude.use){
+    window.claude.use("db").then(function(d){
+      db=d;if(!db){offline();return;}
+      var t=setTimeout(function(){statusEl.textContent="No se pudo leer la decisión guardada; puedes guardar igual.";},10000);
+      db.doc("decisiones/maquetas").get().then(function(s){clearTimeout(t);if(s.exists){var v=s.data();setPick("offer",v.oferta);setPick("deck",v.mazo);document.getElementById("notes").value=v.nota||"";statusEl.textContent="Guardada: oferta "+(v.oferta||"—")+", mazo "+(v.mazo||"—")+".";}}).catch(function(){clearTimeout(t);});
+    });
+  } else offline();
+  saveBtn.addEventListener("click",function(){
+    if(!db){offline();return;}
+    var o=pick("offer"),m=pick("deck");if(!o&&!m){statusEl.textContent="Elige al menos una opción.";return;}
+    saveBtn.disabled=true;statusEl.textContent="Guardando…";
+    db.doc("decisiones/maquetas").set({oferta:o,mazo:m,nota:document.getElementById("notes").value.slice(0,1000),cuando:new Date().toISOString()})
+      .then(function(){statusEl.textContent="Guardada: oferta "+(o||"—")+", mazo "+(m||"—")+". Frank la lee desde aquí.";})
+      .catch(function(){statusEl.textContent="No se pudo guardar. Solo Jürgen puede guardar la decisión.";})
+      .finally(function(){saveBtn.disabled=false;});
+  });
+})();
+</script>

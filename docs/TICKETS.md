@@ -57,6 +57,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | 2026-11-25-ui-nocturna-rojos-reales | done | tickets/done/2026-11-25-ui-nocturna-rojos-reales.md |
 | 2026-11-25-bugs-cuenta-nube-vaciar-datos-y-eliminar-cuenta | done | tickets/done/2026-11-25-bugs-cuenta-nube-vaciar-datos-y-eliminar-cuenta.md |
 | 2026-11-25-gateway-d1-overloaded-vincular-suscripcion | done | tickets/done/2026-11-25-gateway-d1-overloaded-vincular-suscripcion.md |
+| 2026-11-25-maquetas-oferta-pro-y-mazo-centrado | done | tickets/done/2026-11-25-maquetas-oferta-pro-y-mazo-centrado.md |
 | 2026-11-24-bugs-barrido-build-8 | done | tickets/done/2026-11-24-bugs-barrido-build-8.md |
 | 2026-11-24-bandeja-emparejador-entre-fuentes | done | tickets/done/2026-11-24-bandeja-emparejador-entre-fuentes.md |
 | 2026-11-24-bandeja-unir-al-llegar | done | tickets/done/2026-11-24-bandeja-unir-al-llegar.md |
