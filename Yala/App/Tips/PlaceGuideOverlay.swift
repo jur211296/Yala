@@ -36,12 +36,15 @@ final class PlaceGuideFrames {
 /// etiqueta que lee VoiceOver. Si no aparece (otra forma de barra), la tarjeta sale sin flecha.
 @MainActor
 enum TabBarItemLocator {
-    static func frame(ofTabLabeled label: String) -> CGRect? {
-        let window = UIApplication.shared.connectedScenes
+    static var keyWindow: UIWindow? {
+        UIApplication.shared.connectedScenes
             .compactMap { $0 as? UIWindowScene }
             .flatMap(\.windows)
             .first(where: \.isKeyWindow)
-        guard let window, let tabBar = find(UITabBar.self, in: window) else { return nil }
+    }
+
+    static func frame(ofTabLabeled label: String) -> CGRect? {
+        guard let window = keyWindow, let tabBar = find(UITabBar.self, in: window) else { return nil }
         guard let item = firstView(in: tabBar, where: { $0.accessibilityLabel == label }) else { return nil }
         return item.convert(item.bounds, to: nil)
     }
@@ -58,6 +61,54 @@ enum TabBarItemLocator {
             if let found = firstView(in: sub, where: match) { return found }
         }
         return nil
+    }
+}
+
+/// El borde alrededor de la pestaña que señala la guía («Más», «Grupos»). Jürgen, recorrido del 13-nov: el globo solo
+/// tenía «Omitir» y había que adivinar que se tocaba Más. La barra es de UIKit y queda por encima de la página, así que
+/// el borde va en una vista de la ventana, encima de todo y sin recibir toques: tocar la pestaña sigue la guía.
+@MainActor
+enum TabBarItemHalo {
+    private static weak var halo: UIView?
+
+    static func show(around itemFrame: CGRect, color: UIColor) {
+        guard let window = TabBarItemLocator.keyWindow else { return }
+        let ring = PlaceGuideTabHaloLogic.ringFrame(around: itemFrame)
+        let view: UIView
+        if let halo, halo.window === window {
+            view = halo
+        } else {
+            halo?.removeFromSuperview()
+            view = UIView()
+            view.isUserInteractionEnabled = false
+            view.isAccessibilityElement = false
+            view.accessibilityIdentifier = "place_guide_tab_halo"
+            view.backgroundColor = .clear
+            view.layer.borderWidth = PlaceGuideTabHaloLogic.lineWidth
+            window.addSubview(view)
+            halo = view
+        }
+        view.frame = ring
+        view.layer.cornerRadius = ring.height / 2
+        view.layer.borderColor = color.cgColor
+        window.bringSubviewToFront(view)
+    }
+
+    static func hide() {
+        halo?.removeFromSuperview()
+        halo = nil
+    }
+}
+
+/// La forma del borde de la pestaña señalada.
+nonisolated enum PlaceGuideTabHaloLogic {
+    /// El mismo grosor que el borde del foco en Más (`PlaceGuideScrim`).
+    static let lineWidth: CGFloat = 2.5
+    /// Lo que el borde se separa del botón de la pestaña.
+    static let outset: CGFloat = 3
+
+    static func ringFrame(around itemFrame: CGRect) -> CGRect {
+        itemFrame.insetBy(dx: -outset, dy: -outset)
     }
 }
 
@@ -167,6 +218,7 @@ private struct PlaceGuidePanelHost: ViewModifier {
 /// flecha, porque el de un botón de la barra llega en las coordenadas de la barra, no en las de la ventana.
 private struct PanelPlaceGuideLayer: View {
     private var center: PlaceGuideCenter { .shared }
+    @Environment(\.yalaTheme) private var theme
 
     /// Dónde está la pestaña señalada, medido hasta que la barra se queda quieta. Medida una sola vez al pintar, en el
     /// iPhone caía mientras la barra aún se recolocaba tras cerrar el paso y la flecha quedaba corrida (encargo del
@@ -184,7 +236,25 @@ private struct PanelPlaceGuideLayer: View {
             }
             .transition(.opacity)
             .task(id: stage.target) { await followTab(of: stage.target) }
+            // La pestaña señalada, bordeada mientras se ve el aviso.
+            .onChange(of: TabHaloKey(target: stage.target, frame: tabFrame), initial: true) { _, key in
+                updateHalo(key)
+            }
+            .onDisappear { TabBarItemHalo.hide() }
         }
+    }
+
+    private struct TabHaloKey: Equatable {
+        let target: PlaceGuideStage.Target
+        let frame: CGRect?
+    }
+
+    private func updateHalo(_ key: TabHaloKey) {
+        guard key.target.pointsAtTabBar, let frame = key.frame else {
+            TabBarItemHalo.hide()
+            return
+        }
+        TabBarItemHalo.show(around: frame, color: UIColor(theme.accent))
     }
 
     /// Vuelve a medir la pestaña unas veces, hasta que dos medidas seguidas coinciden.

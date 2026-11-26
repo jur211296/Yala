@@ -56,6 +56,14 @@ nonisolated enum TutorialStoryLogic {
         guard let start else { return false }
         return now.timeIntervalSince(start) >= pauseAfter
     }
+
+    /// El alto mínimo de la zona que se toca: lo que el scroll deja ver entre las rayitas y el botón de abajo. Con él,
+    /// tocar o mantener el dedo responde en toda esa zona aunque el contenido acabe a media pantalla (observación del
+    /// iPhone 14, 25-nov-2026: el dedo caía en la mitad de abajo, vacía, y no pasaba nada). Un contenido más alto sigue
+    /// desplazándose como antes.
+    static func stageMinHeight(containerHeight: CGFloat, topInset: CGFloat, bottomInset: CGFloat) -> CGFloat {
+        max(0, (containerHeight - topInset - bottomInset).rounded(.down))
+    }
 }
 
 /// La barra de segmentos: hechos, el de ahora (con lo que lleva) y los que faltan. El relleno sale del reloj en cada
@@ -140,6 +148,8 @@ struct TutorialStoryPage<Part: View, Footer: View>: View {
     @State private var clockPart = -1
     /// El ancho de la zona que se toca, para saber en qué mitad cayó el dedo.
     @State private var stageWidth: CGFloat = 0
+    /// El alto que el scroll deja ver: la zona que se toca llega hasta el botón aunque el contenido sea corto.
+    @State private var stageMinHeight: CGFloat = 0
 
     private var canRun: Bool { autoAdvances && !reduceMotion && !voiceOver }
 
@@ -189,7 +199,8 @@ struct TutorialStoryPage<Part: View, Footer: View>: View {
                 content(part)
                     .id(part)
                     .transition(.opacity)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    // Toda la zona entre las rayitas y el botón escucha el gesto, haya contenido o no.
+                    .frame(maxWidth: .infinity, minHeight: stageMinHeight, alignment: .topLeading)
                     .contentShape(Rectangle())
                     .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { stageWidth = $0 }
                     // Como las historias: la mitad derecha avanza y la izquierda vuelve; mantener el dedo pausa. Los
@@ -224,6 +235,15 @@ struct TutorialStoryPage<Part: View, Footer: View>: View {
                     .accessibilityIdentifier("tutorial_story_stage")
             }
             .scrollBounceBehavior(.basedOnSize)
+            // El alto del propio scroll, menos lo que tapan las barras. `onScrollGeometryChange` no avisaba al aparecer
+            // y la zona se quedaba del alto del contenido (medido en el simulador el 2026-11-25).
+            .onGeometryChange(for: CGFloat.self) { proxy in
+                TutorialStoryLogic.stageMinHeight(containerHeight: proxy.size.height,
+                                                  topInset: proxy.safeAreaInsets.top,
+                                                  bottomInset: proxy.safeAreaInsets.bottom)
+            } action: { height in
+                stageMinHeight = height
+            }
             .animation(reduceMotion ? nil : DS.Animation.appear, value: part)
         }
         .padding(.horizontal, DS.Spacing.lg)
