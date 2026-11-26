@@ -11,6 +11,12 @@ struct CurrencyPickerSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
     @Binding var selectedCurrency: CurrencyCode
+    /// El título de la hoja; `nil`, «Moneda principal». El paso 1 de Primeros pasos pasa «Otra moneda» al añadir una.
+    var title: String? = nil
+    /// Los nombres con la grafía de cada idioma («sol peruano», «US dollar», «US-Dollar») en vez de `.capitalized`
+    /// («Sol Peruano»). Solo el paso 1 de Primeros pasos, que ya los escribe así en su tarjeta (observación del iPhone 14,
+    /// 25-nov-2026); el resto de Ajustes sigue con mayúsculas hasta que se decida para todos.
+    var namesAsWritten: Bool = false
 
     // MARK: - Recommended Currencies
 
@@ -63,7 +69,7 @@ struct CurrencyPickerSheet: View {
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.lg)
             }
-            .navigationTitle(L10n.Settings.preferredCurrency)
+            .navigationTitle(title ?? L10n.Settings.preferredCurrency)
             .navigationBarTitleDisplayMode(.inline)
             .yalaScreenBackground(.subtle)
             .toolbar {
@@ -119,7 +125,7 @@ struct CurrencyPickerSheet: View {
                     .font(DS.Typography.title)
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(info.name.capitalized)
+                    Text(namesAsWritten ? info.name : info.name.capitalized)
                         .font(DS.Typography.body.weight(isSelected ? .semibold : .regular))
                         .foregroundStyle(.primary)
                     Text(info.code)

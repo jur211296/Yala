@@ -81,7 +81,10 @@ struct FirstAccountFlowView: View {
         // El hueco viaja en el cierre de la hoja: en el `onDismiss` de `.sheet(item:)` el `item` ya vale `nil` y la
         // moneda elegida no se aplicaba (review del lote). Cerrar sin elegir no cambia nada.
         .sheet(item: $currencyPickTarget) { target in
-            FirstAccountCurrencyPicker(initial: target.initial) { code in apply(code.rawValue, to: target.index) }
+            FirstAccountCurrencyPicker(
+                initial: target.initial,
+                title: FirstAccountCurrencyPickerTitleLogic.title(slotIndex: target.index)
+            ) { code in apply(code.rawValue, to: target.index) }
         }
         .alert(L10n.Common.error, isPresented: $saveFailed) {
             Button(L10n.Common.understood, role: .cancel) {}
@@ -1026,15 +1029,18 @@ private extension Array {
 /// El selector de moneda de la app con la elección de partida: solo avisa si se elige otra.
 private struct FirstAccountCurrencyPicker: View {
     let onPick: (CurrencyCode) -> Void
+    /// `nil`: «Moneda principal»; al añadir otra, «Otra moneda» (observación del iPhone 14, 25-nov-2026).
+    let title: String?
     @State private var selection: CurrencyCode
 
-    init(initial: CurrencyCode, onPick: @escaping (CurrencyCode) -> Void) {
+    init(initial: CurrencyCode, title: String?, onPick: @escaping (CurrencyCode) -> Void) {
         _selection = State(initialValue: initial)
+        self.title = title
         self.onPick = onPick
     }
 
     var body: some View {
-        CurrencyPickerSheet(selectedCurrency: $selection)
+        CurrencyPickerSheet(selectedCurrency: $selection, title: title, namesAsWritten: true)
             .onChange(of: selection) { _, code in onPick(code) }
     }
 }

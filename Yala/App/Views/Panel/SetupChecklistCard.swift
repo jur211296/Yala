@@ -50,8 +50,11 @@ struct SetupChecklistCard: View {
                 }
 
                 if showCelebration {
+                    // El confeti se desvanece antes de la franja de abajo, donde vive «Cerrar»: caía encima del botón
+                    // (observación del iPhone 14, 25-nov-2026).
                     ConfettiView()
                         .allowsHitTesting(false)
+                        .mask { SetupCelebrationMask() }
                 }
             }
             // Con Reducir movimiento, sin animación (card C6); el mazo cambia de paso con un fundido.
@@ -181,7 +184,8 @@ struct SetupChecklistCard: View {
                 .frame(width: 40, height: 40)
                 .background(Circle().fill(theme.accent))
                 .accessibilityHidden(true)
-            Text(L10n.PrimerosPasos23.Final.doneTitle)
+            // Con pasos para después no dice «completos» (observación del iPhone 14, 25-nov-2026).
+            Text(PrimerosPasosFinalTitleLogic.title(laterCount: laterSteps.count).text)
                 .font(DS.Typography.headline)
                 .foregroundStyle(.thPrimaryText)
                 .multilineTextAlignment(.center)
@@ -261,4 +265,21 @@ struct SetupChecklistCard: View {
         onStepTapped: { _ in }
     )
     .padding()
+}
+
+/// La máscara del confeti del cierre: entero arriba, se desvanece y deja limpia la franja de abajo, la de «Cerrar».
+struct SetupCelebrationMask: View {
+    /// Lo que mide la franja limpia de abajo: el botón «Cerrar» (44) y el margen de la tarjeta.
+    static let clearBottom: CGFloat = 44 + DS.Spacing.lg
+    /// Lo que dura el fundido, por encima de la franja limpia.
+    static let fadeHeight: CGFloat = DS.Spacing.xxl
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Color.black
+            LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom)
+                .frame(height: Self.fadeHeight)
+            Color.clear.frame(height: Self.clearBottom)
+        }
+    }
 }

@@ -54,7 +54,9 @@ struct GroupsTutorialFlowView: View {
 
     private var intro: some View {
         TutorialStoryPage(
-            eyebrow: T.eyebrow(part + 1, 3),
+            // «Antes de empezar», como las intros de los pasos 1, 3 y 4: «Grupos · paso 2 de 3» chocaba con el «paso 5
+            // de 7» de Primeros pasos, y las rayitas ya marcan la parte (observación del iPhone 14, 25-nov-2026).
+            eyebrow: L10n.PrimerosPasos23.Account.introEyebrow,
             count: 3,
             part: $part,
             onBack: goBackFromIntro,

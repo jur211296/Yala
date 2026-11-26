@@ -230,10 +230,12 @@ struct BudgetsWidget: View {
                             .accessibilityHidden(true)
                     }
 
+                    // Hasta dos líneas: en media columna «Mascotas y animales» salía «Mascotas y anima…» (observación
+                    // del iPhone 14, 25-nov-2026).
                     Text(summary.budget.name)
                         .font(DS.Typography.subheadline)
                         .foregroundStyle(.primary)
-                        .lineLimit(1)
+                        .lineLimit(2)
                         .minimumScaleFactor(0.7)
 
                     Spacer(minLength: 0)
