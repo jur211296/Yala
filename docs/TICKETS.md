@@ -1574,3 +1574,4 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | yearly-scheduled-payment-on-feb-29-skips-common-years | done | tickets/done/yearly-scheduled-payment-on-feb-29-skips-common-years.md |
 | zone-decisions-still-per-row | backlog | tickets/backlog/zone-decisions-still-per-row.md |
 | 2026-11-26-maquetas-dividir-boleta-sin-grupo | done | tickets/done/2026-11-26-maquetas-dividir-boleta-sin-grupo.md |
+| 2026-11-26-deudas-directas-con-personas | done | tickets/done/2026-11-26-deudas-directas-con-personas.md |

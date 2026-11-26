@@ -1,0 +1,708 @@
+<title>Personas en Yala</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+/* Layout: columna de lectura con la recomendación arriba; filas de iPhones 14 por opción que se deslizan en el celular;
+   las imágenes para compartir en su propia fila; la decisión al pie. */
+:root{
+  --bg:#F5F5FA; --surface:#FFFFFF; --fg:#16152B; --muted:#5D5B78; --line:#E2E1EE;
+  --accent:#4E4BD8; --accent-soft:#ECEBFD; --good:#1D7A4A; --warn:#A35A00;
+  --f-display:"Space Grotesk",system-ui,sans-serif; --f-body:"Inter",system-ui,-apple-system,sans-serif;
+  --pw:250px; --s:.6410;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0E0D1C; --surface:#18172B; --fg:#ECEBF7; --muted:#A3A1BF; --line:#2B2945;
+  --accent:#8F8CFF; --accent-soft:#25234A; --good:#5BD08F; --warn:#F2B35A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E0D1C; --surface:#18172B; --fg:#ECEBF7; --muted:#A3A1BF; --line:#2B2945;
+  --accent:#8F8CFF; --accent-soft:#25234A; --good:#5BD08F; --warn:#F2B35A; color-scheme:dark}
+@media (min-width:720px){:root{--pw:272px; --s:.6974}}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 64px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:36px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:clamp(26px,5vw,38px)} h2{font-size:clamp(21px,3.6vw,27px)} h3{font-size:17px}
+p{margin:0;max-width:70ch}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.lead{color:var(--muted)}
+.reco{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.reco div{display:flex;flex-direction:column;gap:6px;min-width:0}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent);width:fit-content}
+.pill.v24{background:transparent;border:1px solid var(--line);color:var(--muted)}
+.controls{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:10px;display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;border-bottom:1px solid var(--line)}
+.seg{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px}
+.seg button{font:600 13px var(--f-body);border:0;background:transparent;color:var(--muted);padding:6px 12px;border-radius:999px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#fff}
+.seg button:focus-visible,.btn:focus-visible,.opt:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.ctl-label{font-size:12px;color:var(--muted);font-weight:600;margin-right:6px}
+section{display:flex;flex-direction:column;gap:14px}
+.opthead{display:flex;flex-direction:column;gap:6px}
+.opthead .t{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.k{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:9px;background:var(--accent);color:#fff;font:700 16px var(--f-display);flex:0 0 auto}
+.rec{font:600 11px var(--f-body);color:var(--good);border:1px solid currentColor;border-radius:999px;padding:1px 8px}
+.pc{font-size:14px;display:flex;flex-direction:column;gap:3px}
+.pc .p::before{content:"+ ";color:var(--good);font-weight:700}
+.pc .c::before{content:"– ";color:var(--warn);font-weight:700}
+.size{font-size:13px;color:var(--muted)} .size b{color:var(--fg)}
+.row{display:flex;gap:18px;overflow-x:auto;padding-bottom:10px;scroll-snap-type:x mandatory}
+.col{flex:0 0 auto;width:calc(var(--pw) + 2px);display:flex;flex-direction:column;gap:8px;scroll-snap-align:start}
+.cap{font:600 13px var(--f-body);min-height:20px}
+.cap small{display:block;font-weight:400;color:var(--muted);font-size:12.5px;line-height:1.4}
+.btn{font:600 13px var(--f-body);border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:10px;padding:8px 14px;cursor:pointer;width:fit-content}
+.btn:disabled{opacity:.5;cursor:default}
+.measured{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.measured div{display:flex;flex-direction:column;gap:4px;min-width:0;font-size:14px}
+.measured code{font-size:12px;color:var(--muted);word-break:break-word}
+
+/* ---------- iPhone 14 (390 × 844 pt) escalado ---------- */
+.phone{width:var(--pw);height:calc(var(--pw) * 2.1641);border-radius:calc(var(--pw) * 0.12);border:1px solid var(--line);overflow:hidden;position:relative;background:#000}
+.screen{width:390px;height:844px;transform:scale(var(--s));transform-origin:0 0;position:absolute;left:0;top:0;
+  font-family:-apple-system,"SF Pro Text",system-ui,sans-serif;color:var(--p-fg);background:var(--p-bg);overflow:hidden;font-size:16px;line-height:1.3}
+.m-dark{--p-bg:#100E28;--p-card:#1D1A42;--p-card2:#26235A;--p-fg:#FFFFFF;--p-fg2:#A9A6CF;--p-acc:#5E5CE6;--p-acc-text:#A9A7FF;--p-line:#2E2B5C;--p-glass:rgba(40,38,80,.85);--p-scrim:rgba(0,0,0,.55);--p-paper:#E9E6DD;--p-sheet:#17153A;--p-paid:#5BD0A7}
+.m-light{--p-bg:#F4F4F6;--p-card:#FFFFFF;--p-card2:#F0F0F5;--p-fg:#111018;--p-fg2:#6B6A80;--p-acc:#5E5CE6;--p-acc-text:#4C4AD0;--p-line:#E3E2EE;--p-glass:rgba(255,255,255,.92);--p-scrim:rgba(20,18,40,.35);--p-paper:#FBFAF6;--p-sheet:#F4F4F6;--p-paid:#0F7A5F}
+.m-dark .screen{background:linear-gradient(#1B1840 0,#100E28 360px)}
+.sb{height:50px;display:flex;justify-content:space-between;align-items:flex-end;padding:0 30px 6px 36px;font:600 16px -apple-system,system-ui}
+.nav{height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;gap:8px}
+.nav .ttl{font:600 17px -apple-system,system-ui;flex:1;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.circ{width:40px;height:40px;border-radius:50%;background:var(--p-glass);display:grid;place-items:center;border:1px solid var(--p-line);font-size:17px;color:var(--p-fg);flex:0 0 auto}
+.circ.ok{background:var(--p-acc);color:#fff;border-color:var(--p-acc)}
+.large{font:700 32px -apple-system,system-ui;padding:2px 16px 8px}
+.content{padding:0 16px;display:flex;flex-direction:column;gap:14px}
+.sheet{position:absolute;inset:58px 0 0;background:var(--p-sheet);border-radius:34px 34px 0 0;z-index:6;display:flex;flex-direction:column}
+.grab{width:38px;height:5px;border-radius:3px;background:var(--p-fg2);opacity:.45;margin:8px auto 2px}
+.scrim{position:absolute;inset:0;background:var(--p-scrim);z-index:5}
+.shead{font:700 24px -apple-system,system-ui;padding:6px 20px 2px}
+.ssub{font-size:15px;color:var(--p-fg2);padding:0 20px 14px}
+.tiles{display:flex;gap:10px;padding:0 20px}
+.tile{flex:1;height:112px;border-radius:20px;background:var(--p-card);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;font:600 14px -apple-system,system-ui}
+.tile i{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:20px;background:rgba(94,92,230,.15);color:var(--p-acc-text)}
+.tile.prim{background:var(--p-acc);color:#fff} .tile.prim i{background:rgba(255,255,255,.18);color:#fff}
+.thin{margin:12px 20px 0;height:56px;border-radius:18px;background:var(--p-card);display:flex;align-items:center;gap:12px;padding:0 16px;border:1.5px solid var(--p-acc)}
+.thin i{font-style:normal;width:30px;height:30px;border-radius:9px;background:var(--p-acc);color:#fff;display:grid;place-items:center;font-size:15px;flex:0 0 auto}
+.thin b{font:600 16px -apple-system,system-ui;flex:1}
+.thin span{color:var(--p-fg2);font-size:20px}
+.thinhint{font-size:13px;color:var(--p-fg2);padding:6px 22px 0}
+.qa{display:flex;gap:8px}
+.qa .new{flex:1;height:48px;border-radius:24px;background:var(--p-acc);color:#fff;font:600 16px -apple-system,system-ui;display:flex;align-items:center;justify-content:center}
+.qa .mini{width:58px;height:48px;border-radius:24px;background:var(--p-glass);border:1px solid var(--p-line);font-size:11px;color:var(--p-fg);display:grid;place-items:center;text-align:center;line-height:1.1}
+.thin.inline{margin:0}
+.gcard{background:var(--p-card);border-radius:20px;padding:14px 16px;display:flex;gap:12px;align-items:center}
+.gcard .dot{width:42px;height:42px;border-radius:12px;flex:0 0 auto;display:grid;place-items:center;color:#fff;font-weight:700}
+.gcard b{display:block;font-size:16px} .gcard span{font-size:13px;color:var(--p-fg2)}
+.gcard .amt{margin-left:auto;text-align:right;font:600 15px ui-rounded,"SF Pro Rounded",-apple-system,system-ui;white-space:nowrap}
+.gcard .amt.paid{color:var(--p-paid)}
+.sect{font:600 13px -apple-system,system-ui;color:var(--p-fg2);text-transform:uppercase;letter-spacing:.03em;padding:0 4px}
+.foot{font-size:12.5px;color:var(--p-fg2);padding:0 4px;line-height:1.35}
+.list{background:var(--p-card);border-radius:18px;overflow:hidden}
+.li{display:flex;align-items:center;gap:10px;padding:11px 14px;border-top:1px solid var(--p-line);min-height:46px}
+.li:first-child{border-top:0}
+.li .d{flex:1;min-width:0}
+.li .d b{display:block;font-weight:500;font-size:15.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.li .d span{font-size:12.5px;color:var(--p-fg2);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.li .m{font:500 15.5px ui-rounded,"SF Pro Rounded",-apple-system,system-ui;font-variant-numeric:tabular-nums;white-space:nowrap}
+.li .m.big{font-weight:700;font-size:17px}
+.av{width:26px;height:26px;border-radius:50%;display:inline-grid;place-items:center;color:#fff;font:700 11px -apple-system,system-ui;flex:0 0 auto}
+.av.lg{width:34px;height:34px;font-size:13px}
+.avs{display:flex;gap:3px;margin-top:4px}
+.avs .av{width:20px;height:20px;font-size:9px}
+.allp{font-size:12px;color:var(--p-fg2);border:1px solid var(--p-line);border-radius:10px;padding:1px 8px;margin-top:4px;display:inline-block}
+.photo{display:flex;gap:12px;align-items:center;background:var(--p-card);border-radius:18px;padding:10px 12px}
+.thumb{width:52px;height:68px;border-radius:8px;background:var(--p-paper);flex:0 0 auto;position:relative;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.thumb::before{content:"";position:absolute;inset:9px 8px;background:repeating-linear-gradient(#9A978C 0 2px,transparent 2px 7px);opacity:.55}
+.photo b{display:block;font-size:15.5px} .photo span{font-size:13px;color:var(--p-fg2)}
+.photo .ok{margin-left:auto;font-size:12px;font-weight:600;color:var(--p-acc-text);white-space:nowrap}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 12px 0 5px;border-radius:18px;background:var(--p-card);border:1px solid var(--p-line);font:500 15px -apple-system,system-ui}
+.chip .x{color:var(--p-fg2);font-size:13px;margin-left:2px}
+.chip.add{padding:0 14px;border-style:dashed;color:var(--p-acc-text)}
+.field{height:44px;border-radius:12px;background:var(--p-card);border:1px solid var(--p-line);display:flex;align-items:center;padding:0 14px;color:var(--p-fg2);font-size:15px}
+.recent{font-size:13px;color:var(--p-fg2);padding:0 4px} .recent b{color:var(--p-acc-text);font-weight:600}
+.segp{display:flex;background:var(--p-card2);border-radius:12px;padding:3px}
+.segp span{flex:1;text-align:center;padding:8px 0;border-radius:9px;font:600 14px -apple-system,system-ui;color:var(--p-fg2)}
+.segp span.on{background:var(--p-card);color:var(--p-fg);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.m-dark .segp span.on{background:#3A3680}
+.phrase{background:var(--p-card);border-radius:14px;padding:12px 14px;font-size:14.5px;line-height:1.35;display:flex;gap:10px}
+.phrase .mic{width:30px;height:30px;border-radius:50%;background:rgba(94,92,230,.15);color:var(--p-acc-text);display:grid;place-items:center;flex:0 0 auto;font-size:14px}
+.bottom{position:absolute;left:0;right:0;bottom:0;padding:12px 16px 30px;background:linear-gradient(to bottom,transparent,var(--p-bg) 26%);display:flex;flex-direction:column;gap:10px;z-index:3}
+.cta{height:52px;border-radius:26px;background:var(--p-acc);color:#fff;font:600 17px -apple-system,system-ui;display:flex;align-items:center;justify-content:center;gap:8px}
+.cta2{height:50px;border-radius:25px;background:var(--p-card);border:1px solid var(--p-line);color:var(--p-fg);font:600 16px -apple-system,system-ui;display:flex;align-items:center;justify-content:center;gap:8px}
+.link{text-align:center;color:var(--p-acc-text);font:600 15px -apple-system,system-ui}
+.tot{display:flex;justify-content:space-between;align-items:baseline;padding:0 4px}
+.tot b{font:700 17px -apple-system,system-ui} .tot span{font:700 17px ui-rounded,"SF Pro Rounded",-apple-system,system-ui}
+.hero{padding:4px 4px 0}
+.hero .l{font-size:15px;color:var(--p-fg2)}
+.hero .amt{font:700 44px ui-rounded,"SF Pro Rounded",-apple-system,system-ui;letter-spacing:-.5px}
+.hero .s{font-size:14px;color:var(--p-fg2)}
+.mine{background:rgba(94,92,230,.12)}
+.stepper{display:flex;align-items:center;justify-content:space-between;background:var(--p-card);border-radius:18px;padding:12px 14px}
+.stepper .b{display:flex;gap:8px;align-items:center} .stepper .b i{width:40px;height:34px;border-radius:10px;background:var(--p-card2);display:grid;place-items:center;font-size:20px;font-style:normal}
+.stepper .n{font:700 22px ui-rounded,"SF Pro Rounded",-apple-system,system-ui;min-width:28px;text-align:center}
+.tipchips{display:flex;gap:8px}
+.tipchips span{flex:1;text-align:center;height:36px;line-height:36px;border-radius:18px;background:var(--p-card);border:1px solid var(--p-line);font:500 14px -apple-system,system-ui}
+.tipchips span.on{background:var(--p-acc);color:#fff;border-color:var(--p-acc)}
+.each{background:var(--p-card);border-radius:22px;padding:18px;text-align:center}
+.each .l{color:var(--p-fg2);font-size:15px}
+.each .amt{font:700 48px ui-rounded,"SF Pro Rounded",-apple-system,system-ui}
+.each .s{color:var(--p-fg2);font-size:13px}
+.shareprev{position:absolute;left:28px;right:28px;top:96px;z-index:6;border-radius:18px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.35)}
+.sharesheet{position:absolute;left:0;right:0;bottom:0;z-index:7;background:var(--p-card);border-radius:28px 28px 0 0;padding:16px 18px 34px}
+.apps{display:flex;justify-content:space-between;margin-top:12px}
+.apps span{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:11px;color:var(--p-fg2)}
+.apps i{width:54px;height:54px;border-radius:14px;display:block}
+.badge{font:600 12px -apple-system,system-ui;padding:3px 9px;border-radius:10px;white-space:nowrap}
+.badge.paid{background:rgba(15,122,95,.14);color:var(--p-paid)}
+.badge.pend{background:var(--p-card2);color:var(--p-fg2)}
+.tab{position:absolute;left:14px;right:14px;bottom:24px;height:62px;border-radius:31px;background:var(--p-glass);border:1px solid var(--p-line);display:flex;justify-content:space-around;align-items:center;font-size:10px;color:var(--p-fg2);z-index:4}
+.tab span{display:flex;flex-direction:column;align-items:center;gap:3px}
+.tab span::before{content:"";width:22px;height:18px;border-radius:5px;background:currentColor;opacity:.75}
+.tab span.on{color:var(--p-acc-text)}
+
+/* ---------- Imagen para compartir: colores fijos en claro, como el resumen de Grupos ---------- */
+.share{background:#FFFFFF;color:#111827;font-family:-apple-system,"SF Pro Text",system-ui,sans-serif;width:var(--pw);display:flex;flex-direction:column;border-radius:16px;overflow:hidden;border:1px solid var(--line)}
+.share .in{padding:18px 18px 14px;display:flex;flex-direction:column;gap:12px}
+.share .mer{font:600 12px -apple-system,system-ui;color:#6B7280;text-transform:uppercase;letter-spacing:.04em}
+.share .big{font:700 30px ui-rounded,"SF Pro Rounded",-apple-system,system-ui;line-height:1.05;font-variant-numeric:tabular-nums}
+.share .sub{font-size:12.5px;color:#6B7280}
+.share .hr{height:1px;background:#E5E7EB}
+.share .p{display:flex;gap:10px;align-items:flex-start}
+.share .p .av{width:28px;height:28px;font-size:11px}
+.share .p .n{flex:1;min-width:0}
+.share .p .n b{display:block;font-size:14px}
+.share .p .n span{display:block;font-size:11.5px;color:#6B7280;line-height:1.35}
+.share .p .a{font:700 15px ui-rounded,"SF Pro Rounded",-apple-system,system-ui;font-variant-numeric:tabular-nums;white-space:nowrap}
+.share .ft{display:flex;align-items:center;gap:8px;padding:10px 18px 12px;border-top:1px solid #E5E7EB;font-size:11.5px;color:#6B7280}
+.share .ft .logo{width:18px;height:18px;border-radius:5px;background:linear-gradient(135deg,#5E5CE6,#E8508F);flex:0 0 auto}
+.share .ft b{color:#111827;font-weight:600}
+.share .ln{display:grid;grid-template-columns:1fr auto;gap:2px 8px;font-size:12.5px;align-items:center}
+.share .ln .w{grid-column:1/-1;display:flex;gap:3px;margin-bottom:4px}
+.share .ln .w .av{width:16px;height:16px;font-size:8px}
+.share .ln .am{font-family:ui-rounded,"SF Pro Rounded",-apple-system,system-ui;font-variant-numeric:tabular-nums}
+.share.story{background:#111827;color:#fff;border-color:transparent}
+.share.story .mer,.share.story .sub{color:#B8BCC8}
+.share.story .pcard{border-radius:14px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;color:#fff}
+.share.story .pcard b{font-size:15px;display:block} .share.story .pcard span{font-size:11px;opacity:.92}
+.share.story .pcard .a{font:700 20px ui-rounded,"SF Pro Rounded",-apple-system,system-ui;white-space:nowrap}
+.share.story .ft{border-top-color:#2A3142;color:#B8BCC8} .share.story .ft b{color:#fff}
+
+.decide{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:18px}
+.decide fieldset{border:0;padding:0;margin:0;display:flex;flex-direction:column;gap:8px}
+.decide legend{font:600 15px var(--f-display);margin-bottom:6px}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opt{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:12px;padding:8px 12px;cursor:pointer;font-size:14px;background:var(--bg)}
+.opt input{accent-color:var(--accent)}
+textarea{width:100%;min-height:80px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font:14px var(--f-body);padding:10px}
+#status{font-size:13px;color:var(--muted)}
+/* ---------- Propio de «Personas» ---------- */
+.pos{color:var(--p-paid)} .neg{color:#E0782A}
+.m-light .neg{color:#B4570F}
+.tg{display:inline-block;font:600 11px -apple-system,system-ui;padding:2px 7px;border-radius:8px;background:var(--p-card2);color:var(--p-fg2);margin-top:3px;white-space:nowrap}
+.tg.acc{background:rgba(94,92,230,.15);color:var(--p-acc-text)}
+.tg.warn{background:rgba(224,120,42,.15);color:#E0782A}
+.m-light .tg.warn{color:#B4570F}
+.sumcard{background:var(--p-card);border-radius:20px;padding:14px 16px;display:flex;gap:10px}
+.sumcard div{flex:1;display:flex;flex-direction:column;gap:2px}
+.sumcard div+div{border-left:1px solid var(--p-line);padding-left:12px}
+.sumcard span{font-size:13px;color:var(--p-fg2)}
+.sumcard b{font:700 22px ui-rounded,"SF Pro Rounded",-apple-system,system-ui;font-variant-numeric:tabular-nums}
+.brk{display:flex;gap:8px;flex-wrap:wrap}
+.brk span{background:var(--p-card);border:1px solid var(--p-line);border-radius:12px;padding:6px 10px;font-size:13px;color:var(--p-fg2)}
+.brk span b{color:var(--p-fg);font-weight:600}
+.acts{display:flex;gap:10px}
+.acts div{flex:1;height:46px;border-radius:23px;display:flex;align-items:center;justify-content:center;font:600 15px -apple-system,system-ui;background:var(--p-card);border:1px solid var(--p-line)}
+.acts div.p{background:var(--p-acc);color:#fff;border-color:var(--p-acc)}
+.amtin{font:700 46px ui-rounded,"SF Pro Rounded",-apple-system,system-ui;text-align:center;padding:4px 0 0;font-variant-numeric:tabular-nums}
+.amtin small{font-size:24px;color:var(--p-fg2);font-weight:600;margin-right:4px}
+.res{background:rgba(94,92,230,.12);border-radius:14px;padding:12px 14px;font-size:15px;display:flex;justify-content:space-between;align-items:center}
+.res b{font:700 18px ui-rounded,"SF Pro Rounded",-apple-system,system-ui}
+.tog{display:flex;align-items:center;justify-content:space-between;background:var(--p-card);border-radius:14px;padding:11px 14px;font-size:14.5px;gap:10px}
+.tog span small{display:block;color:var(--p-fg2);font-size:12.5px}
+.sw{width:46px;height:28px;border-radius:14px;background:#34C759;position:relative;flex:0 0 auto}
+.sw::after{content:"";position:absolute;top:2px;right:2px;width:24px;height:24px;border-radius:50%;background:#fff}
+.sw.off{background:var(--p-card2)} .sw.off::after{right:auto;left:2px}
+.toast{position:absolute;left:16px;right:16px;top:58px;z-index:8;background:var(--p-glass);border:1px solid var(--p-line);border-radius:18px;padding:12px 14px;display:flex;gap:10px;align-items:center;font-size:14px;box-shadow:0 10px 30px rgba(0,0,0,.18)}
+.toast i{font-style:normal;width:28px;height:28px;border-radius:50%;background:var(--p-paid);color:#fff;display:grid;place-items:center;flex:0 0 auto}
+.inv{background:var(--p-card);border-radius:22px;padding:18px;display:flex;flex-direction:column;gap:12px;align-items:center;text-align:center}
+.inv .who{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--p-fg2)}
+.inv h4{margin:0;font:700 21px -apple-system,system-ui}
+.inv p{margin:0;font-size:14.5px;color:var(--p-fg2);line-height:1.4}
+.mail{border-radius:12px;border:1px solid var(--p-line);background:var(--p-card);padding:12px 14px;font-size:15px;display:flex;justify-content:space-between}
+.mail span{color:var(--p-fg2)}
+.note{font-size:12.5px;color:var(--p-fg2);line-height:1.4;padding:0 4px}
+.lock{display:flex;gap:10px;background:var(--p-card2);border-radius:14px;padding:11px 13px;font-size:13px;color:var(--p-fg2);line-height:1.35}
+.lock i{font-style:normal;flex:0 0 auto}
+.mon{font:600 13px -apple-system,system-ui;color:var(--p-fg2);text-transform:uppercase;letter-spacing:.03em;padding:4px 4px 0}
+
+/* ---------- Página: tablas y casos ---------- */
+.cmp{overflow-x:auto;border:1px solid var(--line);border-radius:16px;background:var(--surface)}
+.cmp table{border-collapse:collapse;width:100%;min-width:720px;font-size:14px}
+.cmp th,.cmp td{padding:11px 14px;text-align:left;vertical-align:top;border-top:1px solid var(--line)}
+.cmp thead th{border-top:0;font:600 13px var(--f-body);color:var(--muted);background:var(--bg)}
+.cmp tbody th{font-weight:600;width:170px}
+.cmp td.win{background:var(--accent-soft)}
+.cases{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.case{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.case h3{font-size:15.5px}
+.case p{font-size:14px;color:var(--muted)}
+.case .st{font:600 12px var(--f-body);color:var(--accent)}
+.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:14px}
+.flow .n{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:7px 12px;font-weight:600}
+.flow .n.ok{border-color:var(--good);color:var(--good)}
+.flow .a{color:var(--muted);font-size:13px}
+.bul{display:flex;flex-direction:column;gap:8px;padding:0;margin:0;list-style:none}
+.bul li{padding-left:18px;position:relative;font-size:14.5px;max-width:80ch}
+.bul li::before{content:"";position:absolute;left:2px;top:.62em;width:6px;height:6px;border-radius:50%;background:var(--accent)}
+.two{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:10px;min-width:0}
+</style>
+
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:10px">
+    <span class="eyebrow">Yala 2.3 · propuesta para decidir · 26 de noviembre de 2026</span>
+    <h1>Personas: deudas 1 a 1 sin crear grupo</h1>
+    <p class="lead">«Carla me debe la mitad del almuerzo», sin abrir un grupo para eso. Tres formas de construirlo, cómo se vincula a alguien por correo, qué pasa con quien no usa Yala y cómo encaja con Grupos y con «Dividir una boleta».</p>
+  </header>
+
+  <section class="reco" aria-label="Recomendación">
+    <div>
+      <span class="pill">Recomendada para 2.3</span>
+      <h2>A · «Personas» dentro de Grupos</h2>
+      <p>Una segunda vista en Grupos con cada persona y su saldo. Por dentro, cada persona es un grupo de dos que no se ve en la lista. Así reusa lo que ya funciona: sincronía, pagos parciales, enlace de invitación e imagen para compartir.</p>
+    </div>
+    <div>
+      <span class="eyebrow">Qué entra en 2.3</span>
+      <p>Alta rápida «me debe / le debo», saldo con cada persona sumando grupos y directo, liquidar todo o una parte, recordar con imagen, invitar por enlace y aceptar antes de ver nada. El correo sirve como pista para encontrar a la persona cuando entra a Yala, sin que Yala mande correos.</p>
+    </div>
+    <div>
+      <span class="eyebrow">Qué queda para 2.4</span>
+      <p>Que Yala mande el correo de invitación, el aviso al otro teléfono cuando le anotas algo y los préstamos con abonos, que se apoyan en esta misma pantalla de persona.</p>
+      <span class="size">Esfuerzo en 2.3: <b>unas 5 a 6 sesiones</b> (servidor 1 a 2, app 3, QA 1).</span>
+    </div>
+  </section>
+
+  <div class="controls">
+    <span><span class="ctl-label">Tema del iPhone</span><span class="seg"><button id="thLight" type="button">Claro</button><button id="thDark" type="button">Oscuro</button></span></span>
+    <span class="size">iPhone 14 · 390 × 844 · en el celular, desliza cada fila</span>
+  </div>
+
+  <section aria-labelledby="hA">
+    <div class="opthead">
+      <div class="t"><span class="k">A</span><h2 id="hA">Personas dentro de Grupos</h2><span class="rec">Recomendada</span></div>
+      <div class="pc">
+        <span class="p">Reusa sincronía, liquidación parcial, enlace de invitación y puente a tus registros: lo nuevo es poco.</span>
+        <span class="p">Está donde la gente ya busca «quién me debe», y funciona también en «solo grupos».</span>
+        <span class="p">El saldo con Diego suma lo directo y el depa compartido en un solo número.</span>
+        <span class="c">Hay que esconder estos grupos de dos en todos los sitios donde hoy se listan grupos.</span>
+      </div>
+    </div>
+    <div class="row" id="rowA"></div>
+  </section>
+
+  <section aria-labelledby="hAlink">
+    <div class="opthead">
+      <div class="t"><span class="k">A</span><h2 id="hAlink">Martín no usa Yala: enlace, correo y aceptación</h2></div>
+      <p class="size">Mismo camino en las tres opciones. Cambia lo que ve cada uno.</p>
+    </div>
+    <div class="row" id="rowLink"></div>
+  </section>
+
+  <section aria-labelledby="hB">
+    <div class="opthead">
+      <div class="t"><span class="k">B</span><h2 id="hB">Libro de deudas propio, solo tú lo ves</h2></div>
+      <div class="pc">
+        <span class="p">El más simple: nadie tiene que aceptar nada y no hay datos de otros.</span>
+        <span class="p">Encaja de forma natural con «Préstamos con personas» de 2.4.</span>
+        <span class="c">La otra persona nunca lo ve ni lo confirma: solo le llega una imagen.</span>
+        <span class="c">Modelo y sincronía nuevos; compartirlo después cuesta lo mismo que A entera.</span>
+      </div>
+      <span class="size">Esfuerzo: <b>unas 3 sesiones</b>, más A entera el día que se quiera compartir.</span>
+    </div>
+    <div class="row" id="rowB"></div>
+  </section>
+
+  <section aria-labelledby="hC">
+    <div class="opthead">
+      <div class="t"><span class="k">C</span><h2 id="hC">Amigos por correo, como Splitwise</h2></div>
+      <div class="pc">
+        <span class="p">Identidad fuerte: cada deuda es entre dos cuentas que se aceptaron.</span>
+        <span class="c">Frena: con quien no tiene Yala no puedes anotar nada hasta que se registre y acepte.</span>
+        <span class="c">Exige mandar correos desde Yala y buscar cuentas por correo, que hoy no existen.</span>
+        <span class="c">El correo oculto de Apple impide encontrar a mucha gente por su correo real.</span>
+      </div>
+      <span class="size">Esfuerzo: <b>8 sesiones o más</b>. No cabe en 2.3.</span>
+    </div>
+    <div class="row" id="rowC"></div>
+  </section>
+
+  <section aria-labelledby="hCmp">
+    <h2 id="hCmp">Las tres, lado a lado</h2>
+    <div class="cmp"><table>
+      <thead><tr><th></th><th>A · Personas en Grupos</th><th>B · Libro propio</th><th>C · Amigos por correo</th></tr></thead>
+      <tbody>
+        <tr><th>Con quien no usa Yala</th><td class="win">Anotas desde el primer segundo, solo con el nombre</td><td>Anotas solo con el nombre</td><td>No puedes hasta que se registre y acepte</td></tr>
+        <tr><th>La otra persona lo ve</th><td class="win">Sí, cuando acepta el enlace o la pregunta</td><td>No, solo una imagen</td><td>Sí, siempre</td></tr>
+        <tr><th>Saldo sumando grupos</th><td class="win">Sí, con desglose</td><td>No; son mundos aparte</td><td>Sí</td></tr>
+        <tr><th>Cómo se modela</th><td class="win">Grupo de dos oculto: reusa las 5 tablas y la sincronía de Grupos</td><td>Modelos, tablas y sincronía nuevos</td><td>Grupo de dos más directorio de cuentas por correo</td></tr>
+        <tr><th>En «solo grupos»</th><td class="win">Sí, vive en Grupos</td><td>Solo si se le hace un sitio aparte</td><td>Sí</td></tr>
+        <tr><th>Riesgo de deudas falsas</th><td class="win">Bajo: nada aparece sin aceptar</td><td>Nulo: no sale de tu cuenta</td><td>Bajo, pero expone qué correos tienen cuenta</td></tr>
+        <tr><th>Esfuerzo</th><td class="win">5 a 6 sesiones, cabe en 2.3</td><td>3 sesiones; compartir después, otras 5</td><td>8 o más, a 2.4 o después</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section aria-labelledby="hMail">
+    <h2 id="hMail">El correo, caso por caso</h2>
+    <p class="lead">El modo nube obligatorio da una ventaja: toda persona que entra a Yala lo hace con Apple o Google, y esas cuentas traen un correo verificado. Ese correo es la llave para encontrar a Martín cuando llegue, sin que Yala tenga que mandarle nada.</p>
+    <div class="flow" aria-label="Estados de una persona">
+      <span class="n">Solo nombre</span><span class="a">→ compartes el enlace o agregas su correo →</span>
+      <span class="n">Invitada</span><span class="a">→ acepta →</span><span class="n ok">En Yala, vinculada</span>
+    </div>
+    <div class="cases">
+      <div class="case"><span class="st">Acepta</span><h3>Abre el enlace o confirma «Sí, soy yo»</h3><p>Su fila pasa a «En Yala». Se conserva todo el historial y desde ahí los dos ven lo mismo y pueden anotar y marcar pagos.</p></div>
+      <div class="case"><span class="st">Rechaza</span><h3>Toca «No soy yo» o «No reconozco esto»</h3><p>Vuelve a ser «Solo nombre» de tu lado, con la deuda intacta. De su lado no queda nada. Te avisamos y puedes mandarle el enlace a otra persona.</p></div>
+      <div class="case"><span class="st">Nunca contesta</span><h3>Sigue como «Invitada» sin límite</h3><p>Tú sigues anotando. El enlace caduca a los 30 días y se renueva con un toque. No hay recordatorios automáticos a alguien que no usa Yala.</p></div>
+      <div class="case"><span class="st">Ya usa Yala con ese correo</span><h3>Le preguntamos dentro de la app</h3><p>La próxima vez que abre Yala ve «Jürgen te agregó como Martín». A ti no te decimos si ese correo tiene cuenta: así nadie puede averiguar quién usa Yala.</p></div>
+      <div class="case"><span class="st">Entra con «ocultar mi correo» de Apple</span><h3>El correo no coincide</h3><p>Apple le da una dirección de relevo distinta. Para estos casos queda el enlace, que funciona siempre. Por eso el enlace es el camino principal y el correo, una ayuda.</p></div>
+      <div class="case"><span class="st">Se registra con otro correo</span><h3>Tampoco coincide</h3><p>Igual que arriba: el enlace lo resuelve. Puedes cambiar el correo de su ficha mientras siga sin vincular.</p></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="hPriv">
+    <h2 id="hPriv">Privacidad y deudas falsas</h2>
+    <div class="two">
+      <div class="box"><h3>Qué ve cada uno</h3><ul class="bul">
+        <li>Hasta que acepta, la otra persona no ve nada y nada cuenta en su saldo.</li>
+        <li>Al aceptar ve solo lo que tienen en común: los gastos entre los dos, los pagos y el saldo. No ve tus cuentas, tus otros gastos ni tus otros grupos.</li>
+        <li>Lo que registras como «tu parte» en tus cuentas sigue siendo solo tuyo.</li>
+        <li>Cada gasto dice quién lo anotó.</li>
+      </ul></div>
+      <div class="box"><h3>Cómo se evita cargarle deudas a un desconocido</h3><ul class="bul">
+        <li>La deuda es tu anotación hasta que el otro acepta. Escribir un correo ajeno no le crea nada a esa persona.</li>
+        <li>Yala no confirma si un correo tiene cuenta, ni manda correos en 2.3: no sirve para molestar a nadie.</li>
+        <li>Quien recibe la pregunta puede decir «No soy yo» y bloquear a quien lo agregó; no vuelve a preguntarle.</li>
+        <li>Un tope de invitaciones por correo al día, como el que ya tienen los enlaces de grupo.</li>
+        <li>Si no acepta nunca, los datos viven solo en tu cuenta y se borran con ella.</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="hFit">
+    <h2 id="hFit">Cómo convive con lo demás</h2>
+    <div class="cases">
+      <div class="case"><h3>Grupos que ya tienes</h3><p>El saldo con Diego suma lo directo y el depa compartido, con desglose. Liquidar desde Personas salda primero lo directo; lo del grupo se salda en el grupo, como hoy.</p></div>
+      <div class="case"><h3>Modo «solo grupos»</h3><p>Personas vive dentro de Grupos, así que está igual. Solo cambia que no hay «Registrar mi parte», porque no hay cuentas personales.</p></div>
+      <div class="case"><h3>Dividir una boleta sin grupo</h3><p>Al terminar el reparto aparece «Guardar en Personas»: cada «me debe» queda como un gasto 1 a 1 con esa persona. Ver la pantalla A·6.</p></div>
+      <div class="case"><h3>Préstamos con personas (2.4)</h3><p>Conviene compartir piezas, no fusionar las cards: un préstamo será un movimiento más en la pantalla de la persona («Le presté S/ 500», con abonos). La card de 2.4 queda, pero se construye sobre Personas.</p></div>
+    </div>
+  </section>
+
+  <section class="measured" aria-labelledby="hMeas">
+    <div style="grid-column:1/-1"><h2 id="hMeas">Medido en el código de 2.3</h2></div>
+    <div><b>Miembro solo con nombre</b><span>Ya existe: un miembro sin cuenta es un «hueco sin reclamar».</span><code>GroupService.addMember(to:displayName:role:) · SplitMember.userID == nil</code></div>
+    <div><b>Reclamar un hueco al unirse</b><span>El servidor ya acepta que quien entra por enlace ocupe un miembro existente; hoy solo lo usan los grupos migrados.</span><code>join_group(p_token, p_display_name, p_legacy_member_key)</code></div>
+    <div><b>Pago parcial</b><span>La liquidación ya tiene «todo» y «una parte».</span><code>SettlementSaldar23Logic.PaymentScope .all / .part</code></div>
+    <div><b>Grupo de dos</b><span>Ya hay una pantalla de reparto para dos personas al estilo Splitwise.</span><code>GroupTwoPersonSplitView · applyTwoPersonChoice</code></div>
+    <div><b>Correo</b><span>No hay nada de correo en Grupos ni en el servidor de Grupos: ni invitar ni buscar. Es lo nuevo de verdad.</span><code>Services/Groups · gateway/src/groups (sin resultados)</code></div>
+    <div><b>Saldo por persona entre grupos</b><span>No existe; hoy el saldo es por grupo.</span><code>GroupBalanceService · GroupHeaderBalance</code></div>
+    <div><b>Recordatorios</b><span>Son notificaciones locales en tu teléfono, apagadas por defecto; no llegan al otro.</span><code>GroupSettlementReminderService</code></div>
+    <div><b>Entrar a Grupos</b><span>Exige Apple o Google, así que toda persona vinculada tiene un correo verificado (o de relevo de Apple).</span><code>GroupsSignInView · CloudAuthService</code></div>
+  </section>
+
+  <section class="decide" aria-labelledby="decTitle">
+    <h2 id="decTitle">Tu decisión</h2>
+    <fieldset><legend>Opción</legend><div class="opts">
+      <label class="opt"><input type="radio" name="opcion" value="A" id="opA"> A · Personas en Grupos</label>
+      <label class="opt"><input type="radio" name="opcion" value="B" id="opB"> B · Libro propio</label>
+      <label class="opt"><input type="radio" name="opcion" value="C" id="opC"> C · Amigos por correo</label>
+    </div></fieldset>
+    <fieldset><legend>Correo</legend><div class="opts">
+      <label class="opt"><input type="radio" name="correo" value="pista-2.3" id="coA"> En 2.3 como pista, sin mandar correos</label>
+      <label class="opt"><input type="radio" name="correo" value="solo-enlace-2.3" id="coB"> En 2.3 solo enlace; correo en 2.4</label>
+      <label class="opt"><input type="radio" name="correo" value="envio-2.3" id="coC"> En 2.3 y que Yala mande el correo</label>
+    </div></fieldset>
+    <fieldset><legend>Préstamos con personas (2.4)</legend><div class="opts">
+      <label class="opt"><input type="radio" name="prestamos" value="sobre-personas" id="prA"> Construirlos sobre Personas</label>
+      <label class="opt"><input type="radio" name="prestamos" value="separados" id="prB"> Mantenerlos aparte</label>
+    </div></fieldset>
+    <label for="notes" class="ctl-label">Algo más</label>
+    <textarea id="notes" placeholder="Cambios a las pantallas, nombres, lo que falte"></textarea>
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><button class="btn" id="save" type="button">Guardar decisión</button><span id="status"></span></div>
+  </section>
+</div>
+
+<script>
+(function(){
+  var state={theme:"m-light"};
+  try{var s=JSON.parse(localStorage.getItem("ddp")||"{}");if(s.theme==="m-dark"||s.theme==="m-light")state.theme=s.theme;}catch(e){}
+  try{if(!localStorage.getItem("ddp")&&window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches)state.theme="m-dark";}catch(e){}
+
+  var P={
+    yo:{n:"Jürgen",i:"J",c:"#5E5CE6"},
+    carla:{n:"Carla",i:"C",c:"#E8508F"},
+    diego:{n:"Diego",i:"D",c:"#2F9E6E"},
+    martin:{n:"Martín",i:"M",c:"#E08A1E"},
+    lucia:{n:"Lucía",i:"L",c:"#3B82F6"}
+  };
+  function av(p,lg){return '<span class="av'+(lg?' lg':'')+'" style="background:'+p.c+'">'+p.i+'</span>';}
+  function S(n){var a=Math.abs(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,",");return "S/ "+a;}
+  function sb(){return '<div class="sb"><span>9:41</span><span style="font-size:13px;letter-spacing:1px">●●● ▮</span></div>';}
+  function tab(){return '<div class="tab"><span>Panel</span><span>Estadíst.</span><span>Plan</span><span>Registros</span><span>Reportes</span><span class="on">Grupos</span></div>';}
+  function phone(inner){return '<div class="phone '+state.theme+'"><div class="screen">'+inner+'</div></div>';}
+  function col(t,c,inner){return '<div class="col"><div class="cap">'+t+'<small>'+c+'</small></div>'+inner+'</div>';}
+  function li(p,title,sub,amt,cls,extra){
+    return '<div class="li">'+(p?av(p,true):'')+'<div class="d"><b>'+title+'</b><span>'+sub+'</span>'+(extra||'')+'</div><span class="m '+(cls||'')+'">'+amt+'</span></div>';
+  }
+  function row(title,sub,amt,cls){return '<div class="li"><div class="d"><b>'+title+'</b><span>'+sub+'</span></div><span class="m '+(cls||'')+'">'+amt+'</span></div>';}
+
+  // ---------- Opción A ----------
+  function personList(martinTag,toast){
+    return sb()+(toast||'')+
+      '<div class="nav"><span class="circ">⚙︎</span><span class="ttl"></span><span class="circ">＋</span></div>'+
+      '<div class="large">Grupos</div>'+
+      '<div class="content">'+
+        '<div class="segp"><span>Grupos</span><span class="on">Personas</span></div>'+
+        '<div class="sumcard"><div><span>Te deben</span><b class="pos">'+S(237.5)+'</b></div><div><span>Debes</span><b class="neg">'+S(30)+'</b></div></div>'+
+        '<div class="list">'+
+          li(P.carla,"Carla","Almuerzo en Isolina · hoy",S(22.5),"pos")+
+          li(P.diego,"Diego","3 gastos · pagó "+S(60)+" el 20 nov",S(175),"pos",'<span class="tg acc">+ Depa Barranco</span>')+
+          li(P.martin,"Martín","Pollería La Granja · 22 nov",S(40),"pos",martinTag)+
+          li(P.lucia,"Lucía","Entradas al concierto · le debes",S(30),"neg")+
+        '</div>'+
+        '<div class="foot">Verde: te deben. Naranja: debes. El saldo suma lo directo y los grupos que comparten.</div>'+
+      '</div>'+
+      '<div class="bottom" style="bottom:88px;padding-bottom:12px"><div class="cta">＋ Con una persona</div></div>'+tab();
+  }
+  function aList(){return personList('<span class="tg warn">Sin vincular · invitado</span>');}
+
+  function aQuick(){
+    return sb()+'<div style="opacity:.35">'+'<div class="large" style="padding-top:60px">Grupos</div></div><div class="scrim"></div>'+
+      '<div class="sheet"><div class="grab"></div>'+
+        '<div class="nav"><span class="circ">✕</span><span class="ttl">Con una persona</span><span class="circ ok">✓</span></div>'+
+        '<div class="content" style="gap:12px">'+
+          '<div class="chips"><span class="chip" style="border-color:var(--p-acc);background:rgba(94,92,230,.14)">'+av(P.carla)+'Carla</span><span class="chip">'+av(P.diego)+'Diego</span><span class="chip">'+av(P.martin)+'Martín</span><span class="chip add">＋ Otra</span></div>'+
+          '<div class="amtin"><small>S/</small>45.00</div>'+
+          '<div class="field" style="color:var(--p-fg)">Almuerzo en Isolina</div>'+
+          '<div class="segp"><span class="on">Pagué yo</span><span>Pagó Carla</span></div>'+
+          '<div class="segp"><span class="on">A medias</span><span>Me debe todo</span><span>Otro</span></div>'+
+          '<div class="res"><span>Carla te debe</span><b>'+S(22.5)+'</b></div>'+
+          '<div class="tog"><span>Registrar mi parte<small>'+S(22.5)+' en Comida · BCP Sueldo</small></span><span class="sw"></span></div>'+
+          '<div class="phrase"><span class="mic">🎙</span><span>O díctalo: «Carla me debe 45 entre dos»</span></div>'+
+        '</div></div>';
+  }
+
+  function aDetail(){
+    return sb()+
+      '<div class="nav"><span class="circ">‹</span><span class="ttl"></span><span class="circ">⋯</span></div>'+
+      '<div class="content" style="gap:12px">'+
+        '<div class="hero" style="display:flex;flex-direction:column;gap:4px"><div style="display:flex;align-items:center;gap:10px">'+av(P.diego,true)+'<b style="font-size:19px">Diego</b><span class="tg acc">En Yala · ve lo mismo</span></div>'+
+          '<div class="l">Te debe</div><div class="amt pos">'+S(175)+'</div></div>'+
+        '<div class="brk"><span>Directo <b>'+S(135)+'</b></span><span>Depa Barranco <b>'+S(40)+'</b> ›</span></div>'+
+        '<div class="acts"><div>Recordar</div><div class="p">Liquidar</div></div>'+
+        '<div class="mon">Noviembre</div>'+
+        '<div class="list">'+
+          row("Diego te pagó","20 nov · efectivo","− "+S(60),"")+
+          row("Pasajes a Cusco","Pagaste "+S(240)+" · le toca "+S(120),"+ "+S(120),"pos")+
+          row("Regalo para mamá","Pagaste "+S(190)+" · le toca "+S(95),"+ "+S(95),"pos")+
+          row("Uber al aeropuerto","Pagó Diego "+S(40)+" · te toca "+S(20),"− "+S(20),"neg")+
+        '</div>'+
+        '<div class="mon">En grupos</div>'+
+        '<div class="list">'+row("Depa Barranco","6 gastos · tu saldo con Diego",S(40)+" ›","pos")+'</div>'+
+      '</div>';
+  }
+
+  function aSettle(){
+    return sb()+'<div style="opacity:.35"><div class="large" style="padding-top:60px">Diego</div></div><div class="scrim"></div>'+
+      '<div class="sheet"><div class="grab"></div>'+
+        '<div class="nav"><span class="circ">✕</span><span class="ttl">Diego te paga</span><span class="circ ok">✓</span></div>'+
+        '<div class="content" style="gap:12px">'+
+          '<div class="segp"><span>Todo · '+S(175)+'</span><span class="on">Una parte</span></div>'+
+          '<div class="amtin"><small>S/</small>75.00</div>'+
+          '<div class="res"><span>Queda</span><b>'+S(100)+'</b></div>'+
+          '<div class="lock"><i>ⓘ</i><span>Se descuenta de lo directo ('+S(135)+'). Lo del Depa Barranco se salda dentro del grupo, como hoy.</span></div>'+
+          '<div class="tog"><span>Registrar el ingreso<small>BCP Sueldo · hoy</small></span><span class="sw"></span></div>'+
+          '<div class="note">Diego ve el pago en su Yala y puede corregirlo si no coincide.</div>'+
+        '</div></div>';
+  }
+
+  function aShare(){
+    var L=function(t,s,a){return '<div class="p"><div class="n"><b>'+t+'</b><span>'+s+'</span></div><span class="a">'+a+'</span></div>';};
+    return '<div class="share"><div class="in"><span class="mer">Cuentas con Diego · 26 nov</span>'+
+      '<div><div class="sub">Diego, me debes</div><div class="big">'+S(175)+'</div><div class="sub">Lo directo y el Depa Barranco</div></div><div class="hr"></div>'+
+      L("Pasajes a Cusco","Pagué "+S(240)+" · tu mitad","+ "+S(120))+
+      L("Regalo para mamá","Pagué "+S(190)+" · tu mitad","+ "+S(95))+
+      L("Uber al aeropuerto","Pagaste "+S(40)+" · mi mitad","− "+S(20))+
+      L("Me pagaste","20 nov","− "+S(60))+
+      L("Depa Barranco","Saldo del grupo","+ "+S(40))+
+      '</div><div class="ft"><span class="logo"></span><span><b>Cuentas claras con Yala</b> · ábrelo para verlo al día</span></div></div>';
+  }
+
+  function aReceipt(){
+    return sb()+
+      '<div class="nav"><span class="circ">‹</span><span class="ttl">Pardos Chicken</span><span class="circ ok" style="width:auto;padding:0 14px;border-radius:20px;font:600 15px -apple-system,system-ui">Listo</span></div>'+
+      '<div class="content" style="gap:12px">'+
+        '<div class="hero"><div class="l">Pagaste '+S(129.9)+'. Te deben</div><div class="amt">'+S(64.3)+'</div><div class="s">Tu parte: '+S(65.6)+'</div></div>'+
+        '<div class="list">'+
+          li(P.carla,"Carla","Pollo a la brasa · chicha",S(22.1),"pos",'<span class="tg acc">Se suma a su saldo</span>')+
+          li(P.diego,"Diego","Parrilla · limonada",S(18.4),"pos",'<span class="tg acc">Se suma a su saldo</span>')+
+          li(P.lucia,"Lucía","Ensalada · postre",S(23.8),"pos",'<span class="tg">Le debías '+S(30)+' · ahora le debes '+S(6.2)+'</span>')+
+        '</div>'+
+        '<div class="foot">Cada parte queda como un gasto 1 a 1 con esa persona. Quien no está en Personas se agrega solo con su nombre.</div>'+
+      '</div>'+
+      '<div class="bottom"><div class="cta">Guardar en Personas</div><div class="cta2">Compartir imagen</div></div>';
+  }
+
+  // ---------- Vinculación ----------
+  function lMartin(){
+    return sb()+
+      '<div class="nav"><span class="circ">‹</span><span class="ttl"></span><span class="circ">⋯</span></div>'+
+      '<div class="content" style="gap:12px">'+
+        '<div class="hero" style="display:flex;flex-direction:column;gap:4px"><div style="display:flex;align-items:center;gap:10px">'+av(P.martin,true)+'<b style="font-size:19px">Martín</b><span class="tg warn">Sin vincular</span></div>'+
+          '<div class="l">Te debe</div><div class="amt pos">'+S(40)+'</div></div>'+
+        '<div class="inv" style="align-items:stretch;text-align:left"><h4 style="font-size:18px">Martín aún no usa Yala</h4><p>Sigues anotando igual. Si se une, ve lo mismo que tú y puede marcar sus pagos.</p>'+
+          '<div class="cta">Mandar enlace</div>'+
+          '<div class="mail"><span>Su correo (opcional)</span>martin.r@gmail.com</div>'+
+          '<div class="note">Si Martín entra a Yala con este correo, le preguntamos si es él. Yala no le escribe, y a ti no te dice si ese correo ya tiene cuenta.</div></div>'+
+        '<div class="list">'+row("Pollería La Granja","22 nov · pagaste "+S(80)+" · le toca "+S(40),"+ "+S(40),"pos")+'</div>'+
+      '</div>';
+  }
+  function lInvite(){
+    return sb()+
+      '<div style="height:40px"></div><div class="content" style="gap:16px">'+
+        '<div class="inv"><div class="who">'+av(P.yo)+'Jürgen te invita</div><h4>Llevar cuentas con Jürgen en Yala</h4>'+
+        '<p>Jürgen anotó 1 gasto contigo. Entra para verlo. Nada cuenta en tu saldo hasta que aceptes.</p></div>'+
+        '<div class="lock"><i>🔒</i><span>Solo verás lo que tienen en común. Jürgen no ve tus cuentas ni tus gastos.</span></div>'+
+      '</div>'+
+      '<div class="bottom"><div class="cta"> Continuar con Apple</div><div class="cta2">Continuar con Google</div><div class="note" style="text-align:center">Martín abrió el enlace de WhatsApp sin tener Yala: llega aquí tras instalarla.</div></div>';
+  }
+  function lAsk(){
+    return sb()+
+      '<div style="height:24px"></div><div class="content" style="gap:14px">'+
+        '<div class="inv"><div class="who">'+av(P.yo)+'Jürgen</div><h4>Jürgen te agregó como «Martín»</h4><p>¿Eres tú?</p></div>'+
+        '<div class="list">'+row("Pollería La Granja","22 nov · pagó Jürgen "+S(80)+" · te toca "+S(40),S(40),"neg")+'</div>'+
+        '<div class="lock"><i>🔒</i><span>Si aceptas, verás estos gastos y el saldo con Jürgen. Jürgen no ve tus cuentas, tus gastos ni tus otros grupos.</span></div>'+
+      '</div>'+
+      '<div class="bottom"><div class="cta">Sí, soy yo</div><div class="cta2">No soy yo</div><div class="link">No reconozco este gasto</div></div>';
+  }
+  function lLinked(){
+    return personList('<span class="tg acc">En Yala desde hoy</span>','<div class="toast"><i>✓</i><span><b>Martín aceptó.</b> Se conservaron sus gastos y ahora ve lo mismo que tú.</span></div>');
+  }
+  function lRejected(){
+    return personList('<span class="tg">Solo nombre</span>','<div class="toast"><i style="background:var(--p-fg2)">ⓘ</i><span><b>Martín dijo que no es él.</b> La deuda sigue en tu cuenta. Puedes mandar el enlace a otra persona.</span></div>');
+  }
+
+  // ---------- Opción B ----------
+  function bList(){
+    return sb()+
+      '<div class="nav"><span class="circ">‹</span><span class="ttl">Deudas</span><span class="circ">＋</span></div>'+
+      '<div class="content">'+
+        '<div class="sumcard"><div><span>Te deben</span><b class="pos">'+S(197.5)+'</b></div><div><span>Debes</span><b class="neg">'+S(30)+'</b></div></div>'+
+        '<div class="list">'+
+          li(P.carla,"Carla","Almuerzo en Isolina · hoy",S(22.5),"pos")+
+          li(P.diego,"Diego","3 gastos · pagó "+S(60),S(135),"pos")+
+          li(P.martin,"Martín","Pollería La Granja",S(40),"pos")+
+          li(P.lucia,"Lucía","Entradas al concierto",S(30),"neg")+
+        '</div>'+
+        '<div class="lock"><i>🔒</i><span>Solo tú lo ves. Lo de los grupos va aparte: Diego también te debe '+S(40)+' en el Depa Barranco.</span></div>'+
+      '</div>'+
+      '<div class="bottom"><div class="cta">＋ Nueva deuda</div></div>';
+  }
+  function bDetail(){
+    return sb()+
+      '<div class="nav"><span class="circ">‹</span><span class="ttl"></span><span class="circ">⋯</span></div>'+
+      '<div class="content" style="gap:12px">'+
+        '<div class="hero" style="display:flex;flex-direction:column;gap:4px"><div style="display:flex;align-items:center;gap:10px">'+av(P.diego,true)+'<b style="font-size:19px">Diego</b><span class="tg">Solo tú lo ves</span></div>'+
+          '<div class="l">Te debe</div><div class="amt pos">'+S(135)+'</div></div>'+
+        '<div class="acts"><div>Compartir estado</div><div class="p">Anotar pago</div></div>'+
+        '<div class="list">'+
+          row("Diego te pagó","20 nov","− "+S(60),"")+
+          row("Pasajes a Cusco","Le toca "+S(120),"+ "+S(120),"pos")+
+          row("Regalo para mamá","Le toca "+S(95),"+ "+S(95),"pos")+
+          row("Uber al aeropuerto","Te toca "+S(20),"− "+S(20),"neg")+
+        '</div>'+
+        '<div class="lock"><i>ⓘ</i><span>Diego no ve esto en su Yala ni puede marcar pagos. Para que lo vea, comparte la imagen.</span></div>'+
+      '</div>';
+  }
+
+  // ---------- Opción C ----------
+  function cAdd(){
+    return sb()+
+      '<div class="nav"><span class="circ">‹</span><span class="ttl">Amigos</span><span class="circ">＋</span></div>'+
+      '<div class="content" style="gap:12px">'+
+        '<div class="sect">Agregar por correo</div>'+
+        '<div class="mail"><span>Correo</span>martin.r@gmail.com</div>'+
+        '<div class="cta">Mandar solicitud</div>'+
+        '<div class="sect" style="margin-top:6px">Tus amigos</div>'+
+        '<div class="list">'+
+          li(P.carla,"Carla","Amigos desde marzo",S(22.5),"pos")+
+          li(P.diego,"Diego","Amigos desde enero",S(175),"pos")+
+          li(P.martin,"Martín","Esperando que acepte","—","",'<span class="tg warn">Solicitud enviada</span>')+
+        '</div>'+
+        '<div class="lock"><i>⏳</i><span>Hasta que Martín acepte no puedes anotarle la pollería. Si nunca instala Yala, esa deuda no tiene dónde ir.</span></div>'+
+      '</div>';
+  }
+  function cMail(){
+    return sb()+
+      '<div class="nav"><span class="circ">‹</span><span class="ttl">Gmail</span><span class="circ">⋯</span></div>'+
+      '<div class="content" style="gap:14px">'+
+        '<div style="display:flex;gap:10px;align-items:center"><span class="av lg" style="background:#5E5CE6">Y</span><div><b>Yala</b><div class="note" style="padding:0">para martin.r@gmail.com</div></div></div>'+
+        '<div style="font:700 20px -apple-system,system-ui">Jürgen quiere llevar cuentas contigo</div>'+
+        '<div class="inv" style="text-align:left;align-items:stretch"><p>Jürgen te agregó como amigo en Yala para dividir gastos. Acepta para empezar.</p><div class="cta">Aceptar en Yala</div><div class="link">No conozco a esta persona</div></div>'+
+        '<div class="lock"><i>!</i><span>Hoy Yala no manda correos de este tipo: haría falta un servicio de envío, plantillas en 16 idiomas y control de spam.</span></div>'+
+      '</div>';
+  }
+
+  function render(){
+    document.getElementById("rowA").innerHTML=
+      col("A·1 · Personas","Segunda vista dentro de Grupos. Saldo total arriba y una fila por persona.",phone(aList()))+
+      col("A·2 · Con una persona","Alta rápida: persona, monto, quién pagó y cómo se divide. «Listo» arriba a la derecha.",phone(aQuick()))+
+      col("A·3 · Diego, tu hermano","Gastos 1 a 1, un pago parcial y el saldo del depa sumado con desglose.",phone(aDetail()))+
+      col("A·4 · Liquidar una parte","Todo o una parte. Se descuenta de lo directo; el grupo se salda en el grupo.",phone(aSettle()))+
+      col("A·5 · Recordar","La imagen que se comparte por WhatsApp, con el detalle.",aShare())+
+      col("A·6 · Desde una boleta","El final de «Dividir una boleta»: cada «me debe» pasa a Personas.",phone(aReceipt()));
+    document.getElementById("rowLink").innerHTML=
+      col("1 · Ficha de Martín","Sin vincular. Enlace como camino principal; el correo, opcional.",phone(lMartin()))+
+      col("2 · Martín abre el enlace","En su teléfono, tras instalar Yala. Entra con Apple o Google.",phone(lInvite()))+
+      col("3 · «¿Eres tú?»","Lo mismo ve quien ya usaba Yala con ese correo. Nada cuenta hasta aceptar.",phone(lAsk()))+
+      col("4 · Aceptó","Tu lista: Martín pasa a «En Yala» y el historial sigue igual.",phone(lLinked()))+
+      col("5 · Rechazó","Vuelve a «Solo nombre», con la deuda intacta en tu cuenta.",phone(lRejected()));
+    document.getElementById("rowB").innerHTML=
+      col("B·1 · Deudas","Una lista aparte, sin vínculo con Grupos.",phone(bList()))+
+      col("B·2 · Diego","Saldo solo de lo directo. Compartir es la única forma de que lo vea.",phone(bDetail()));
+    document.getElementById("rowC").innerHTML=
+      col("C·1 · Agregar amigo","Primero la solicitud; los gastos después.",phone(cAdd()))+
+      col("C·2 · Lo que recibe Martín","Un correo de Yala. Hoy no existe ese envío.",phone(cMail()));
+    document.getElementById("thLight").setAttribute("aria-pressed",String(state.theme==="m-light"));
+    document.getElementById("thDark").setAttribute("aria-pressed",String(state.theme==="m-dark"));
+    try{localStorage.setItem("ddp",JSON.stringify(state));}catch(e){}
+  }
+  document.getElementById("thLight").onclick=function(){state.theme="m-light";render();};
+  document.getElementById("thDark").onclick=function(){state.theme="m-dark";render();};
+  render();
+
+  // ---------- Decisión en la base del artifact ----------
+  var statusEl=document.getElementById("status"),saveBtn=document.getElementById("save"),db=null,KEY="decisiones/deudas-directas";
+  function pick(n){var r=document.querySelector('input[name="'+n+'"]:checked');return r?r.value:"";}
+  function setPick(n,v){var r=document.querySelector('input[name="'+n+'"][value="'+v+'"]');if(r)r.checked=true;}
+  function offline(){statusEl.textContent="Para guardar, ábrelo en claude.ai con tu cuenta.";}
+  function shown(v){return "Guardada: opción "+(v.opcion||"—")+", correo "+(v.correo||"—")+", préstamos "+(v.prestamos||"—")+".";}
+  if(window.claude&&window.claude.use){
+    window.claude.use("db").then(function(d){
+      db=d;if(!db){offline();return;}
+      var t=setTimeout(function(){statusEl.textContent="No se pudo leer la decisión guardada; puedes guardar igual.";},10000);
+      db.doc(KEY).get().then(function(s){clearTimeout(t);if(s.exists){var v=s.data();setPick("opcion",v.opcion);setPick("correo",v.correo);setPick("prestamos",v.prestamos);document.getElementById("notes").value=v.nota||"";statusEl.textContent=shown(v);}}).catch(function(){clearTimeout(t);});
+    });
+  } else offline();
+  saveBtn.addEventListener("click",function(){
+    if(!db){offline();return;}
+    var v={opcion:pick("opcion"),correo:pick("correo"),prestamos:pick("prestamos"),nota:document.getElementById("notes").value.slice(0,1000),cuando:new Date().toISOString()};
+    if(!v.opcion&&!v.correo&&!v.prestamos){statusEl.textContent="Elige al menos una opción.";return;}
+    saveBtn.disabled=true;statusEl.textContent="Guardando…";
+    db.doc(KEY).set(v)
+      .then(function(){statusEl.textContent=shown(v)+" Frank la lee desde aquí.";})
+      .catch(function(){statusEl.textContent="No se pudo guardar. Solo Jürgen puede guardar la decisión.";})
+      .finally(function(){saveBtn.disabled=false;});
+  });
+})();
+</script>
