@@ -1,0 +1,84 @@
+/*
+  DividirBoleta.strings
+  Yala
+
+  Dividir una boleta sin crear grupo (maqueta 1A, 26-nov-2026): nombres al vuelo, por igual o por líneas, quién pagó,
+  la imagen para compartir (resumen o detalle, tres diseños) y registrar mi parte. Tabla propia, fuera de
+  Localizable.strings.
+*/
+
+"dividirBoleta.entry.title" = "レシートを割り勘";
+"dividirBoleta.entry.hint" = "Yalaを使っていない人とも割り勘できます。記録するのは自分の分だけ。";
+"dividirBoleta.entry.hintGroups" = "グループを作らずに、誰とでも。";
+"dividirBoleta.source.subtitle" = "レシートを撮影するか、写真やファイルから選びます。";
+"dividirBoleta.who.photo" = "レシートの写真";
+"dividirBoleta.who.photoPending" = "「割り勘する」をタップすると読み取ります";
+"dividirBoleta.who.photoRead" = "読み取り済み ✓";
+"dividirBoleta.who.photoReadDetail" = "合計 %@";
+"dividirBoleta.who.otherPhoto" = "別の写真";
+"dividirBoleta.who.peopleSection" = "誰と割り勘？";
+"dividirBoleta.who.me" = "自分";
+"dividirBoleta.who.namePlaceholder" = "名前を入力…";
+"dividirBoleta.who.add" = "追加";
+"dividirBoleta.who.remove" = "%@を外す";
+"dividirBoleta.who.peopleFooter" = "自分は必ず含まれます。ほかの人はYalaがなくても大丈夫です。";
+"dividirBoleta.who.duplicateName" = "同じ名前の人がいます。";
+"dividirBoleta.who.modeSection" = "どう分けますか？";
+"dividirBoleta.mode.equal" = "均等に";
+"dividirBoleta.mode.byLines" = "品目ごと";
+"dividirBoleta.who.phraseSection" = "誰が何を？・任意";
+"dividirBoleta.who.phrasePlaceholder" = "自分はハンバーガー、カーラはサラダ、飲み物はみんなで";
+"dividirBoleta.who.phraseFooter" = "入力しない場合は、確認画面で品目ごとに選べます。";
+"dividirBoleta.who.split" = "割り勘する";
+"dividirBoleta.who.needsPeople" = "もう1人以上追加してください。";
+"dividirBoleta.manual.title" = "レシートの合計を入力";
+"dividirBoleta.manual.footer" = "全員で均等に分けます。";
+"dividirBoleta.manual.lineName" = "レシートの合計";
+"dividirBoleta.review.title" = "割り勘を確認";
+"dividirBoleta.review.linesSection" = "注文した内容";
+"dividirBoleta.review.linesFooterByLines" = "品目をタップして、誰の分か選びます。";
+"dividirBoleta.review.linesFooterEqual" = "均等：すべてを全員で分けます。";
+"dividirBoleta.review.continue" = "一人ずつの金額を見る";
+"dividirBoleta.result.title" = "割り勘";
+"dividirBoleta.result.done" = "完了";
+"dividirBoleta.result.owedToYou" = "受け取る金額";
+"dividirBoleta.result.oneOwesYou" = "%@からの受け取り";
+"dividirBoleta.result.youOwe" = "%@への支払い";
+"dividirBoleta.result.nobodyOwes" = "支払った人への支払いはありません";
+"dividirBoleta.result.subtitle" = "%1$@・合計 %2$@";
+"dividirBoleta.result.merchantFallback" = "レシート";
+"dividirBoleta.result.paidBy" = "誰が支払った？";
+"dividirBoleta.result.yourPart" = "自分の分";
+"dividirBoleta.result.paidLabel" = "支払い済み";
+"dividirBoleta.result.footerPaidByMe" = "自分の分は支出として記録されます。ほかの人の分は記録されません。";
+"dividirBoleta.result.footerPaidByOther" = "%@への支払い分はあなたの支出です。今記録したら、支払うときにもう一度記録しないでください。";
+"dividirBoleta.result.footerGroupsOnly" = "ここでは記録しません。割り勘を見て共有するだけです。";
+"dividirBoleta.image.section" = "共有する画像";
+"dividirBoleta.image.kindLabel" = "内容";
+"dividirBoleta.image.summary" = "概要のみ";
+"dividirBoleta.image.detailed" = "明細つき";
+"dividirBoleta.image.styleLabel" = "デザイン";
+"dividirBoleta.image.styleLight" = "ライト";
+"dividirBoleta.image.styleBrand" = "Yala";
+"dividirBoleta.image.styleReceipt" = "レシート";
+"dividirBoleta.image.share" = "画像を共有";
+"dividirBoleta.image.preview" = "画像のプレビュー";
+"dividirBoleta.image.renderFailed" = "画像を作成できませんでした。";
+"dividirBoleta.image.owedToOther" = "%@が受け取る金額";
+"dividirBoleta.image.oneOwesOther" = "%1$@ → %2$@";
+"dividirBoleta.image.paidByTotal" = "支払い：%1$@・合計 %2$@";
+"dividirBoleta.image.payerPart" = "%1$@の分：%2$@";
+"dividirBoleta.image.everyone" = "全員";
+"dividirBoleta.image.sharedBy" = "%d人で";
+"dividirBoleta.image.footerTitle" = "Yalaで割り勘";
+"dividirBoleta.image.footerSubtitle" = "無料で割り勘";
+"dividirBoleta.image.nameLabel" = "画像に表示する名前";
+"dividirBoleta.image.namePlaceholder" = "名前を入力";
+"dividirBoleta.image.nameFooter" = "画像はほかの人に送られるので、あなたの名前が表示されます。名前はプロフィールに保存されます。";
+"dividirBoleta.register.button" = "自分の分を記録・%@";
+"dividirBoleta.register.inbox" = "または受信箱へ";
+"dividirBoleta.register.done" = "自分の分を記録しました";
+"dividirBoleta.register.inInbox" = "自分の分は受信箱にあります";
+"dividirBoleta.register.failed" = "保存できませんでした。もう一度お試しください。";
+"dividirBoleta.close" = "閉じる";
+"dividirBoleta.back" = "戻る";

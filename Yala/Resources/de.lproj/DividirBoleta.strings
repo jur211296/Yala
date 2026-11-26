@@ -1,0 +1,84 @@
+/*
+  DividirBoleta.strings
+  Yala
+
+  Dividir una boleta sin crear grupo (maqueta 1A, 26-nov-2026): nombres al vuelo, por igual o por líneas, quién pagó,
+  la imagen para compartir (resumen o detalle, tres diseños) y registrar mi parte. Tabla propia, fuera de
+  Localizable.strings.
+*/
+
+"dividirBoleta.entry.title" = "Rechnung teilen";
+"dividirBoleta.entry.hint" = "Teile mit allen, auch ohne Yala. Du erfasst nur deinen Anteil.";
+"dividirBoleta.entry.hintGroups" = "Ohne Gruppe, mit allen.";
+"dividirBoleta.source.subtitle" = "Fotografiere die Rechnung oder wähle sie aus Fotos oder Dateien.";
+"dividirBoleta.who.photo" = "Foto der Rechnung";
+"dividirBoleta.who.photoPending" = "Yala liest sie, wenn du auf Teilen tippst";
+"dividirBoleta.who.photoRead" = "Gelesen ✓";
+"dividirBoleta.who.photoReadDetail" = "Gesamt %@";
+"dividirBoleta.who.otherPhoto" = "Anderes Foto";
+"dividirBoleta.who.peopleSection" = "Zwischen wem?";
+"dividirBoleta.who.me" = "Ich";
+"dividirBoleta.who.namePlaceholder" = "Name eingeben…";
+"dividirBoleta.who.add" = "Hinzufügen";
+"dividirBoleta.who.remove" = "%@ entfernen";
+"dividirBoleta.who.peopleFooter" = "Du bist immer dabei. Die anderen brauchen kein Yala.";
+"dividirBoleta.who.duplicateName" = "Diesen Namen gibt es schon.";
+"dividirBoleta.who.modeSection" = "Wie teilen wir?";
+"dividirBoleta.mode.equal" = "Gleichmäßig";
+"dividirBoleta.mode.byLines" = "Nach Posten";
+"dividirBoleta.who.phraseSection" = "Wer hatte was? · optional";
+"dividirBoleta.who.phrasePlaceholder" = "Ich den Burger, Carla den Salat, Getränke für alle";
+"dividirBoleta.who.phraseFooter" = "Sonst wählst du in der Prüfung, wer welchen Posten hatte.";
+"dividirBoleta.who.split" = "Teilen";
+"dividirBoleta.who.needsPeople" = "Füge mindestens eine weitere Person hinzu.";
+"dividirBoleta.manual.title" = "Gib den Rechnungsbetrag ein";
+"dividirBoleta.manual.footer" = "Wir teilen ihn gleichmäßig auf alle auf.";
+"dividirBoleta.manual.lineName" = "Rechnungsbetrag";
+"dividirBoleta.review.title" = "Aufteilung prüfen";
+"dividirBoleta.review.linesSection" = "Was bestellt wurde";
+"dividirBoleta.review.linesFooterByLines" = "Tippe auf einen Posten, um zu wählen, wer ihn hatte.";
+"dividirBoleta.review.linesFooterEqual" = "Gleichmäßig: Alles wird auf alle aufgeteilt.";
+"dividirBoleta.review.continue" = "Anteile ansehen";
+"dividirBoleta.result.title" = "Aufteilung";
+"dividirBoleta.result.done" = "Fertig";
+"dividirBoleta.result.owedToYou" = "Dir schuldet man";
+"dividirBoleta.result.oneOwesYou" = "%@ schuldet dir";
+"dividirBoleta.result.youOwe" = "Du schuldest %@";
+"dividirBoleta.result.nobodyOwes" = "Niemand schuldet der zahlenden Person etwas";
+"dividirBoleta.result.subtitle" = "%1$@ · gesamt %2$@";
+"dividirBoleta.result.merchantFallback" = "Rechnung";
+"dividirBoleta.result.paidBy" = "Wer hat bezahlt?";
+"dividirBoleta.result.yourPart" = "Dein Anteil";
+"dividirBoleta.result.paidLabel" = "Hat bezahlt";
+"dividirBoleta.result.footerPaidByMe" = "Dein Anteil wird als deine Ausgabe erfasst. Die Anteile der anderen nicht.";
+"dividirBoleta.result.footerPaidByOther" = "Was du %@ schuldest, ist deine Ausgabe. Erfasst du es jetzt, erfasse es beim Bezahlen nicht noch einmal.";
+"dividirBoleta.result.footerGroupsOnly" = "Hier wird nichts erfasst: Du siehst die Aufteilung und teilst sie.";
+"dividirBoleta.image.section" = "Bild zum Teilen";
+"dividirBoleta.image.kindLabel" = "Was es zeigt";
+"dividirBoleta.image.summary" = "Nur Übersicht";
+"dividirBoleta.image.detailed" = "Mit Details";
+"dividirBoleta.image.styleLabel" = "Design";
+"dividirBoleta.image.styleLight" = "Hell";
+"dividirBoleta.image.styleBrand" = "Yala";
+"dividirBoleta.image.styleReceipt" = "Beleg";
+"dividirBoleta.image.share" = "Bild teilen";
+"dividirBoleta.image.preview" = "Bildvorschau";
+"dividirBoleta.image.renderFailed" = "Das Bild konnte nicht erstellt werden.";
+"dividirBoleta.image.owedToOther" = "%@ bekommt";
+"dividirBoleta.image.oneOwesOther" = "%1$@ schuldet %2$@";
+"dividirBoleta.image.paidByTotal" = "Bezahlt von %1$@ · gesamt %2$@";
+"dividirBoleta.image.payerPart" = "Anteil von %1$@: %2$@";
+"dividirBoleta.image.everyone" = "Alle";
+"dividirBoleta.image.sharedBy" = "durch %d";
+"dividirBoleta.image.footerTitle" = "Geteilt mit Yala";
+"dividirBoleta.image.footerSubtitle" = "Teile deine Rechnung kostenlos";
+"dividirBoleta.image.nameLabel" = "Dein Name im Bild";
+"dividirBoleta.image.namePlaceholder" = "Gib deinen Namen ein";
+"dividirBoleta.image.nameFooter" = "Das Bild geht an andere: Dort stehst du mit deinem Namen. Er wird in deinem Profil gespeichert.";
+"dividirBoleta.register.button" = "Meinen Anteil erfassen · %@";
+"dividirBoleta.register.inbox" = "oder in den Eingang legen";
+"dividirBoleta.register.done" = "Dein Anteil ist erfasst";
+"dividirBoleta.register.inInbox" = "Dein Anteil liegt im Eingang";
+"dividirBoleta.register.failed" = "Dein Anteil konnte nicht gespeichert werden. Versuch es noch einmal.";
+"dividirBoleta.close" = "Schließen";
+"dividirBoleta.back" = "Zurück";

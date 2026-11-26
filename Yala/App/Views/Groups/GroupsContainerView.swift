@@ -66,6 +66,8 @@ struct GroupsContainerView: View {
     @State private var expenseComposerPayload: ExpenseComposerPayload?
     /// Voz y Foto de arriba: repartir un recibo con IA (2026-11-14).
     @State private var receiptRequest: GroupReceiptRequest?
+    /// «Dividir una boleta» sin grupo (maqueta 1A, 26-nov-2026).
+    @State private var showDividirBoleta = false
     /// El veredicto de App Attest de ESTE teléfono, y **solo el veredicto**. Es un `@State` porque
     /// `GroupsAttestStreakStore.isTerminal()` lee `UserDefaults` —que no repinta ninguna vista— y además depende
     /// del RELOJ: una racha de ayer se vuelve terminal sin que nadie escriba nada. Se recalcula en los CINCO
@@ -173,6 +175,10 @@ struct GroupsContainerView: View {
                             // La acción principal arriba, bajo el resumen, como en el Panel; el flotante solo al bajar
                             // (card kzhe).
                             topActions
+
+                            // «Dividir una boleta» bajo la fila (maqueta 1A, 26-nov-2026): sin elegir grupo, con nombres
+                            // al vuelo.
+                            DividirBoletaEntryButton(identifier: "groups_dividir_boleta") { showDividirBoleta = true }
 
                             // Nudge banner
                             if let nudge = NudgeService.shared.currentNudge, showNudgeBanner {
@@ -358,6 +364,14 @@ struct GroupsContainerView: View {
                     onSave: { viewModel.loadData() }
                 )
                 .yalaSheetDetents([.large])
+            }
+            .sheet(isPresented: $showDividirBoleta) {
+                // En Yala completo se puede registrar mi parte; en «solo grupos», solo ver y compartir.
+                DividirBoletaFlowView(
+                    currencyCode: appPreferences.defaultCurrencyCode.rawValue,
+                    allowsRegistering: !sessionState.isGroupsFocusedShell,
+                    onFinished: {}
+                )
             }
             .groupReceiptSplitFlow(
                 request: $receiptRequest,

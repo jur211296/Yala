@@ -1,0 +1,84 @@
+/*
+  DividirBoleta.strings
+  Yala
+
+  Dividir una boleta sin crear grupo (maqueta 1A, 26-nov-2026): nombres al vuelo, por igual o por líneas, quién pagó,
+  la imagen para compartir (resumen o detalle, tres diseños) y registrar mi parte. Tabla propia, fuera de
+  Localizable.strings.
+*/
+
+"dividirBoleta.entry.title" = "分摊账单";
+"dividirBoleta.entry.hint" = "可以和任何人分摊，即使对方不用 Yala。只记录你自己的那份。";
+"dividirBoleta.entry.hintGroups" = "无需创建群组，和任何人。";
+"dividirBoleta.source.subtitle" = "拍下账单，或从照片或文件中选择。";
+"dividirBoleta.who.photo" = "账单照片";
+"dividirBoleta.who.photoPending" = "点按“分摊”后 Yala 会读取";
+"dividirBoleta.who.photoRead" = "已读取 ✓";
+"dividirBoleta.who.photoReadDetail" = "合计 %@";
+"dividirBoleta.who.otherPhoto" = "换一张";
+"dividirBoleta.who.peopleSection" = "和谁分摊？";
+"dividirBoleta.who.me" = "我";
+"dividirBoleta.who.namePlaceholder" = "输入名字…";
+"dividirBoleta.who.add" = "添加";
+"dividirBoleta.who.remove" = "移除 %@";
+"dividirBoleta.who.peopleFooter" = "你总在其中。其他人不需要 Yala。";
+"dividirBoleta.who.duplicateName" = "已有同名的人。";
+"dividirBoleta.who.modeSection" = "怎么分？";
+"dividirBoleta.mode.equal" = "平均分";
+"dividirBoleta.mode.byLines" = "按项目";
+"dividirBoleta.who.phraseSection" = "谁点了什么？· 可选";
+"dividirBoleta.who.phrasePlaceholder" = "我点汉堡，Carla 点沙拉，饮料大家分";
+"dividirBoleta.who.phraseFooter" = "不填的话，可以在核对时逐项选择。";
+"dividirBoleta.who.split" = "分摊";
+"dividirBoleta.who.needsPeople" = "请至少再添加一人。";
+"dividirBoleta.manual.title" = "输入账单总额";
+"dividirBoleta.manual.footer" = "我们会平均分给所有人。";
+"dividirBoleta.manual.lineName" = "账单总额";
+"dividirBoleta.review.title" = "核对分摊";
+"dividirBoleta.review.linesSection" = "点了什么";
+"dividirBoleta.review.linesFooterByLines" = "点按项目，选择是谁点的。";
+"dividirBoleta.review.linesFooterEqual" = "平均分：全部由所有人平摊。";
+"dividirBoleta.review.continue" = "查看每人应付";
+"dividirBoleta.result.title" = "分摊";
+"dividirBoleta.result.done" = "完成";
+"dividirBoleta.result.owedToYou" = "别人欠你";
+"dividirBoleta.result.oneOwesYou" = "%@ 欠你";
+"dividirBoleta.result.youOwe" = "你欠 %@";
+"dividirBoleta.result.nobodyOwes" = "没人欠付款人钱";
+"dividirBoleta.result.subtitle" = "%1$@ · 合计 %2$@";
+"dividirBoleta.result.merchantFallback" = "账单";
+"dividirBoleta.result.paidBy" = "谁付的钱？";
+"dividirBoleta.result.yourPart" = "你的那份";
+"dividirBoleta.result.paidLabel" = "已付";
+"dividirBoleta.result.footerPaidByMe" = "你的那份记为你的支出，其他人的不计入你的记录。";
+"dividirBoleta.result.footerPaidByOther" = "你欠 %@ 的钱是你的支出。现在记了，还钱时就不要再记一次。";
+"dividirBoleta.result.footerGroupsOnly" = "这里不记账：只查看并分享分摊结果。";
+"dividirBoleta.image.section" = "分享图片";
+"dividirBoleta.image.kindLabel" = "包含内容";
+"dividirBoleta.image.summary" = "仅摘要";
+"dividirBoleta.image.detailed" = "含明细";
+"dividirBoleta.image.styleLabel" = "样式";
+"dividirBoleta.image.styleLight" = "浅色";
+"dividirBoleta.image.styleBrand" = "Yala";
+"dividirBoleta.image.styleReceipt" = "小票";
+"dividirBoleta.image.share" = "分享图片";
+"dividirBoleta.image.preview" = "图片预览";
+"dividirBoleta.image.renderFailed" = "无法生成图片。";
+"dividirBoleta.image.owedToOther" = "别人欠 %@";
+"dividirBoleta.image.oneOwesOther" = "%1$@ 欠 %2$@";
+"dividirBoleta.image.paidByTotal" = "%1$@ 付款 · 合计 %2$@";
+"dividirBoleta.image.payerPart" = "%1$@ 的那份：%2$@";
+"dividirBoleta.image.everyone" = "大家平摊";
+"dividirBoleta.image.sharedBy" = "%d 人分";
+"dividirBoleta.image.footerTitle" = "用 Yala 分摊";
+"dividirBoleta.image.footerSubtitle" = "免费分摊账单";
+"dividirBoleta.image.nameLabel" = "图片上显示的名字";
+"dividirBoleta.image.namePlaceholder" = "输入你的名字";
+"dividirBoleta.image.nameFooter" = "图片会发给其他人，上面显示你的名字。名字会保存到你的个人资料。";
+"dividirBoleta.register.button" = "记录我的那份 · %@";
+"dividirBoleta.register.inbox" = "或发送到收件箱";
+"dividirBoleta.register.done" = "你的那份已记录";
+"dividirBoleta.register.inInbox" = "你的那份已在收件箱";
+"dividirBoleta.register.failed" = "无法保存你的那份，请重试。";
+"dividirBoleta.close" = "关闭";
+"dividirBoleta.back" = "返回";

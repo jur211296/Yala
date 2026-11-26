@@ -1,0 +1,84 @@
+/*
+  DividirBoleta.strings
+  Yala
+
+  Dividir una boleta sin crear grupo (maqueta 1A, 26-nov-2026): nombres al vuelo, por igual o por líneas, quién pagó,
+  la imagen para compartir (resumen o detalle, tres diseños) y registrar mi parte. Tabla propia, fuera de
+  Localizable.strings.
+*/
+
+"dividirBoleta.entry.title" = "Podziel rachunek";
+"dividirBoleta.entry.hint" = "Podziel z kimkolwiek, nawet bez Yali. Zapisujesz tylko swoją część.";
+"dividirBoleta.entry.hintGroups" = "Bez tworzenia grupy, z kimkolwiek.";
+"dividirBoleta.source.subtitle" = "Zrób zdjęcie rachunku albo wybierz je ze zdjęć lub plików.";
+"dividirBoleta.who.photo" = "Zdjęcie rachunku";
+"dividirBoleta.who.photoPending" = "Yala odczyta je po dotknięciu Podziel";
+"dividirBoleta.who.photoRead" = "Odczytano ✓";
+"dividirBoleta.who.photoReadDetail" = "Razem %@";
+"dividirBoleta.who.otherPhoto" = "Inne zdjęcie";
+"dividirBoleta.who.peopleSection" = "Między kim?";
+"dividirBoleta.who.me" = "Ja";
+"dividirBoleta.who.namePlaceholder" = "Wpisz imię…";
+"dividirBoleta.who.add" = "Dodaj";
+"dividirBoleta.who.remove" = "Usuń: %@";
+"dividirBoleta.who.peopleFooter" = "Ty zawsze jesteś. Inni nie potrzebują Yali.";
+"dividirBoleta.who.duplicateName" = "Ktoś już ma to imię.";
+"dividirBoleta.who.modeSection" = "Jak dzielimy?";
+"dividirBoleta.mode.equal" = "Po równo";
+"dividirBoleta.mode.byLines" = "Według pozycji";
+"dividirBoleta.who.phraseSection" = "Kto co jadł? · opcjonalnie";
+"dividirBoleta.who.phrasePlaceholder" = "Ja burgera, Carla sałatkę, napoje dla wszystkich";
+"dividirBoleta.who.phraseFooter" = "Jeśli pominiesz, wybierzesz w przeglądzie, kto co jadł.";
+"dividirBoleta.who.split" = "Podziel";
+"dividirBoleta.who.needsPeople" = "Dodaj co najmniej jeszcze jedną osobę.";
+"dividirBoleta.manual.title" = "Wpisz kwotę rachunku";
+"dividirBoleta.manual.footer" = "Podzielimy po równo między wszystkich.";
+"dividirBoleta.manual.lineName" = "Kwota rachunku";
+"dividirBoleta.review.title" = "Sprawdź podział";
+"dividirBoleta.review.linesSection" = "Co zamówiono";
+"dividirBoleta.review.linesFooterByLines" = "Dotknij pozycji, aby wybrać, kto ją jadł.";
+"dividirBoleta.review.linesFooterEqual" = "Po równo: wszystko dzielone między wszystkich.";
+"dividirBoleta.review.continue" = "Zobacz, ile przypada na każdego";
+"dividirBoleta.result.title" = "Podział";
+"dividirBoleta.result.done" = "Gotowe";
+"dividirBoleta.result.owedToYou" = "Należy ci się";
+"dividirBoleta.result.oneOwesYou" = "%@ jest ci winien";
+"dividirBoleta.result.youOwe" = "Jesteś winien: %@";
+"dividirBoleta.result.nobodyOwes" = "Nikt nic nie jest winien płacącemu";
+"dividirBoleta.result.subtitle" = "%1$@ · razem %2$@";
+"dividirBoleta.result.merchantFallback" = "Rachunek";
+"dividirBoleta.result.paidBy" = "Kto zapłacił?";
+"dividirBoleta.result.yourPart" = "Twoja część";
+"dividirBoleta.result.paidLabel" = "Zapłacił(a)";
+"dividirBoleta.result.footerPaidByMe" = "Twoja część zapisuje się jako twój wydatek. Części innych nie trafiają do twoich zapisów.";
+"dividirBoleta.result.footerPaidByOther" = "To, co jesteś winien (%@), to twój wydatek. Jeśli zapiszesz to teraz, nie zapisuj ponownie przy spłacie.";
+"dividirBoleta.result.footerGroupsOnly" = "Tu nic się nie zapisuje: widzisz podział i go udostępniasz.";
+"dividirBoleta.image.section" = "Obraz do udostępnienia";
+"dividirBoleta.image.kindLabel" = "Co zawiera";
+"dividirBoleta.image.summary" = "Tylko podsumowanie";
+"dividirBoleta.image.detailed" = "Ze szczegółami";
+"dividirBoleta.image.styleLabel" = "Wygląd";
+"dividirBoleta.image.styleLight" = "Jasny";
+"dividirBoleta.image.styleBrand" = "Yala";
+"dividirBoleta.image.styleReceipt" = "Paragon";
+"dividirBoleta.image.share" = "Udostępnij obraz";
+"dividirBoleta.image.preview" = "Podgląd obrazu";
+"dividirBoleta.image.renderFailed" = "Nie udało się utworzyć obrazu.";
+"dividirBoleta.image.owedToOther" = "Należy się: %@";
+"dividirBoleta.image.oneOwesOther" = "%1$@ jest winien: %2$@";
+"dividirBoleta.image.paidByTotal" = "Zapłacił(a) %1$@ · razem %2$@";
+"dividirBoleta.image.payerPart" = "Część (%1$@): %2$@";
+"dividirBoleta.image.everyone" = "Wszyscy";
+"dividirBoleta.image.sharedBy" = "na %d";
+"dividirBoleta.image.footerTitle" = "Podzielone z Yalą";
+"dividirBoleta.image.footerSubtitle" = "Podziel rachunek za darmo";
+"dividirBoleta.image.nameLabel" = "Twoje imię na obrazie";
+"dividirBoleta.image.namePlaceholder" = "Wpisz swoje imię";
+"dividirBoleta.image.nameFooter" = "Obraz trafi do innych osób: widnieje na nim twoje imię. Zapisze się w twoim profilu.";
+"dividirBoleta.register.button" = "Zapisz moją część · %@";
+"dividirBoleta.register.inbox" = "lub wyślij do Skrzynki";
+"dividirBoleta.register.done" = "Twoja część jest zapisana";
+"dividirBoleta.register.inInbox" = "Twoja część jest w Skrzynce";
+"dividirBoleta.register.failed" = "Nie udało się zapisać twojej części. Spróbuj ponownie.";
+"dividirBoleta.close" = "Zamknij";
+"dividirBoleta.back" = "Wstecz";
