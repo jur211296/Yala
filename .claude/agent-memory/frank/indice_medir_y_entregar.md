@@ -137,3 +137,5 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de correr tests, el gate o
 - [Campo de iCloud pendiente frena la subida](reference_campo_de_icloud_pendiente_frena_la_subida.md) — pendingProductionDeploy + cktool de Producción en el Paso 0 de cada subida; desplegar es de Dan.
 - [Medir un cambio de build del CI en local](reference_medir_un_cambio_de_build_del_ci_en_local.md) — worktree desechable + strings del binario tras cada build; 8 s «verde» era un binario viejo.
 - [Los scans leen el árbol, no el binario](feedback_las_pruebas_de_cableado_leen_el_arbol.md) — test-without-building con otra rama: rojos falsos en los WiringTests.
+- [Perfilar ciclos en el iPhone con xctrace](reference_perfilar_ciclos_en_el_iphone_con_xctrace.md) — volver sin relanzar, `--launch` y no `--attach`, signposts en ventana, consola con `--`, informes de iOS.
+- [Calor: con cable y por incrementos](feedback_medir_calor_con_cable_y_por_incrementos.md) — Jürgen prefiere comparar ventanas y antes-después, no desconectar.
