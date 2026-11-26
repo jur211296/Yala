@@ -55,6 +55,8 @@ struct MoreView: View {
     @Environment(\.isRootPageShown) private var isRootPageShown
     @State private var showProfile = false
     @State private var showEditor = false
+    /// La posición del scroll: la mueve una guía de lugar para traer a la vista lo que enmarca.
+    @State private var scrollPosition = ScrollPosition(edge: .top)
 
     /// GC-08: sin sesión privada en este teléfono solo Grupos es accesible; el dashboard personal se
     /// oculta y se muestra el CTA «Activar Yala completo». Reactivo por el espejo observable del eje.
@@ -95,6 +97,13 @@ struct MoreView: View {
                     }
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.xxl)
+                    .scrollTargetLayout()
+            }
+            .scrollPosition($scrollPosition)
+            // Una guía de lugar que enmarca tarjetas de Más las trae a la vista antes: con Más desplazado, lo que debía
+            // enmarcar quedaba fuera y la guía no señalaba nada (observación del iPhone 14, 25-nov-2026, paso 6).
+            .task(id: GuideRevealKey(targetIDs: guideTargetIDs, isShown: isRootPageShown)) {
+                await revealGuideTarget()
             }
             .navigationTitle(L10n.Tab.more)
             .navigationBarTitleDisplayMode(.inline)
@@ -136,6 +145,32 @@ struct MoreView: View {
                 // La barra de pestañas espera a que se cierre el editor para montar lo elegido (card fozu).
                 .onAppear { navigation.isEditingTabBarLayout = true }
                 .onDisappear { navigation.isEditingTabBarLayout = false }
+        }
+    }
+
+    // MARK: - Guías de lugar
+
+    /// Las tarjetas que enmarca la guía en curso, si enmarca alguna de Más.
+    private var guideTargetIDs: [String]? {
+        guard case .moreItems(let ids) = PlaceGuideCenter.shared.stage?.target else { return nil }
+        return ids
+    }
+
+    private struct GuideRevealKey: Equatable {
+        let targetIDs: [String]?
+        let isShown: Bool
+    }
+
+    /// Lleva arriba la sección donde están las tarjetas señaladas, con Más ya a la vista: la guía arranca justo antes de
+    /// abrir la pestaña, y desplazar la página oculta no la movía (medido en XCUITest el 2026-11-25). Dos veces: la
+    /// segunda, cuando la pestaña terminó de aparecer.
+    private func revealGuideTarget() async {
+        guard isRootPageShown, let ids = guideTargetIDs, !isGroupsFocusedShell else { return }
+        let sections = orderedSectionKinds.map { kind in (kind, items(for: kind).map(\.id)) }
+        guard let kind = MorePlaceGuideScroll.section(containing: ids, in: sections) else { return }
+        for delay in MorePlaceGuideScroll.revealDelays {
+            do { try await Task.sleep(for: delay) } catch { return }
+            scrollPosition.scrollTo(id: MorePlaceGuideScroll.sectionID(kind), anchor: .top)
         }
     }
 
@@ -360,4 +395,19 @@ private struct NavItem: Identifiable {
     var badge: String? = nil
     var iconColor: Color? = nil
     let action: () -> Void
+}
+
+/// Dónde desplazar Más para que se vea lo que señala una guía de lugar.
+enum MorePlaceGuideScroll {
+    /// Las esperas antes de cada desplazamiento: enseguida y cuando la pestaña ya apareció.
+    static let revealDelays: [Duration] = [.zero, .milliseconds(250)]
+
+    /// La identidad que el `ForEach` de las secciones ya da a cada una. Un `.id` propio dentro del `ForEach` no servía de
+    /// ancla: el desplazamiento por id no lo encontraba (medido en el simulador el 2026-11-25).
+    static func sectionID(_ kind: MoreSectionKind) -> String { kind.id }
+
+    /// La primera sección (en el orden de la persona) que contiene alguna de las tarjetas señaladas.
+    static func section(containing ids: [String], in sections: [(MoreSectionKind, [String])]) -> MoreSectionKind? {
+        sections.first { _, itemIDs in itemIDs.contains(where: ids.contains) }?.0
+    }
 }

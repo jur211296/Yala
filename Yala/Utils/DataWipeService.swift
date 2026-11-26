@@ -1149,7 +1149,12 @@ final class DataWipeService {
     /// Corre PRE-UI en el arranque: solo toca UserDefaults, archivos y singletons de estado.
     static func resetForSignOutWipe() {
         ProfileImageStorage.shared.delete()
+        // Lo que la persona ya aprendió en este teléfono sobrevive al cierre de sesión (observación del iPhone 14,
+        // 25-nov-2026: tras cerrar sesión y volver con la misma cuenta, «Nuevo grupo» repetía la intro de Grupos ya
+        // aceptada). «Vaciar datos» y «Empezar de cero» la siguen reiniciando: van por otros barridos.
+        let learned = SignOutKeptLearning.capture(from: UserDefaults.standard)
         resetAllUserPreferences()
+        SignOutKeptLearning.restore(learned, into: UserDefaults.standard)
         WidgetDataCache.clearCache()
         do {
             try Tips.resetDatastore()
@@ -1520,5 +1525,27 @@ final class DataWipeService {
         // Note: Notifications are NOT seeded here.
         // They are created during onboarding (step 6) based on user selection.
         // For existing users upgrading, YalaApp.swift handles the seed.
+    }
+}
+
+/// Las marcas de «ya lo viste» que el borrado del cierre de sesión conserva. El cierre deja el teléfono «como recién
+/// instalado» en datos y cuenta, pero no tiene por qué volver a enseñar lo que la persona ya aprendió en él: la intro de
+/// Grupos se repetía al volver con la misma cuenta (observación del iPhone 14, 25-nov-2026). Eliminar la cuenta pasa por
+/// el mismo borrado y la conserva igual, como ya pasaba con las intros de Primeros pasos.
+enum SignOutKeptLearning {
+    /// Las claves que se conservan. Solo marcas de «visto»: nada con datos de la persona.
+    static let keys: [String] = [
+        AppPreferences.Keys.hasShownGroupsOnboarding,
+    ]
+
+    /// Lo que había antes del borrado (solo las marcas puestas).
+    static func capture(from defaults: UserDefaults) -> [String: Bool] {
+        var kept: [String: Bool] = [:]
+        for key in keys where defaults.bool(forKey: key) { kept[key] = true }
+        return kept
+    }
+
+    static func restore(_ kept: [String: Bool], into defaults: UserDefaults) {
+        for (key, value) in kept { defaults.set(value, forKey: key) }
     }
 }

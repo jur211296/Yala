@@ -139,6 +139,15 @@ struct PlaceGuideStage: Equatable {
         /// La pestaña «Grupos» de la barra de abajo.
         case groupsTab
 
+        /// Señala una pestaña de la barra de abajo. Mientras se ve, la barra va desplegada y la pestaña bordeada
+        /// (observación del iPhone 14, 25-nov-2026: con la barra encogida la flecha apuntaba a un hueco vacío).
+        var pointsAtTabBar: Bool {
+            switch self {
+            case .moreTab, .groupsTab: return true
+            case .panelConfigure, .panelInbox, .moreItems: return false
+            }
+        }
+
         /// La pestaña en la que se pinta este momento.
         var tab: AppTab {
             switch self {
@@ -198,6 +207,9 @@ final class PlaceGuideCenter {
     }
 
     var isActive: Bool { guide != nil }
+
+    /// La barra de pestañas tiene que ir desplegada: el momento a la vista señala una de sus pestañas.
+    var holdsTabBarExpanded: Bool { stage?.target.pointsAtTabBar ?? false }
 
     /// Arranca una guía. Si ya hay otra en pantalla no hace nada: dos guías a la vez se taparían.
     @discardableResult

@@ -189,6 +189,8 @@ struct PanelView: View {
     /// 2026-11-20; antes pedía tocar la pestaña y llevaba «Omitir»). Terminada, el paso queda hecho y el mazo pasa al 7.
     /// Irse a otra pestaña la cierra sin tocar el mazo. Sin «Más» en la barra (iPad a pantalla completa), las gráficas
     /// están en su propia pestaña: se abren y el paso queda hecho.
+    /// Al terminarla vuelve al Panel, con el mazo ya en el paso 7 (observación del iPhone 14, 25-nov-2026: «mira dónde me
+    /// dejó, tirado» en Más).
     private func startChartsStepGuide() {
         let markDone = { SetupChecklistManager.shared.markCompleted(.whereMoneyGoes) }
         guard sizeClass != .regular else {
@@ -196,7 +198,12 @@ struct PanelView: View {
             markDone()
             return
         }
-        guard PlaceGuideCenter.shared.start(.chartsStep, onFinish: markDone,
+        let navigation = self.navigation
+        let finishAndReturn = {
+            markDone()
+            navigation.selectMainTab(.panel)
+        }
+        guard PlaceGuideCenter.shared.start(.chartsStep, onFinish: finishAndReturn,
                                             onSkip: { SetupChecklistManager.shared.markSkipped(.whereMoneyGoes) })
         else { return }
         navigation.selectMainTab(.more)

@@ -2,26 +2,27 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (147 entradas)
+## Índice (148 entradas)
 
-> **No hace falta leer este fichero entero** — son 361 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 362 KB. Localiza la entrada
 > aquí y salta a ella.
 
+- `2026-11-25` [Lote del 25-nov (18:25-19:43): los hallazgos del iPhone 14 van en lotes, y Primeros pasos con el mes](#2026-11-25-lote-del-25-nov-1825-1943-los-hallazgos-del-iphone-14-van-en-lotes-y-primeros-pasos-con-el-mes-gratis-y-el-mazo-centrado)
 - `2026-11-25` [Lote del 25-nov (07:07-12:33): la build 10 espera los cuatro PR de 2.3, y las tareas chicas de Yala ](#2026-11-25-lote-del-25-nov-0707-1233-la-build-10-espera-los-cuatro-pr-de-23-y-las-tareas-chicas-de-yala-van-en-lotes)
-- `2026-11-24` [Lote del 24-nov (08:47-14:33): la build 8 espera todo lo de 2.3, la Bandeja sin duplicados después d](#2026-11-24-lote-del-24-nov-0847-1433-la-build-8-espera-todo-lo-de-23-la-bandeja-sin-duplicados-despus-de-la-build-y-marketing-en-lenguaje-simple)
 - `2026-11-24` [Lote del 24-nov (17:58-17:59): el arreglo del paso 3 de Gmail a producción con Dan, y la web a Cloud](#2026-11-24-lote-del-24-nov-1758-1759-el-arreglo-del-paso-3-de-gmail-a-produccin-con-dan-y-la-web-a-cloudflare-pasa-a-24)
+- `2026-11-24` [Lote del 24-nov (08:47-14:33): la build 8 espera todo lo de 2.3, la Bandeja sin duplicados después d](#2026-11-24-lote-del-24-nov-0847-1433-la-build-8-espera-todo-lo-de-23-la-bandeja-sin-duplicados-despus-de-la-build-y-marketing-en-lenguaje-simple)
+- `2026-11-23` [«Conecta tu IA»: opción C, gratis, listar y desconectar desde la app, y desconectar como al reconect](#2026-11-23-conecta-tu-ia-opcin-c-gratis-listar-y-desconectar-desde-la-app-y-desconectar-como-al-reconectar)
 - `2026-11-23` [Lote del 23-nov (15:02-15:51): la build 7 espera todo lo de 2.3, y la web a Cloudflare sin desplegar](#2026-11-23-lote-del-23-nov-1502-1551-la-build-7-espera-todo-lo-de-23-y-la-web-a-cloudflare-sin-desplegar)
 - `2026-11-23` [Lote del 23-nov (10:31-11:13): barrido de QA antes de la build 7, en el iPhone 14 real](#2026-11-23-lote-del-23-nov-1031-1113-barrido-de-qa-antes-de-la-build-7-en-el-iphone-14-real)
-- `2026-11-23` [«Conecta tu IA»: opción C, gratis, listar y desconectar desde la app, y desconectar como al reconect](#2026-11-23-conecta-tu-ia-opcin-c-gratis-listar-y-desconectar-desde-la-app-y-desconectar-como-al-reconectar)
 - `2026-11-23` [Lote del 23-nov (07:30-09:59): Salud financiera como el Panel, semana 7 de marketing, esquemas de Cl](#2026-11-23-lote-del-23-nov-0730-0959-salud-financiera-como-el-panel-semana-7-de-marketing-esquemas-de-cloudkit-con-dan-e-importar-de-splitwise-ya-hecho)
-- `2026-11-22` [Lote del 22-nov (10:01-10:03): conector completo, campo de reglas de captura antes de la build, «Est](#2026-11-22-lote-del-22-nov-1001-1003-conector-completo-campo-de-reglas-de-captura-antes-de-la-build-esto-le-opcin-a-correos-de-seguridad-apagados-y-la-causa-de-las-tandas-5-y-6)
 - `2026-11-22` [Lote del 22-nov (15:05): despliegue del límite de tarjeta a producción, comercios en común con lo re](#2026-11-22-lote-del-22-nov-1505-despliegue-del-lmite-de-tarjeta-a-produccin-comercios-en-comn-con-lo-recomendado-y-uso-de-lnea-en-tarjetas-con-dos-monedas)
 - `2026-11-22` [El conector de Claude sale a producción con Dan, y su SQL cambia solo el id del conector en el hook ](#2026-11-22-el-conector-de-claude-sale-a-produccin-con-dan-y-su-sql-cambia-solo-el-id-del-conector-en-el-hook-de-yala-web)
 - `2026-11-22` [Yala IA ampliada al 100 % en producción, conector de pruebas en mcp-staging.yala-app.pe y Face ID en](#2026-11-22-yala-ia-ampliada-al-100--en-produccin-conector-de-pruebas-en-mcp-stagingyala-apppe-y-face-id-en-la-app-publicada)
+- `2026-11-22` [Lote del 22-nov (10:01-10:03): conector completo, campo de reglas de captura antes de la build, «Est](#2026-11-22-lote-del-22-nov-1001-1003-conector-completo-campo-de-reglas-de-captura-antes-de-la-build-esto-le-opcin-a-correos-de-seguridad-apagados-y-la-causa-de-las-tandas-5-y-6)
 - `2026-11-22` [Límite de la tarjeta como campo sincronizado: «uso de línea» en la hoja de cuenta](#2026-11-22-lmite-de-la-tarjeta-como-campo-sincronizado-uso-de-lnea-en-la-hoja-de-cuenta)
 - `2026-11-22` [Lote del 21 y 22-nov: consolas confirmadas, la sesión de las reglas de captura pausada y retomada, u](#2026-11-22-lote-del-21-y-22-nov-consolas-confirmadas-la-sesin-de-las-reglas-de-captura-pausada-y-retomada-uso-de-lnea-con-campo-propio-editor-de-la-bandeja-botones-del-toolbar-en-primary-y-la-hoja-esto-le)
-- `2026-11-21` [Lote del 21-nov (mañana): CI más rápido, logos en «Elige los pagos», «Reusar» con gastos de grupo, a](#2026-11-21-lote-del-21-nov-maana-ci-ms-rpido-logos-en-elige-los-pagos-reusar-con-gastos-de-grupo-asistente-de-pago-planificado-completo-auditora-de-decisiones-y-consolas-resueltas)
 - `2026-11-21` [Pago planificado compartido: quién paga se elige al registrar, no se guarda](#2026-11-21-pago-planificado-compartido-quin-paga-se-elige-al-registrar-no-se-guarda)
+- `2026-11-21` [Lote del 21-nov (mañana): CI más rápido, logos en «Elige los pagos», «Reusar» con gastos de grupo, a](#2026-11-21-lote-del-21-nov-maana-ci-ms-rpido-logos-en-elige-los-pagos-reusar-con-gastos-de-grupo-asistente-de-pago-planificado-completo-auditora-de-decisiones-y-consolas-resueltas)
 - `2026-11-21` [Lote del 21-nov (madrugada): favoritos de Nuevo registro, auditoría de decisiones, iCloud del flujo ](#2026-11-21-lote-del-21-nov-madrugada-favoritos-de-nuevo-registro-auditora-de-decisiones-icloud-del-flujo-de-caja-privacidad-web-con-sentry-github-en-sentry-nombres-de-cuentas-a-yala-ia-y-salud-financiera)
 - `2026-11-20` [Lote del 20-nov (mañana): Primeros pasos, Nuevo registro, Registros, flujo de caja, Comparativa y Es](#2026-11-20-lote-del-20-nov-maana-primeros-pasos-nuevo-registro-registros-flujo-de-caja-comparativa-y-estadsticas)
 - `2026-11-20` [Nuevo registro: hoja B1 con la fila de abajo en una línea, éxito minimalista y sugerencias que ponen](#2026-11-20-nuevo-registro-hoja-b1-con-la-fila-de-abajo-en-una-lnea-xito-minimalista-y-sugerencias-que-ponen-cuenta-y-categora)
@@ -32,20 +33,20 @@
 - `2026-11-18` [Avisos del banco sin Gmail: se quita `gmail.readonly` y se sigue con lo que hay](#2026-11-18-avisos-del-banco-sin-gmail-se-quita-gmailreadonly-y-se-sigue-con-lo-que-hay)
 - `2026-11-18` [Verificación de Google: no se paga la evaluación CASA de `gmail.readonly`](#2026-11-18-verificacin-de-google-no-se-paga-la-evaluacin-casa-de-gmailreadonly)
 - `2026-11-18` [Lote del 18-nov (mañana): flujo de caja por subcategoría, logo del comercio solo en Pagos planificad](#2026-11-18-lote-del-18-nov-maana-flujo-de-caja-por-subcategora-logo-del-comercio-solo-en-pagos-planificados-y-yala-web-a-produccin)
-- `2026-11-17` [Verificación: se aplica lo recomendado, pero sin pruebas de interfaz en el CI del PR](#2026-11-17-verificacin-se-aplica-lo-recomendado-pero-sin-pruebas-de-interfaz-en-el-ci-del-pr)
 - `2026-11-17` [Lote del 17-nov (noche): flujo de caja, Comparativa, crear por pasos, Salud financiera, perfil, hoja](#2026-11-17-lote-del-17-nov-noche-flujo-de-caja-comparativa-crear-por-pasos-salud-financiera-perfil-hoja-de-cuenta-y-iphone-duo)
 - `2026-11-17` [Verificación: se aplica todo lo recomendado de la propuesta del 17-nov](#2026-11-17-verificacin-se-aplica-todo-lo-recomendado-de-la-propuesta-del-17-nov)
 - `2026-11-17` [Lote del 17-nov (madrugada): chips en horizontal, nota de salud, historial purgado, Resumen con hora](#2026-11-17-lote-del-17-nov-madrugada-chips-en-horizontal-nota-de-salud-historial-purgado-resumen-con-hora-cachs-y-el-video-de-gmail)
+- `2026-11-17` [Verificación: se aplica lo recomendado, pero sin pruebas de interfaz en el CI del PR](#2026-11-17-verificacin-se-aplica-lo-recomendado-pero-sin-pruebas-de-interfaz-en-el-ci-del-pr)
 - `2026-11-17` [Lote del 17-nov (tarde): «Desde un registro», Yala web, Nuevo registro, una vista por sesión y la ho](#2026-11-17-lote-del-17-nov-tarde-desde-un-registro-yala-web-nuevo-registro-una-vista-por-sesin-y-la-hoja-esto-le)
-- `2026-11-16` [La sesión que arregla los rojos del CI mergea a mano y deja 2.3 en verde](#2026-11-16-la-sesin-que-arregla-los-rojos-del-ci-mergea-a-mano-y-deja-23-en-verde)
 - `2026-11-16` [Yala web como la app: todo lo recomendado de la maqueta, en seis lotes](#2026-11-16-yala-web-como-la-app-todo-lo-recomendado-de-la-maqueta-en-seis-lotes)
 - `2026-11-16` [Yala web se parece lo más posible a Yala en el iPhone](#2026-11-16-yala-web-se-parece-lo-ms-posible-a-yala-en-el-iphone)
 - `2026-11-16` [Lote del 16-nov (tarde): el hero del Panel es el estándar, y los guiados de Yala IA van por subcateg](#2026-11-16-lote-del-16-nov-tarde-el-hero-del-panel-es-el-estndar-y-los-guiados-de-yala-ia-van-por-subcategoras-con-opciones-avanzadas-al-final)
 - `2026-11-16` [Yala web debe parecerse a Yala móvil](#2026-11-16-yala-web-debe-parecerse-a-yala-mvil)
 - `2026-11-16` [Lote del 16-nov: semana de publicaciones de la 2.2, planificación los viernes, préstamos e IA para 2](#2026-11-16-lote-del-16-nov-semana-de-publicaciones-de-la-22-planificacin-los-viernes-prstamos-e-ia-para-24-y-lo-que-entra-en-la-cola)
+- `2026-11-16` [La sesión que arregla los rojos del CI mergea a mano y deja 2.3 en verde](#2026-11-16-la-sesin-que-arregla-los-rojos-del-ci-mergea-a-mano-y-deja-23-en-verde)
 - `2026-11-16` [Yala web en producción: Grupos se enciende quitando la condición del gateway](#2026-11-16-yala-web-en-produccin-grupos-se-enciende-quitando-la-condicin-del-gateway)
-- `2026-11-15` [Lote del 15-nov: Yala web sale a producción entera, dominio app.yala-app.pe, 2.3 (1) a TestFlight y ](#2026-11-15-lote-del-15-nov-yala-web-sale-a-produccin-entera-dominio-appyala-apppe-23-1-a-testflight-y-recurrentes-desde-un-registro)
 - `2026-11-15` [Lote del 15-nov (tarde): la IA predice mejor categoría y cuenta, el saldo del Panel sin maqueta prev](#2026-11-15-lote-del-15-nov-tarde-la-ia-predice-mejor-categora-y-cuenta-el-saldo-del-panel-sin-maqueta-previa-y-tarjetas-de-cuentas-personalizables)
+- `2026-11-15` [Lote del 15-nov: Yala web sale a producción entera, dominio app.yala-app.pe, 2.3 (1) a TestFlight y ](#2026-11-15-lote-del-15-nov-yala-web-sale-a-produccin-entera-dominio-appyala-apppe-23-1-a-testflight-y-recurrentes-desde-un-registro)
 - `2026-11-14` [Lote del 14-nov (tarde): atajo del banco con las recomendadas, escritura de Grupos de Yala web a pro](#2026-11-14-lote-del-14-nov-tarde-atajo-del-banco-con-las-recomendadas-escritura-de-grupos-de-yala-web-a-produccin-icloud-fuera-del-camino-de-cuenta-y-el-gateway-ms-rpido)
 - `2026-11-14` [Bienvenida: «Entrar con iCloud privado» es la única excepción a la decisión 51 de 2.3](#2026-11-14-bienvenida-entrar-con-icloud-privado-es-la-nica-excepcin-a-la-decisin-51-de-23)
 - `2026-11-14` [Lote del 14-nov: Yala web antes de 3.0, bugs altos del barrido delante y quién despliega a CloudKit](#2026-11-14-lote-del-14-nov-yala-web-antes-de-30-bugs-altos-del-barrido-delante-y-quin-despliega-a-cloudkit)
@@ -53,9 +54,9 @@
 - `2026-11-13` [Lote del 13-nov: Grupos pago por confirmar, bienvenida 2.3, encargos que declaran lo que tocan y ord](#2026-11-13-lote-del-13-nov-grupos-pago-por-confirmar-bienvenida-23-encargos-que-declaran-lo-que-tocan-y-orden-de-la-cola)
 - `2026-11-12` [Lote del 11 y 12-nov: cierre de la 2.2, nota de salud, «Activar sin borrar», bienvenida 2.3 y priori](#2026-11-12-lote-del-11-y-12-nov-cierre-de-la-22-nota-de-salud-activar-sin-borrar-bienvenida-23-y-prioridades-de-la-cola)
 - `2026-11-11` [Las propuestas de mejora se entregan como artifact visual, no como Markdown](#2026-11-11-las-propuestas-de-mejora-se-entregan-como-artifact-visual-no-como-markdown)
+- `2026-11-10` [El correo del banco llega a un dominio aparte, yalainbox.com, solo para recibir](#2026-11-10-el-correo-del-banco-llega-a-un-dominio-aparte-yalainboxcom-solo-para-recibir)
 - `2026-11-10` [Orden del 10-nov: 2.2 en verde y en TestFlight antes que los lotes de 2.3, que corren de a dos sin d](#2026-11-10-orden-del-10-nov-22-en-verde-y-en-testflight-antes-que-los-lotes-de-23-que-corren-de-a-dos-sin-declarar-el-catlogo-de-textos)
 - `2026-11-10` [Cierre de la 2.2: una sesión deja verde lo abierto y sube la build siguiente, en paralelo con los lo](#2026-11-10-cierre-de-la-22-una-sesin-deja-verde-lo-abierto-y-sube-la-build-siguiente-en-paralelo-con-los-lotes-23)
-- `2026-11-10` [El correo del banco llega a un dominio aparte, yalainbox.com, solo para recibir](#2026-11-10-el-correo-del-banco-llega-a-un-dominio-aparte-yalainboxcom-solo-para-recibir)
 - `2026-11-10` [Entrar con Google o Apple con tu iCloud privado en el teléfono: se deja iCloud aparte (opción B), y ](#2026-11-10-entrar-con-google-o-apple-con-tu-icloud-privado-en-el-telfono-se-deja-icloud-aparte-opcin-b-y-el-lote-del-9-y-10-nov)
 - `2026-11-09` [Verificación de Google de «Conectar Gmail»: se pide con la lectura en el teléfono](#2026-11-09-verificacin-de-google-de-conectar-gmail-se-pide-con-la-lectura-en-el-telfono)
 - `2026-11-09` [Entrar con Google o Apple con tu propio iCloud privado: Yala te pregunta (opción C), y Grupos usa un](#2026-11-09-entrar-con-google-o-apple-con-tu-propio-icloud-privado-yala-te-pregunta-opcin-c-y-grupos-usa-una-sola-cuenta-grupos)
@@ -128,8 +129,8 @@
 - `2026-05-05` [Groups Pulido Final — Subset 3 (A6/A7/A8)](#2026-05-05-groups-pulido-final--subset-3-a6a7a8)
 - `2026-05-05` [A0-Bridge — rediseño completo del bridge SplitExpense ↔ TransactionItem (modelo M5)](#2026-05-05-a0-bridge--rediseo-completo-del-bridge-splitexpense--transactionitem-modelo-m5)
 - `2026-05-04` [Groups Pulido Final — Subset 2 (A9/A10/A12/A13)](#2026-05-04-groups-pulido-final--subset-2-a9a10a12a13)
-- `2026-04-28` [3 fixes runtime post-QA chat-registrar-transacciones](#2026-04-28-3-fixes-runtime-post-qa-chat-registrar-transacciones)
 - `2026-04-28` [Traducciones reales — 4 locales completos (nl, pl, zh-Hans, ja)](#2026-04-28-traducciones-reales--4-locales-completos-nl-pl-zh-hans-ja)
+- `2026-04-28` [3 fixes runtime post-QA chat-registrar-transacciones](#2026-04-28-3-fixes-runtime-post-qa-chat-registrar-transacciones)
 - `2026-04-27` [Sankey con rama Planificados](#2026-04-27-sankey-con-rama-planificados)
 - `2026-04-27` [Chat → Registrar transacciones (Opción C híbrida)](#2026-04-27-chat--registrar-transacciones-opcin-c-hbrida)
 - `2026-04-26` [Yala IA — pivot a context-rich (Opción B)](#2026-04-26-yala-ia--pivot-a-context-rich-opcin-b)
@@ -173,6 +174,13 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-11-25] Lote del 25-nov (18:25-19:43): los hallazgos del iPhone 14 van en lotes, y Primeros pasos con el mes gratis y el mazo centrado
+**Contexto:** Decisiones de Jürgen en el chat del 25-nov (18:25, 18:48 y 19:43, Lima), capturadas por el bot dueño (ADR-082 de casa). Las registra la sesión del lote 2 (guías y avisos que señalan donde deben), en la Max, donde `decisiones.py` no está: el lote no queda marcado como incorporado.
+**Decisión:** (1) Los hallazgos de la observación en vivo del iPhone 14 del 25-nov se encolan **en lotes** (primero, que cada paso cuente bien; segundo, guías y avisos; tercero, textos). (2) Se encola una sesión de **maquetas** para el diseño de Primeros pasos (oferta Pro y mazo centrado), sin construir. (3) Primeros pasos: oferta Pro **opción C** (el mes gratis dentro de «¡Primeros pasos completos!») y mazo **opción B** (centrado en el paso 1, con el saludo «Hola, <nombre>»).
+**Razones:** No las dio.
+**Consecuencias:** (1) y (2) son órdenes de cola, ya cumplidas (lote 1 mergeado; lote 2, este; maquetas, mergeadas). (3) espera su encargo de construcción: ningún código lo implementa todavía.
+**Estado:** Activa
 
 ### [2026-11-25] Lote del 25-nov (07:07-12:33): la build 10 espera los cuatro PR de 2.3, y las tareas chicas de Yala van en lotes
 **Contexto:** Decisiones de Jürgen en el chat del 25-nov (07:07, 07:26 y 12:33, Lima); las dos primeras, capturadas por el bot dueño (ADR-082 de casa). Las registra la sesión que subió la build 10.

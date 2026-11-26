@@ -471,6 +471,12 @@ paths:
   «Todo» de Buscar). Si vuelve a hacer falta, el molde está en el git de `RecordsListSearchField.swift` antes de esa
   fecha; pin de que no vuelva a Registros: `BuscarSinBarraEnRegistrosTests`.
 
+- **Desplazar por id a una vista de un `ForEach` usa la identidad del `ForEach`, no un `.id(...)` puesto dentro
+  (medido el 2026-11-25, iOS 27.2, guía del paso 6 en Más).** Con `.id("more_section_x")` en la vista de cada sección,
+  `ScrollViewProxy.scrollTo` y `ScrollPosition.scrollTo(id:)` se llamaban y el scroll no se movía; con el id que el
+  `ForEach` ya da (`kind.id`) sí. Y una página de pestaña oculta tampoco se desplaza: se pide con la página a la vista
+  (`\.isRootPageShown`). Molde: `MoreView.revealGuideTarget`. **`onScrollGeometryChange` no avisa al aparecer**: para
+  un alto que hace falta desde el primer pintado, `onGeometryChange` sobre el scroll (`TutorialStoryPage`).
 - **`ScrollViewProxy.scrollTo` hacia algo lejano de un `LazyVStack` se queda corto (medido el 2026-11-12, iOS 27.2,
   separador de mes de Registros).** Calcula con alturas estimadas de lo que aún no se pintó: «diciembre de 2025»
   aterrizaba al final de enero de 2026. ⇒ repite el `scrollTo` una o dos vueltas después (~80 ms), cuando las filas de
