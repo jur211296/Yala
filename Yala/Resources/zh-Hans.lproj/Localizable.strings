@@ -10325,3 +10325,20 @@
 "estoLei.appendNote.photo" = "读取的内容会加到已有内容里。";
 "estoLei.appendNote.voice" = "你说的内容会加到已有内容里。";
 "estoLei.seePhotos" = "查看照片";
+
+/* Primeros pasos: el mes gratis en la tarjeta final, la tarjeta de Pro con el mes gratis y el saludo del mazo (25-nov-2026) */
+"pasos23.final.cardOffer.chip" = "YALA PRO · 免费 1 个月";
+"pasos23.final.cardOffer.title" = "接下来：免费试用 Yala Pro 1 个月";
+"pasos23.final.cardOffer.voice.title" = "无需打字即可记账";
+"pasos23.final.cardOffer.ai.title" = "Yala AI";
+"pasos23.final.cardOffer.unlimited.title" = "无限制";
+"pasos23.final.cardOffer.cta" = "开始我的免费 1 个月";
+"pasos23.final.cardOffer.footnote" = "今天无需付款 · 扣款前我们会提醒你";
+"pasos23.final.cardOffer.notNow" = "以后再说";
+"proBanner.freeMonth.chip" = "免费 1 个月";
+"proBanner.freeMonth.title" = "免费试用 Yala Pro 1 个月";
+"proBanner.freeMonth.subtitle" = "用语音或照片记账，问问 Yala AI，汇总你的所有账户。今天无需付款。";
+"proBanner.freeMonth.cta" = "开始免费月";
+"pasos23.greeting.hello" = "你好";
+"pasos23.greeting.helloName" = "你好，%@";
+"pasos23.greeting.subtitle" = "七个简短步骤，让 Yala 更适合你。";

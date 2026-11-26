@@ -159,12 +159,22 @@ final class Bienvenida23FinalUITests: XCTestCase {
         XCTAssertTrue(element(app, "setup_deck_done_title").waitForExistence(timeout: 10))
     }
 
-    /// Y23-18: la oferta sube sola tras el final con el anual preseleccionado y la línea de tiempo; «Seguir con la versión
-    /// gratis» la cierra sin dar Pro.
+    /// Opción C de Jürgen (25-nov-2026): con derecho al mes gratis, la oferta va DENTRO de la tarjeta final y la hoja ya
+    /// no sube sola; se abre con «Empezar mi mes gratis» de la tarjeta.
+    private func openFinalOffer(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssertFalse(element(app, "setup_offer_title").exists, "La hoja no sube sola encima de la tarjeta.",
+                       file: file, line: line)
+        tapWhenSettled(app, "setup_deck_offer_cta", timeout: 15, file: file, line: line)
+        XCTAssertTrue(element(app, "setup_offer_title").waitForExistence(timeout: 10),
+                      "«Empezar mi mes gratis» de la tarjeta no abrió la hoja.", file: file, line: line)
+    }
+
+    /// Y23-18: la oferta, abierta desde la tarjeta final, con el anual preseleccionado y la línea de tiempo; «Seguir con
+    /// la versión gratis» la cierra sin dar Pro.
     func test_final_offer_keepFree_closesWithoutPro() {
         let app = launch(atStep: 8)
         let title = element(app, "setup_offer_title")
-        XCTAssertTrue(title.waitForExistence(timeout: 15), "La oferta del final sube sola.")
+        openFinalOffer(app)
         XCTAssertTrue(title.label.contains("1"), "La prueba de un mes se anuncia como «1 mes»: «\(title.label)».")
         XCTAssertTrue(element(app, "setup_offer_plans").exists)
         // El botón de empezar, solo y fijo abajo, a la vista sin desplazar (opción B del 20-nov-2026).
@@ -182,7 +192,7 @@ final class Bienvenida23FinalUITests: XCTestCase {
     func test_final_offer_confirmedPurchase_showsProIsOn() {
         // La compra fingida deja Pro con la prueba de un mes en curso, como la confirma Apple.
         let app = launch(atStep: 8, extra: ["-uitest-fake-purchase", "-uitest-pro-trial-days", "30"])
-        XCTAssertTrue(element(app, "setup_offer_title").waitForExistence(timeout: 15))
+        openFinalOffer(app)
         app.swipeUp()
         tapWhenSettled(app, "setup_offer_cta")
         XCTAssertTrue(element(app, "setup_offer_success_title").waitForExistence(timeout: 10))
@@ -200,7 +210,7 @@ final class Bienvenida23FinalUITests: XCTestCase {
     /// Pro» en la misma hoja, con el botón de empezar fijo abajo, y «‹» vuelve con el plan que se eligió antes.
     func test_final_offer_seeAllBenefits_pushesAndComesBack() {
         let app = launch(atStep: 8)
-        XCTAssertTrue(element(app, "setup_offer_title").waitForExistence(timeout: 15))
+        openFinalOffer(app)
         XCTAssertTrue(element(app, "setup_offer_block_capture").exists, "«Anota sin teclear».")
         XCTAssertTrue(element(app, "setup_offer_block_style").exists, "«A tu estilo».")
         // El mensual, elegido antes de ir a la página (el anual llega preseleccionado).
@@ -231,7 +241,7 @@ final class Bienvenida23FinalUITests: XCTestCase {
     /// Desde «Qué incluye Yala Pro», «Empezar mi mes gratis» compra el plan de la oferta y queda «¡Listo! Tienes Pro».
     func test_final_offer_purchaseFromAllBenefits_showsProIsOn() {
         let app = launch(atStep: 8, extra: ["-uitest-fake-purchase", "-uitest-pro-trial-days", "30"])
-        XCTAssertTrue(element(app, "setup_offer_title").waitForExistence(timeout: 15))
+        openFinalOffer(app)
         tapWhenSettled(app, "setup_offer_see_all")
         XCTAssertTrue(element(app, "setup_offer_all_benefits").waitForExistence(timeout: 10))
         tapWhenSettled(app, "setup_offer_cta")

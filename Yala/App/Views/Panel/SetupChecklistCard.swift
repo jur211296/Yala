@@ -202,12 +202,14 @@ struct SetupChecklistCard: View {
             if !laterSteps.isEmpty {
                 SetupDeckStepsRow(steps: manager.steps, current: nil, caption: "", onOpen: onStepTapped)
             }
-            Button(L10n.Action.close) { manager.dismissCompleted() }
-                .font(DS.Typography.body.weight(.semibold))
-                .foregroundStyle(.thAccentText)
-                .frame(minWidth: 44, minHeight: 44)
-                .accessibilityIdentifier("setup_deck_done_close")
+            if showsOfferInCard {
+                freeMonthOffer
+                    .transition(.opacity)
+            } else {
+                closeButton
+            }
         }
+        .animation(reduceMotion ? nil : DS.Animation.appear, value: showsOfferInCard)
         .frame(maxWidth: .infinity)
         .padding(DS.Spacing.lg)
         .background(DS.Semantic.infoBackground)
@@ -216,6 +218,108 @@ struct SetupChecklistCard: View {
     }
 
     private var laterSteps: [SetupStepID] { SetupDeckProgressLogic.later(manager.steps) }
+
+    private var closeButton: some View {
+        Button(L10n.Action.close) { manager.dismissCompleted() }
+            .font(DS.Typography.body.weight(.semibold))
+            .foregroundStyle(.thAccentText)
+            .frame(minWidth: 44, minHeight: 44)
+            .accessibilityIdentifier("setup_deck_done_close")
+    }
+
+    // MARK: - El mes gratis en la tarjeta final (opción C de Jürgen, 25-nov-2026)
+
+    /// Solo con derecho al mes gratis (elegibilidad medida) y mientras no dijo «Ahora no».
+    private var showsOfferInCard: Bool {
+        SetupCompleteTrialOfferLogic.showsOfferInCard(
+            announcesFreeMonth: SetupCompleteTrialOfferLogic.announcesFreeMonthNow,
+            declined: manager.isCompletedOfferDeclined)
+    }
+
+    /// Un solo bloque con el logro: «1 mes gratis», la oferta, tres beneficios, «Empezar mi mes gratis» (abre la hoja con
+    /// los planes), «Hoy no pagas…», y debajo «Ahora no» (pliega la oferta) y «Cerrar» (quita la tarjeta, como hoy).
+    private var freeMonthOffer: some View {
+        VStack(spacing: DS.Spacing.sm) {
+            Divider()
+                .padding(.vertical, DS.Spacing.xxs)
+            Text(L10n.PrimerosPasos23.Final.CardOffer.chip)
+                .font(DS.Typography.badgeLabel)
+                .tracking(0.6) // A11Y-DT: espaciado del rótulo en mayúsculas de la maqueta; no cambia el tamaño
+                .foregroundStyle(theme.onAccent)
+                .padding(.horizontal, DS.Spacing.sm)
+                .padding(.vertical, DS.Spacing.xxs)
+                .background(Capsule().fill(theme.accent))
+                .accessibilityIdentifier("setup_deck_offer_chip")
+            Text(L10n.PrimerosPasos23.Final.CardOffer.title)
+                .font(DS.Typography.subheadlineEmphasized)
+                .foregroundStyle(.thPrimaryText)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityAddTraits(.isHeader)
+                .accessibilityIdentifier("setup_deck_offer_title")
+            // Los tres en una fila, como en el encargo («Anota sin teclear · Yala IA · Sin límites»): así la tarjeta
+            // cabe en el iPhone 14 sin bajar. Si no caben (texto grande), uno debajo del otro.
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: DS.Spacing.md) { offerBenefits }
+                VStack(alignment: .leading, spacing: DS.Spacing.xs) { offerBenefits }
+            }
+            Button {
+                SetupCompleteTrialOfferLogic.requestOfferSheet()
+            } label: {
+                HStack(spacing: DS.Spacing.xs) {
+                    YalaSpark(size: .small, animated: false)
+                    Text(L10n.PrimerosPasos23.Final.CardOffer.cta)
+                        .font(DS.Typography.body.weight(.semibold))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .foregroundStyle(theme.onAccent)
+                .frame(maxWidth: .infinity, minHeight: 44)
+                .padding(.vertical, DS.Spacing.xxs)
+                .background(Capsule().fill(theme.accent))
+                .contentShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("setup_deck_offer_cta")
+            Text(L10n.PrimerosPasos23.Final.CardOffer.footnote)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.thSecondaryText)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: DS.Spacing.xl) { notNowButton; closeButton }
+                VStack(spacing: 0) { notNowButton; closeButton }
+            }
+        }
+    }
+
+    private var notNowButton: some View {
+        Button(L10n.PrimerosPasos23.Final.CardOffer.notNow) { manager.declineCompletedOffer() }
+            .font(DS.Typography.body)
+            .foregroundStyle(.thSecondaryText)
+            .frame(minWidth: 44, minHeight: 44)
+            .accessibilityIdentifier("setup_deck_offer_not_now")
+    }
+
+    @ViewBuilder
+    private var offerBenefits: some View {
+        offerBenefit(symbol: "waveform", title: L10n.PrimerosPasos23.Final.CardOffer.voiceTitle)
+        offerBenefit(symbol: "sparkles", title: L10n.PrimerosPasos23.Final.CardOffer.aiTitle)
+        offerBenefit(symbol: "infinity", title: L10n.PrimerosPasos23.Final.CardOffer.unlimitedTitle)
+    }
+
+    private func offerBenefit(symbol: String, title: String) -> some View {
+        HStack(spacing: DS.Spacing.xxs) {
+            Image(systemName: symbol)
+                .foregroundStyle(.thAccentText)
+                .accessibilityHidden(true)
+            Text(title)
+                .foregroundStyle(.thPrimaryText)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .font(DS.Typography.labelSmall.weight(.semibold))
+        .accessibilityElement(children: .combine)
+    }
 
     /// Con pasos para después, los nombra; si no, el mensaje de siempre.
     private var doneMessage: String {

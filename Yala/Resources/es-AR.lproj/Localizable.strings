@@ -9566,3 +9566,20 @@
 "estoLei.appendNote.photo" = "Lo que leas se suma a lo que ya está en la hoja.";
 "estoLei.appendNote.voice" = "Lo que digas se suma a lo que ya está en la hoja.";
 "estoLei.seePhotos" = "Ver las fotos";
+
+/* Primeros pasos: el mes gratis en la tarjeta final, la tarjeta de Pro con el mes gratis y el saludo del mazo (25-nov-2026) */
+"pasos23.final.cardOffer.chip" = "YALA PRO · 1 MES GRATIS";
+"pasos23.final.cardOffer.title" = "Para seguir: probá Yala Pro 1 mes gratis";
+"pasos23.final.cardOffer.voice.title" = "Anotá sin teclear";
+"pasos23.final.cardOffer.ai.title" = "Yala IA";
+"pasos23.final.cardOffer.unlimited.title" = "Sin límites";
+"pasos23.final.cardOffer.cta" = "Empezar mi mes gratis";
+"pasos23.final.cardOffer.footnote" = "Hoy no pagás · te avisamos antes de cobrar";
+"pasos23.final.cardOffer.notNow" = "Ahora no";
+"proBanner.freeMonth.chip" = "1 MES GRATIS";
+"proBanner.freeMonth.title" = "Probá Yala Pro gratis 1 mes";
+"proBanner.freeMonth.subtitle" = "Anotá hablando o con una foto, preguntale a Yala IA y sumá todas tus cuentas. Hoy no pagás.";
+"proBanner.freeMonth.cta" = "Empezar mes gratis";
+"pasos23.greeting.hello" = "Hola";
+"pasos23.greeting.helloName" = "Hola, %@";
+"pasos23.greeting.subtitle" = "Siete pasos cortos para dejar Yala a tu medida.";
