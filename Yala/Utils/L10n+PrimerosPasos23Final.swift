@@ -159,5 +159,35 @@ extension L10n.PrimerosPasos23 {
 
         static var reminderTitle: String { pp23f("pasos23.final.reminder.title") }
         static func reminderMessage(_ chargeDay: String) -> String { pp23f("pasos23.final.reminder.body", chargeDay) }
+
+        /// El mes gratis dentro de la tarjeta final (opción C de Jürgen, 25-nov-2026).
+        enum CardOffer {
+            static var chip: String { pp23f("pasos23.final.cardOffer.chip") }
+            static var title: String { pp23f("pasos23.final.cardOffer.title") }
+            static var voiceTitle: String { pp23f("pasos23.final.cardOffer.voice.title") }
+            static var aiTitle: String { pp23f("pasos23.final.cardOffer.ai.title") }
+            static var unlimitedTitle: String { pp23f("pasos23.final.cardOffer.unlimited.title") }
+            static var cta: String { pp23f("pasos23.final.cardOffer.cta") }
+            static var footnote: String { pp23f("pasos23.final.cardOffer.footnote") }
+            static var notNow: String { pp23f("pasos23.final.cardOffer.notNow") }
+        }
+    }
+
+    /// La tarjeta de Pro del Panel para quien tiene derecho al mes gratis (texto de la maqueta A, 25-nov-2026).
+    enum ProBannerFreeMonth {
+        static var chip: String { pp23f("proBanner.freeMonth.chip") }
+        static var title: String { pp23f("proBanner.freeMonth.title") }
+        static var subtitle: String { pp23f("proBanner.freeMonth.subtitle") }
+        static var cta: String { pp23f("proBanner.freeMonth.cta") }
+    }
+
+    /// El saludo del mazo centrado mientras se está en el paso 1 (opción B de Jürgen, 25-nov-2026).
+    enum Greeting {
+        static var hello: String { pp23f("pasos23.greeting.hello") }
+        static func hello(_ name: String) -> String { pp23f("pasos23.greeting.helloName", name) }
+        static var subtitle: String { pp23f("pasos23.greeting.subtitle") }
+
+        /// «Hola, <nombre>» o «Hola» si Yala no sabe el nombre.
+        static func title(name: String?) -> String { name.map { hello($0) } ?? hello }
     }
 }

@@ -60,6 +60,10 @@ final class SetupChecklistManager {
     /// Whether the user manually dismissed the completed banner.
     private(set) var isCompletedDismissed: Bool = false
 
+    /// «Ahora no» en la oferta del mes gratis de la tarjeta final (opción C de Jürgen, 25-nov-2026): la oferta se pliega
+    /// y la tarjeta sigue con su «Cerrar».
+    private(set) var isCompletedOfferDeclined: Bool = false
+
     // MARK: - Computed
 
     /// Pasos del mazo hechos (las prácticas de voz y foto no cuentan).
@@ -205,13 +209,8 @@ final class SetupChecklistManager {
             TrialOfferMoments.note(.setupChecklistCompleted)
             return
         }
-        guard SetupCompleteTrialOfferLogic.offersAtCompletion(offeredAfterRecordStep: UserDefaults.standard.bool(
-            forKey: SetupCompleteTrialOfferLogic.offeredAfterRecordStepKey)) else {
-            #if DEBUG
-            print("SetupChecklist: sin oferta al completar: ya salió al terminar el paso 2")
-            #endif
-            return
-        }
+        // Opción C (25-nov-2026): con la oferta dentro de la tarjeta final, la hoja no sube encima.
+        guard SetupCompleteTrialOfferLogic.completionSubmitsSheetNow else { return }
         UserDefaults.standard.set(true, forKey: SetupCompleteTrialOfferLogic.pendingOfferKey)
         TrialOfferMoments.note(
             .setupChecklistCompleted,
@@ -404,6 +403,12 @@ final class SetupChecklistManager {
         isCompletedDismissed = true
     }
 
+    /// «Ahora no» en la oferta del mes gratis de la tarjeta final: pliega la oferta y deja la tarjeta.
+    func declineCompletedOffer() {
+        UserDefaults.standard.set(true, forKey: SetupCompleteTrialOfferLogic.cardOfferDeclinedKey)
+        isCompletedOfferDeclined = true
+    }
+
     /// Check if the card should re-expand (called on panel appear).
     func checkReExpand() {
         guard isCollapsed, !isAllComplete else { return }
@@ -429,6 +434,7 @@ final class SetupChecklistManager {
         defaults.removeObject(forKey: Keys.completedAll)
         defaults.removeObject(forKey: Keys.completedAllDate)
         defaults.removeObject(forKey: Keys.completedDismissed)
+        defaults.removeObject(forKey: SetupCompleteTrialOfferLogic.cardOfferDeclinedKey)
         defaults.removeObject(forKey: Keys.recordTutorialRunning)
         defaults.removeObject(forKey: Keys.planningShownInPanel)
         // Keep isNewInstall — a new install remains new after wipe
@@ -442,6 +448,7 @@ final class SetupChecklistManager {
         isCollapsed = false
         isAllComplete = false
         isCompletedDismissed = false
+        isCompletedOfferDeclined = false
         completedAllDate = nil
     }
 
@@ -458,6 +465,7 @@ final class SetupChecklistManager {
         isCollapsed = defaults.bool(forKey: Keys.collapsed)
         isAllComplete = defaults.bool(forKey: Keys.completedAll)
         isCompletedDismissed = defaults.bool(forKey: Keys.completedDismissed)
+        isCompletedOfferDeclined = defaults.bool(forKey: SetupCompleteTrialOfferLogic.cardOfferDeclinedKey)
         isRecordTutorialRunning = defaults.bool(forKey: Keys.recordTutorialRunning)
         isPlanningShownInPanel = defaults.bool(forKey: Keys.planningShownInPanel)
 

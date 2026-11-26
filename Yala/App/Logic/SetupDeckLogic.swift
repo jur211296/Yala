@@ -12,6 +12,7 @@
 //  sus widgets si dijo que sí. Sin guías ni coach tips. `PrimerosPasosPanelGate` es esa regla, sin efectos.
 //
 
+import CoreGraphics
 import Foundation
 
 nonisolated enum SetupDeckLogic {
@@ -35,6 +36,36 @@ nonisolated enum SetupDeckLogic {
         guard let index = order.firstIndex(where: { !isResolved($0) }) else { return nil }
         let upcoming = order[(index + 1)...].filter { !isResolved($0) }.prefix(peekingCount)
         return Deck(current: order[index], position: index + 1, total: order.count, upcoming: Array(upcoming))
+    }
+}
+
+// MARK: - El mazo centrado con saludo (opción B de Jürgen, 25-nov-2026)
+
+/// Mientras se está en el paso 1 (sin cuenta), el mazo va centrado en la pantalla con «Hola, <nombre>» encima. Al crear
+/// la cuenta el saludo se va y el mazo sube a su sitio de siempre.
+nonisolated enum PrimerosPasosGreetingLogic {
+
+    /// El saludo y el centrado: con el mazo a la vista, sin terminar y el paso 1 sin resolver. Vale igual para «Solo
+    /// gastos» y para «Ingresos y gastos»: los dos esperan la cuenta del paso 1 (`PrimerosPasosPanelGate.make`).
+    static func centersDeck(showsDeck: Bool, isAllComplete: Bool, accountStepResolved: Bool) -> Bool {
+        showsDeck && !isAllComplete && !accountStepResolved
+    }
+
+    /// El nombre del saludo: el guardado, si es de la persona. Vacío o el de relleno («Usuario», en cualquier idioma) no
+    /// es un nombre, y el saludo queda en «Hola». Solo el primer nombre: «Hola, Jürgen», no el nombre completo.
+    static func greetingName(stored: String?, placeholders: Set<String>) -> String? {
+        guard let trimmed = stored?.trimmingCharacters(in: .whitespacesAndNewlines), !trimmed.isEmpty else { return nil }
+        guard !placeholders.contains(where: { $0.caseInsensitiveCompare(trimmed) == .orderedSame }) else { return nil }
+        return trimmed.split(whereSeparator: \.isWhitespace).first.map(String.init)
+    }
+
+    /// Cuánto baja el bloque del saludo y el mazo para quedar centrado en lo visible. `visibleHeight` es el alto entre
+    /// la barra de arriba y la de pestañas; `naturalTop`, dónde empezaría el bloque sin bajarlo, medido desde el borde
+    /// de arriba de lo visible (lo que hay encima: un aviso de la nube, el margen). Si no cabe, no baja: el bloque se
+    /// queda arriba y se desplaza.
+    static func centeringOffset(visibleHeight: CGFloat, blockHeight: CGFloat, naturalTop: CGFloat) -> CGFloat {
+        guard visibleHeight > 0, blockHeight > 0 else { return 0 }
+        return max(0, ((visibleHeight - blockHeight) / 2 - naturalTop).rounded())
     }
 }
 

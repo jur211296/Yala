@@ -18,6 +18,10 @@ struct ProUpgradeBanner: View {
     let onUpgrade: () -> Void
     let onDismiss: () -> Void
 
+    /// Con derecho al mes gratis (elegibilidad medida, prueba de un mes), el texto de la maqueta A (Jürgen, 25-nov-2026):
+    /// «1 MES GRATIS», «Prueba Yala Pro gratis 1 mes» y «Empezar mes gratis». Sin derecho, el de siempre.
+    private var offersFreeMonth: Bool { SetupCompleteTrialOfferLogic.announcesFreeMonthNow }
+
     // MARK: - Body
 
     var body: some View {
@@ -26,13 +30,27 @@ struct ProUpgradeBanner: View {
                 YalaSpark(size: .medium, animated: false)
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(L10n.ProBanner.title)
+                    if offersFreeMonth {
+                        Text(L10n.PrimerosPasos23.ProBannerFreeMonth.chip)
+                            .font(DS.Typography.badgeLabel)
+                            .tracking(0.6) // A11Y-DT: espaciado del rótulo en mayúsculas de la maqueta; no cambia el tamaño
+                            .foregroundStyle(.thOnAccent)
+                            .padding(.horizontal, DS.Spacing.sm)
+                            .padding(.vertical, DS.Spacing.xxs)
+                            .background(Capsule().fill(theme.accent))
+                            .accessibilityIdentifier("pro_banner_free_month_chip")
+                    }
+
+                    Text(offersFreeMonth ? L10n.PrimerosPasos23.ProBannerFreeMonth.title : L10n.ProBanner.title)
                         .font(DS.Typography.headline)
                         .foregroundStyle(.thPrimaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("pro_banner_title")
 
-                    Text(L10n.ProBanner.subtitle)
+                    Text(offersFreeMonth ? L10n.PrimerosPasos23.ProBannerFreeMonth.subtitle : L10n.ProBanner.subtitle)
                         .font(DS.Typography.caption)
                         .foregroundStyle(.thSecondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
 
                 Spacer()
@@ -54,7 +72,7 @@ struct ProUpgradeBanner: View {
                 HStack(spacing: DS.Spacing.xs) {
                     YalaSpark(size: .small, animated: false)
                     // «Probar Pro gratis» o «Pasarme a Pro»: «Actualizar» sonaba a la App Store (UX 2.2 · L17-4).
-                    Text(ProPresentation.upgradeButtonTitle)
+                    Text(offersFreeMonth ? L10n.PrimerosPasos23.ProBannerFreeMonth.cta : ProPresentation.upgradeButtonTitle)
                         .font(DS.Typography.labelSmall)
                 }
                 .foregroundStyle(.thOnAccent)
@@ -63,6 +81,7 @@ struct ProUpgradeBanner: View {
                 .background(theme.accent)
                 .clipShape(Capsule())
             }
+            .accessibilityIdentifier("pro_banner_cta")
         }
         .padding(DS.Spacing.md)
         .background(DS.Semantic.infoBackground)

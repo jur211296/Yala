@@ -120,6 +120,30 @@ nonisolated enum SetupCompleteTrialOfferLogic {
         return tried
     }
 
+    // MARK: - El mes gratis en la tarjeta final (opción C de Jürgen, 25-nov-2026)
+
+    /// «Ahora no» en la oferta de la tarjeta final: la oferta se pliega y la tarjeta de «completos» sigue con su «Cerrar».
+    static let cardOfferDeclinedKey = "onboarding23.completedCardOfferDeclined"
+
+    /// Si se puede anunciar «1 mes gratis»: sin Pro, con la elegibilidad MEDIDA (precios cargados), con derecho a la
+    /// prueba y con la prueba de un mes. Sin medir no se promete (L17-4); con otra duración el texto diría algo falso.
+    static func announcesFreeMonth(isPro: Bool, eligibilityKnown: Bool, offeredTrialDays: Int?,
+                                   trialIsOneMonth: Bool) -> Bool {
+        !isPro && eligibilityKnown && offeredTrialDays != nil && trialIsOneMonth
+    }
+
+    /// La tarjeta «¡Primeros pasos completos!» lleva dentro la oferta del mes gratis: solo para quien tiene derecho y
+    /// mientras no dijo «Ahora no». Sin derecho, la tarjeta de siempre y la de Pro de siempre debajo.
+    static func showsOfferInCard(announcesFreeMonth: Bool, declined: Bool) -> Bool {
+        announcesFreeMonth && !declined
+    }
+
+    /// Al completar, la hoja de la oferta solo sube si la tarjeta no la lleva ya: con la oferta dentro, subir la hoja
+    /// encima taparía el logro y repetiría lo mismo (maqueta C: «llama más que hoy sin abrir otra ventana»).
+    static func completionSubmitsSheet(offeredAfterRecordStep: Bool, offerInCard: Bool) -> Bool {
+        offersAtCompletion(offeredAfterRecordStep: offeredAfterRecordStep) && !offerInCard
+    }
+
     // MARK: - El aviso que se debe
 
     /// La compra confirmada en esta oferta deja apuntado que se prometió el aviso; la app lo repone si un borrado o un
@@ -136,5 +160,39 @@ nonisolated enum SetupCompleteTrialOfferLogic {
         guard owed else { return .nothing }
         guard isTrial, willAutoRenew != false, let chargeDate else { return .removeAndForget }
         return .ensure(chargeDate: chargeDate)
+    }
+}
+
+// MARK: - Lo que se sabe ahora
+
+extension SetupCompleteTrialOfferLogic {
+    /// `announcesFreeMonth` con lo que se sabe en este momento de la tienda y del plan.
+    @MainActor static var announcesFreeMonthNow: Bool {
+        let store = StoreKitManager.shared
+        return announcesFreeMonth(
+            isPro: FeatureGateService.shared.isProUser,
+            eligibilityKnown: store.isIntroOfferEligibilityKnown,
+            offeredTrialDays: store.offeredTrialDays,
+            trialIsOneMonth: store.offeredTrialIsOneMonth)
+    }
+
+    /// `completionSubmitsSheet` con lo que se sabe ahora: la hoja del final ya salió en el paso 2, o la tarjeta la lleva.
+    @MainActor static var completionSubmitsSheetNow: Bool {
+        let submits = completionSubmitsSheet(
+            offeredAfterRecordStep: UserDefaults.standard.bool(forKey: offeredAfterRecordStepKey),
+            offerInCard: showsOfferInCard(
+                announcesFreeMonth: announcesFreeMonthNow,
+                declined: SetupChecklistManager.shared.isCompletedOfferDeclined))
+        #if DEBUG
+        if !submits { print("SetupChecklist: sin hoja al completar: ya salió en el paso 2 o la tarjeta final la lleva") }
+        #endif
+        return submits
+    }
+
+    /// «Empezar mi mes gratis» de la tarjeta final: la hoja «Prueba Yala Pro 1 mes gratis» de Primeros pasos, por el
+    /// router (la misma que sube tras el paso 2; el router vuelve a medir el derecho al drenarla).
+    @MainActor static func requestOfferSheet(defaults: UserDefaults = .standard) {
+        defaults.set(true, forKey: pendingOfferKey)
+        RouterEntryGate.shared.submit(.presentTrialOffer)
     }
 }

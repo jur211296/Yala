@@ -132,7 +132,12 @@ struct PrimerosPasosPaso7OfferTests {
         let gate = try Paso7Source.body(after: "static func note(_ moment: TrialOfferMoment, submitDelay: Duration? = nil) {", in: code)
         #expect(gate.contains("primerosPasosShown: SetupChecklistManager.shared.isPrimerosPasosShown"))
         let manager = try Paso7Source.code("Yala/App/Models/SetupChecklistManager.swift")
-        #expect(manager.contains("guard SetupCompleteTrialOfferLogic.offersAtCompletion(offeredAfterRecordStep:"))
+        // Desde la opción C (25-nov-2026) el guard pasa también por la oferta dentro de la tarjeta final; la regla del paso
+        // 2 sigue dentro (`completionSubmitsSheet` llama a `offersAtCompletion`).
+        #expect(manager.contains("guard SetupCompleteTrialOfferLogic.completionSubmitsSheetNow else { return }"))
+        let logic = try Paso7Source.code("Yala/App/Logic/SetupCompleteTrialOfferLogic.swift")
+        #expect(logic.contains("offersAtCompletion(offeredAfterRecordStep: offeredAfterRecordStep) && !offerInCard"))
+        #expect(logic.contains("offeredAfterRecordStep: UserDefaults.standard.bool(forKey: offeredAfterRecordStepKey)"))
     }
 
     @Test("la hoja: «Ahora no» arriba, el botón de empezar solo y fijo abajo, los cuatro bloques de Pro")

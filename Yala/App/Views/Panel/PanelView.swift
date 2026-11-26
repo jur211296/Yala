@@ -130,6 +130,46 @@ struct PanelView: View {
         SetupChecklistManager.shared.panelGate()
     }
 
+    /// Mientras se está en el paso 1 (sin cuenta), el mazo va centrado con «Hola, <nombre>» encima (opción B de Jürgen,
+    /// 25-nov-2026). Al crear la cuenta el saludo se va y el mazo sube, con la animación del contenido del Panel.
+    private var centersSetupDeck: Bool {
+        PrimerosPasosGreetingLogic.centersDeck(
+            showsDeck: showsSetupDeck,
+            isAllComplete: SetupChecklistManager.shared.isAllComplete,
+            accountStepResolved: panelGate.showsAccounts)
+    }
+
+    /// Lo que baja el bloque del saludo y el mazo para quedar en el centro de lo visible.
+    private var setupDeckCenteringOffset: CGFloat {
+        guard centersSetupDeck else { return 0 }
+        return PrimerosPasosGreetingLogic.centeringOffset(
+            visibleHeight: panelVisibleHeight,
+            blockHeight: setupDeckBlockFrame.height,
+            naturalTop: setupDeckBlockFrame.minY - setupDeckAppliedOffset + DS.Spacing.lg)
+    }
+
+    /// El saludo: el nombre que Yala sabe (el de Ajustes, que llena la bienvenida con Apple o Google), o solo «Hola».
+    private var setupDeckGreeting: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+            Text(L10n.PrimerosPasos23.Greeting.title(name: PrimerosPasosGreetingLogic.greetingName(
+                stored: appPreferences.userName,
+                placeholders: ["Usuario", L10n.Profile.defaultName])))
+                .font(DS.Typography.welcomeHeadline.weight(.bold))
+                .foregroundStyle(.thPrimaryText)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityAddTraits(.isHeader)
+                .accessibilityIdentifier("setup_deck_greeting_title")
+            Text(L10n.PrimerosPasos23.Greeting.subtitle)
+                .font(DS.Typography.body)
+                .foregroundStyle(.thSecondaryText)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("setup_deck_greeting_subtitle")
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("setup_deck_greeting")
+    }
+
     /// El mazo, también con «Solo gastos» (Jürgen, 19-nov-2026): los mismos siete pasos. Hasta entonces «Solo gastos»
     /// llegaba con un botón suelto «Anotar el primer gasto» en vez del mazo, y Primeros pasos no salía.
     private var setupDeckSlot: some View {
@@ -592,6 +632,15 @@ struct PanelView: View {
     // MARK: - Avisos (UX 2.2 · L3-8)
 
     /// Cada aviso con la MISMA condición con la que se pintaba suelto.
+    /// La tarjeta «¡Primeros pasos completos!» está a la vista con la oferta del mes gratis dentro.
+    private var finalCardCarriesOffer: Bool {
+        let manager = SetupChecklistManager.shared
+        return showsSetupDeck && manager.shouldShow && manager.isAllComplete
+            && SetupCompleteTrialOfferLogic.showsOfferInCard(
+                announcesFreeMonth: SetupCompleteTrialOfferLogic.announcesFreeMonthNow,
+                declined: manager.isCompletedOfferDeclined)
+    }
+
     private var noticeFlags: PanelNoticeQueueLogic.Flags {
         var flags = PanelNoticeQueueLogic.Flags()
         flags.cloudAdoptOffer = CloudAdoptOfferLogic.shows(
@@ -613,6 +662,8 @@ struct PanelView: View {
             isInTrial: StoreKitManager.shared.isInTrial,
             daysRemaining: StoreKitManager.shared.trialDaysRemaining)
             || (!FeatureGateService.shared.isProUser && showPeriodicBanner)
+        // Opción C de Jürgen (25-nov-2026): mientras la tarjeta final lleva el mes gratis, la de Pro no lo repite.
+        if finalCardCarriesOffer { flags.proOffer = false }
         flags.nudge = !UITestHooks.isActive && NudgeService.shared.currentNudge != nil && showNudgeBanner
         flags.siriTip = !UITestHooks.isActive && appPreferences.showSiriTip && viewModel.transactions.count >= 5
         // Panel progresivo: con Primeros pasos a medias solo siguen los avisos sobre los datos y la versión nueva.
@@ -721,6 +772,12 @@ struct PanelView: View {
     /// El pliegue del iPhone Duo abierto en horizontal, medido sobre la cabecera: la banda pone una columna a cada lado.
     @State private var headerFold: ClosedRange<CGFloat>?
 
+    /// El centrado del mazo del paso 1: el alto visible, el bloque del saludo y el mazo, y lo que ya se bajó.
+    @State private var panelVisibleHeight: CGFloat = 0
+    @State private var setupDeckBlockFrame: CGRect = .zero
+    @State private var setupDeckAppliedOffset: CGFloat = 0
+    private static let panelContentSpace = "panelContent"
+
     private var headerLayout: AnyLayout {
         DS.Adaptive.isWideScreen(sizeClass)
             ? AnyLayout(HeaderBandLayout(spacing: DS.Spacing.lg, fold: headerFold))
@@ -795,11 +852,24 @@ struct PanelView: View {
 
                         // Primeros pasos (Y23-05): el mazo, debajo de las acciones; en la llegada, la única acción.
                         if showsSetupDeck {
-                            setupDeckSlot
-                                // Lo que la persona crea con el Panel delante (la cuenta del paso 1, en su hoja) avanza
-                                // el mazo sin esperar a volver a entrar.
-                                .onChange(of: setupDetectionKey) { _, _ in detectSetupSteps() }
-                                .headerBandColumn(.leading)
+                            VStack(alignment: .leading, spacing: DS.Spacing.xl) {
+                                if centersSetupDeck {
+                                    setupDeckGreeting
+                                        .transition(.opacity)
+                                }
+                                setupDeckSlot
+                            }
+                            .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(Self.panelContentSpace)) } action: {
+                                setupDeckBlockFrame = $0
+                            }
+                            .padding(.top, setupDeckCenteringOffset)
+                            .onChange(of: setupDeckCenteringOffset, initial: true) { _, offset in
+                                setupDeckAppliedOffset = offset
+                            }
+                            // Lo que la persona crea con el Panel delante (la cuenta del paso 1, en su hoja) avanza
+                            // el mazo sin esperar a volver a entrar.
+                            .onChange(of: setupDetectionKey) { _, _ in detectSetupSteps() }
+                            .headerBandColumn(.leading)
                         }
 
                         // Movimientos sin cuenta: el primero de los avisos tras la cabecera. No ofrece nada: dice que hay
@@ -867,6 +937,10 @@ struct PanelView: View {
                         .padding(.top, panoramaVisible ? DS.Spacing.xxl - DS.Spacing.lg : 0)
                     }
                     .readsVerticalFold($headerFold)
+                    .coordinateSpace(.named(Self.panelContentSpace))
+                    // Al crear la cuenta del paso 1, el saludo se funde y el mazo sube a su sitio (opción B de Jürgen,
+                    // 25-nov-2026). En el contenedor común: el saldo y «Tus finanzas» entran con él.
+                    .animation(reduceMotion ? nil : DS.Animation.appear, value: centersSetupDeck)
                     // Cerrar un aviso (la oferta de la nube, el de grupos, la guía, la actualización…) lo funde y sube
                     // lo de debajo. Implícita y no `withAnimation`: `ContentView` apaga la animación de toda
                     // transacción que cruza las pestañas (card 8atf; regla de `swiftui-ds.md`).
@@ -893,6 +967,11 @@ struct PanelView: View {
                     .padding(.bottom, DS.Button.fabStackClearance(buttons: 2))
                 }
                 .scrollViewGlassEdges(horizontalMargin: DS.Adaptive.horizontalPadding(sizeClass))
+                // El alto entre las barras, para centrar el mazo del paso 1: el marco del scroll ya acaba en la barra de
+                // arriba y en la de pestañas (medido en el iPhone 14: y=101, alto 660), y sus `safeAreaInsets` son los
+                // que deja pasar por debajo, no los que le quitan alto. `onGeometryChange` y no
+                // `onScrollGeometryChange`: éste no avisa al aparecer (regla de `swiftui-ds.md`).
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { panelVisibleHeight = $0 }
                 .onScrollGeometryChange(for: CGFloat.self) { geom in
                     geom.contentOffset.y
                 } action: { _, offsetY in
