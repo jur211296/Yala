@@ -1070,10 +1070,11 @@ struct PanelView: View {
         }
     }
 
-    /// Pull-to-refresh: sync preferences + reload data
+    /// Pull-to-refresh: sync preferences + reload data. Solo recarga si cambió la firma del Panel (lote 3 de eficiencia):
+    /// el recálculo entero, sin nada nuevo, eran ~7 s de hilo principal con 16 k movimientos.
     private func refreshData() async {
         PreferenceSyncService.shared.bootstrap()
-        viewModel.reloadAndRecalculate()
+        viewModel.refreshIfStale()
         try? await Task.sleep(for: .milliseconds(300))
         DS.Haptic.light()
     }

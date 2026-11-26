@@ -291,6 +291,13 @@ final class PanelViewModel {
     @ObservationIgnored
     private(set) var hasInterruptedWork = false
 
+    /// Hay un cálculo por etapas en marcha (`finishRecalculation`). Lote 3 de eficiencia.
+    @ObservationIgnored
+    private var isCalculatingInStages = false
+    /// Se pidió un recálculo con el cálculo por etapas a medias: corre detrás de él.
+    @ObservationIgnored
+    private var calculationRequestedMidway = false
+
     /// Se pidió un recálculo con la app todavía sin activar. En el arranque en frío del iPad el `onAppear` del Panel y
     /// su cambio de fase a `.active` llegan antes de que UIKit marque la app activa: el freno los descartaba y nada
     /// volvía a pedir la carga, así que el Panel se quedaba en el esqueleto hasta mandar Yala a segundo plano y volver
@@ -303,6 +310,11 @@ final class PanelViewModel {
     /// evento produce UN recálculo y no más, y la traza de DEBUG lo imprime con su motivo.
     @ObservationIgnored
     private(set) var debugCalculationRuns = 0
+
+    /// Cuántos cálculos empezaron (lote 3 de eficiencia). `debugCalculationRuns` cuenta los que llegaron a su última
+    /// etapa: uno cortado entre etapas cuenta aquí y no allí.
+    @ObservationIgnored
+    private(set) var debugCalculationsStarted = 0
 
     /// Cuántas esperas de 150 ms se han abierto. Una petición que llega con otra esperando se suma a ella y no abre
     /// otra: los tests lo cuentan sin depender del reloj (card h1hy).
@@ -2983,12 +2995,7 @@ final class PanelViewModel {
     /// ya es lo que hay: sus observadores siguieron recalculando con el Panel oculto (card
     /// `tablero-volver-al-panel-lo-recarga-y-recalcula-e-zpgm`). La primera aparición siempre carga.
     func reloadOnAppearIfStale() {
-        let stale = PanelReloadFreshness.needsReload(
-            lastLoad: lastLoadStamp,
-            now: currentDataStamp(),
-            hasUnsavedChanges: modelContext?.hasChanges ?? true,
-            hasInterruptedWork: hasInterruptedWork
-        )
+        let stale = isStale()
         #if DEBUG
         print("PanelViewModel: volver al Panel → \(stale ? "recarga" : "sin cambios, no recarga")")
         #endif
@@ -2997,6 +3004,29 @@ final class PanelViewModel {
         } else {
             LoadTimeMarks.ready(.panel)
         }
+    }
+
+    /// «Tirar para actualizar» (lote 3 de eficiencia, 26-nov-2026): recarga y recalcula solo si cambió la firma del Panel,
+    /// como al volver a él. Con 16 k movimientos el recálculo entero costaba ~7 s de hilo principal por cada tirón, sin
+    /// nada nuevo que enseñar. Devuelve si recargó.
+    @discardableResult
+    func refreshIfStale() -> Bool {
+        let stale = isStale()
+        #if DEBUG
+        print("PanelViewModel: tirar para actualizar → \(stale ? "recarga" : "sin cambios, no recarga")")
+        #endif
+        if stale { reloadAndRecalculate() }
+        return stale
+    }
+
+    /// ¿Cambió algo desde la última carga? (`PanelReloadFreshness`)
+    private func isStale() -> Bool {
+        PanelReloadFreshness.needsReload(
+            lastLoad: lastLoadStamp,
+            now: currentDataStamp(),
+            hasUnsavedChanges: modelContext?.hasChanges ?? true,
+            hasInterruptedWork: hasInterruptedWork
+        )
     }
 
     private func currentDataStamp() -> PanelDataStamp {
@@ -3060,6 +3090,9 @@ final class PanelViewModel {
         }
         if reload { pendingReload = true }
         hasInterruptedWork = false
+        // Un cálculo por etapas en marcha ya leyó los filtros de las etapas hechas: lo pedido ahora corre detrás de él
+        // (lote 3 de eficiencia, `finishRecalculation`).
+        if isCalculatingInStages { calculationRequestedMidway = true }
         guard recalculateTask == nil else { return }
         #if DEBUG
         debugRecalculationWindowsOpened += 1
@@ -3084,25 +3117,46 @@ final class PanelViewModel {
                 guard let loaded else {
                     // La lectura por tramos no pudo ir (lectura fallida): la de siempre, de una vez, con su `catch`.
                     loadData(stamp: stamp, preloadedTransactions: nil)
-                    finishRecalculation()
+                    await finishRecalculation()
                     return
                 }
                 loadData(stamp: stamp, preloadedTransactions: loaded)
             }
-            finishRecalculation()
+            await finishRecalculation()
         }
     }
 
-    /// El final de una vuelta del recálculo, sin ningún `await`: nadie puede sumarse a este cálculo a medias. Una recarga
-    /// pedida mientras se leían los tramos abre la vuelta siguiente.
-    private func finishRecalculation() {
+    /// El final de una vuelta del recálculo: el cálculo, por etapas (lote 3 de eficiencia, `performCalculationInStages`).
+    /// `recalculateTask` sigue puesto mientras dura, así que lo que se pida a medias no abre otro cálculo que se cruce con
+    /// este: una recarga abre la vuelta siguiente y un recálculo, también (`calculationRequestedMidway`), porque las
+    /// etapas hechas leyeron los filtros de antes.
+    ///
+    /// Cortado (la app se fue, se salió del Panel, cambió el almacén): quien canceló ya soltó la tarea y apuntó el trabajo
+    /// a medias (`hasInterruptedWork`), así que no se toca nada más; la vuelta lo rehace por su firma.
+    private func finishRecalculation() async {
+        calculationRequestedMidway = false
+        isCalculatingInStages = true
+        let completed = await performCalculationInStages()
+        isCalculatingInStages = false
+        guard completed else {
+            if !Task.isCancelled {
+                // Cortado sin cancelar (la app dejó de estar en primer plano antes de que llegara su `setBackground`).
+                hasInterruptedWork = true
+                recalculateTask = nil
+            }
+            return
+        }
         recalculateTask = nil
-        performCalculation()
         if isReady {
             LoadTimeMarks.ready(.coldLaunch)
             LoadTimeMarks.ready(.panel)
         }
-        if pendingReload { scheduleRecalculation(reload: true) }
+        if pendingReload {
+            scheduleRecalculation(reload: true)
+        } else if calculationRequestedMidway {
+            scheduleRecalculation(reload: false)
+        }
+        calculationRequestedMidway = false
     }
 
     // MARK: - Lectura de los movimientos por tramos (YALA-IOS-K, 2026-11-13)
@@ -3201,11 +3255,18 @@ final class PanelViewModel {
     }
 
     /// Runs all widget calculations from cached data (no SwiftData fetch).
-    private func performCalculation() {
-        guard let sessionState, let context = modelContext else { return }
+    ///
+    /// Por etapas que ceden el hilo principal entre una y otra (lote 3 de eficiencia, 26-nov-2026). Con 16.004
+    /// movimientos en el iPhone 14 el cálculo entero tardaba 7 s (16 s compitiendo) de una vez, y si la persona se iba
+    /// a otra app en ese rato, iOS no podía tomar la foto de la escena y la cerraba a los 10 s (`0x8BADF00D` en segundo
+    /// plano, `docs/qa/rendimiento-iphone14-2026-11-26/`). Entre etapa y etapa la app atiende el paso a segundo plano, y el
+    /// freno (`setBackground`) corta lo que falta. Cada etapa sigue siendo de una vez: partirlas por dentro es el lote 4.
+    /// `false` si se cortó: las etapas hechas ya pintan, las demás conservan lo de antes hasta el próximo cálculo.
+    private func performCalculationInStages() async -> Bool {
+        guard let sessionState, let context = modelContext else { return true }
         #if DEBUG
-        debugCalculationRuns += 1
-        print("PanelViewModel: performCalculation #\(debugCalculationRuns)")
+        debugCalculationsStarted += 1
+        print("PanelViewModel: performCalculation #\(debugCalculationsStarted)")
         #endif
         calculateTrendData(
             accounts: accounts,
@@ -3214,6 +3275,7 @@ final class PanelViewModel {
             context: context,
             sessionState: sessionState
         )
+        guard await continuesAfterStage(context: context) else { return false }
         if isWidgetVisible(.budgets) {
             calculateBudgetsWidget(
                 budgets: budgets,
@@ -3251,6 +3313,7 @@ final class PanelViewModel {
         if scheduledVisible {
             calculateScheduledPaymentsWidget(injectedPaidAmounts: sharedPaidAmounts)
         }
+        guard await continuesAfterStage(context: context) else { return false }
 
         if healthVisible {
             // El score Salud Financiera ahora reacciona a `selectedPeriod`. Para el
@@ -3272,8 +3335,10 @@ final class PanelViewModel {
             }
             calculateHealthWidget(paidAmounts: paidForHealth)
         }
+        guard await continuesAfterStage(context: context) else { return false }
 
         calculateAccountPeriodExpenses()
+        guard await continuesAfterStage(context: context) else { return false }
         // Hero always computes — it replaces the Panel title and cannot be
         // hidden (see epic out-of-scope). Cheap O(n) pass over `transactions`;
         // the equality guard in `calculateHeroWidget()` suppresses no-op
@@ -3284,6 +3349,20 @@ final class PanelViewModel {
             monthInterval: currentMonthInterval,
             periodInterval: panelDateInterval
         )
+        #if DEBUG
+        debugCalculationRuns += 1
+        #endif
+        return true
+    }
+
+    /// Entre dos etapas del cálculo: cede el hilo principal (un milisegundo, para que el run loop atienda el paso a
+    /// segundo plano y los toques, como `fetchTransactionsInSlices`) y dice si sigue. No sigue si se canceló, si el freno
+    /// está puesto o la app ya no está en primer plano, o si el almacén cambió.
+    private func continuesAfterStage(context: ModelContext) async -> Bool {
+        do { try await Task.sleep(for: .milliseconds(1)) } catch { return false }
+        guard !Task.isCancelled, !isInBackground, isApplicationInForeground() else { return false }
+        guard !boundStore.isDetached, let current = modelContext, current === context else { return false }
+        return true
     }
 
     private func calculateWeekdayWidget(context: PanelCalculationContext) {

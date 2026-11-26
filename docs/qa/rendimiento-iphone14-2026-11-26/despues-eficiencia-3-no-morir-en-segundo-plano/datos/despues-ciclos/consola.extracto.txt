@@ -1,0 +1,28 @@
+1795729233251 2026-11-26 16:40:33.246617-0500 Yala[3135:1637434] [IntentSignal] INITIAL-SYNC — hasExistingData=true
+1795729233514 PanelViewModel: volver al Panel → recarga
+1795729233708 PanelViewModel: volver al Panel → recarga
+1795729234771 PanelViewModel: performCalculation #1
+1795729244011 2026-11-26 16:40:43.943389-0500 Yala[3135:1637434] [carga] PERF arranque 10852.6 ms
+1795729244011 2026-11-26 16:40:43.943404-0500 Yala[3135:1637434] [carga] PERF panel 10437.5 ms
+1795729251023 2026-11-26 16:40:51.017375-0500 Yala[3135:1637434] [carga] PERF widgets 0.0 ms
+1795729251223 SpotlightIndexService: Error: CancellationError()
+1795729274671 PanelViewModel: tirar para actualizar → sin cambios, no recarga
+1795729279835 PanelViewModel: volver al Panel → sin cambios, no recarga
+1795729280553 PanelViewModel: tirar para actualizar → sin cambios, no recarga
+1795729286827 PanelViewModel: volver al Panel → sin cambios, no recarga
+1795729287571 PanelViewModel: tirar para actualizar → sin cambios, no recarga
+1795729294863 PanelViewModel: volver al Panel → sin cambios, no recarga
+1795729295572 PanelViewModel: tirar para actualizar → sin cambios, no recarga
+1795729303814 PanelViewModel: volver al Panel → sin cambios, no recarga
+1795729304560 PanelViewModel: tirar para actualizar → sin cambios, no recarga
+1795729309788 PanelViewModel: volver al Panel → sin cambios, no recarga
+1795729310579 PanelViewModel: tirar para actualizar → sin cambios, no recarga
+1795729316862 PanelViewModel: volver al Panel → sin cambios, no recarga
+1795729317649 PanelViewModel: tirar para actualizar → sin cambios, no recarga
+1795729324947 PanelViewModel: volver al Panel → sin cambios, no recarga
+1795729325716 PanelViewModel: tirar para actualizar → sin cambios, no recarga
+1795729334102 PanelViewModel: volver al Panel → sin cambios, no recarga
+1795729334869 PanelViewModel: tirar para actualizar → sin cambios, no recarga
+1795729340002 PanelViewModel: volver al Panel → sin cambios, no recarga
+1795729340752 PanelViewModel: tirar para actualizar → sin cambios, no recarga
+1795729347016 PanelViewModel: volver al Panel → sin cambios, no recarga

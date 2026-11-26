@@ -1578,3 +1578,4 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | 2026-11-26-deudas-directas-con-personas | done | tickets/done/2026-11-26-deudas-directas-con-personas.md |
 | 2026-11-26-eficiencia-2-animaciones-solo-visibles | done | tickets/done/2026-11-26-eficiencia-2-animaciones-solo-visibles.md |
 | 2026-11-26-eficiencia-1-volver-sin-recalcular | done | tickets/done/2026-11-26-eficiencia-1-volver-sin-recalcular.md |
+| 2026-11-26-eficiencia-3-no-morir-en-segundo-plano | done | tickets/done/2026-11-26-eficiencia-3-no-morir-en-segundo-plano.md |

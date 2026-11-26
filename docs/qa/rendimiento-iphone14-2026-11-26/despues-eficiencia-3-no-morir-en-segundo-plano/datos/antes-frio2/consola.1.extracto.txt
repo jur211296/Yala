@@ -1,0 +1,8 @@
+1795727875458 2026-11-26 16:17:55.472730-0500 Yala[3093:1619401] [IntentSignal] INITIAL-SYNC — hasExistingData=true
+1795727875791 PanelViewModel: volver al Panel → recarga
+1795727876038 PanelViewModel: volver al Panel → recarga
+1795727877008 PanelViewModel: performCalculation #1
+1795727885665 2026-11-26 16:18:05.679033-0500 Yala[3093:1619401] [carga] PERF arranque 10734.4 ms
+1795727885665 2026-11-26 16:18:05.679062-0500 Yala[3093:1619401] [carga] PERF panel 9877.2 ms
+1795727886441 PanelViewModel: volver al Panel → sin cambios, no recarga
+1795727887652 PanelViewModel: performCalculation #2

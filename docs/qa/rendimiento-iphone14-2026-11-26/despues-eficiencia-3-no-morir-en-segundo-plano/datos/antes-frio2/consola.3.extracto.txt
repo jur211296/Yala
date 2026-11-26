@@ -1,0 +1,7 @@
+1795727912811 2026-11-26 16:18:32.823553-0500 Yala[3099:1620202] [IntentSignal] INITIAL-SYNC — hasExistingData=true
+1795727913083 PanelViewModel: volver al Panel → recarga
+1795727913286 PanelViewModel: volver al Panel → recarga
+1795727914378 PanelViewModel: performCalculation #1
+1795727924422 2026-11-26 16:18:44.434222-0500 Yala[3099:1620202] [carga] PERF arranque 11768.1 ms
+1795727924423 2026-11-26 16:18:44.434247-0500 Yala[3099:1620202] [carga] PERF panel 11341.9 ms
+1795727927225 App terminated due to signal 9.

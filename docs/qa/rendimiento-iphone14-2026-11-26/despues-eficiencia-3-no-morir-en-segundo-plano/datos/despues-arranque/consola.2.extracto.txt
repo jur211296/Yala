@@ -1,0 +1,12 @@
+1795729414185 2026-11-26 16:43:34.146572-0500 Yala[3140:1640450] [IntentSignal] INITIAL-SYNC — hasExistingData=true
+1795729414414 PanelViewModel: volver al Panel → recarga
+1795729414626 PanelViewModel: volver al Panel → recarga
+1795729415639 PanelViewModel: performCalculation #1
+1795729424641 2026-11-26 16:43:44.630916-0500 Yala[3140:1640450] [carga] PERF arranque 10648.6 ms
+1795729424641 2026-11-26 16:43:44.630929-0500 Yala[3140:1640450] [carga] PERF panel 10229.0 ms
+1795729432330 2026-11-26 16:43:52.319117-0500 Yala[3140:1640450] [carga] PERF widgets 0.0 ms
+1795729432855 PanelViewModel: performCalculation #2
+1795729436117 SpotlightIndexService: Error: CancellationError()
+1795729437867 SpotlightIndexService: segundo plano — se corta la reconciliación en vuelo
+1795729440748 PanelViewModel: volver al Panel → recarga
+1795729441848 PanelViewModel: performCalculation #3

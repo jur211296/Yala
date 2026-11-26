@@ -9,6 +9,7 @@
 import CoreData
 import Foundation
 import SwiftData
+import UIKit
 import WidgetKit
 
 // MARK: - Codable DTOs for Widget Data
@@ -405,8 +406,8 @@ enum WidgetDataCache {
     /// tirón tardaba ~3 s con 20.000 movimientos en el simulador, y más en un iPhone con iOS 27.3. Se publica por el
     /// camino de siempre (`updateCacheNow`, con su puerta del borrado armado), que la toma ya hecha.
     ///
-    /// Mientras dura sigue contando como pedida (`hasPendingUpdate`): pasar a segundo plano la cancela y hace la foto de
-    /// una vez (`flushPendingUpdate`), y soltar el contenedor la olvida (`cancelPendingUpdate`). Si entre dos etapas se
+    /// Mientras dura sigue contando como pedida (`hasPendingUpdate`): pasar a segundo plano la deja seguir, con el permiso
+    /// de segundo plano de iOS (`flushPendingUpdate`), y soltar el contenedor la olvida (`cancelPendingUpdate`). Si entre dos etapas se
     /// guarda algo en SwiftData o el espejo de iCloud funde cambios, la foto a medias se tira y se pide otra: pudo ser un
     /// borrado, y leer un `@Model` borrado aborta en el iPhone (card f8rj). Con cambios seguidos (una importación, el pull
     /// de la nube) la foto espera a que paren o a que la app pase a segundo plano.
@@ -417,7 +418,7 @@ enum WidgetDataCache {
         }
         // Con un borrado armado no se construye nada: la foto de una vez lo dice y no escribe.
         guard !isWipeArmed else {
-            flushPendingUpdate()
+            publishPendingNow()
             return
         }
         let savesAtStart = StoreSaveCounter.shared.count
@@ -453,7 +454,7 @@ enum WidgetDataCache {
         let requestedAgain = requestedDuringStagedBuild
         stagedSnapshot = (context: ObjectIdentifier(context), saves: savesAtStart, remoteChanges: remoteChangesAtStart,
                           built: finish())
-        flushPendingUpdate()
+        publishPendingNow()
         stagedSnapshot = nil
         if requestedAgain { updateCache(context: context) }
     }
@@ -500,9 +501,69 @@ enum WidgetDataCache {
     /// `true` mientras hay una foto pedida que aún no se hizo.
     static var hasPendingUpdate: Bool { pendingRebuild != nil }
 
-    /// Hace YA la foto pedida, si la hay. Lo llaman el paso a segundo plano (`YalaApp.handleScenePhase`: iOS puede
-    /// suspender la app antes de que venza la espera) y la espera misma.
+    /// El paso a segundo plano (`YalaApp.handleScenePhase`): la foto pedida se termina YA, por etapas y con el permiso de
+    /// segundo plano de iOS, para que el widget no se quede sin el último cambio si iOS suspende la app.
+    ///
+    /// Hasta el lote 3 de eficiencia (26-nov-2026) se hacía de una vez en el hilo principal. Con 16.004 movimientos en el
+    /// iPhone 14 eso eran varios segundos justo cuando iOS pide la foto de la escena, y detrás del cálculo del Panel
+    /// pasaban de los 10 s: iOS cerró Yala (`0x8BADF00D`) en 4 de 5 arranques con salida a los 3 s
+    /// (`docs/qa/rendimiento-iphone14-2026-11-26/despues-eficiencia-3-no-morir-en-segundo-plano/`). Ahora cede el hilo entre
+    /// etapas (`rebuildPendingInStages`); si ya había una foto por etapas en marcha, sigue esa. Si iOS agota el permiso, la
+    /// foto se queda pedida para la próxima vez.
     static func flushPendingUpdate() {
+        guard pendingContext != nil else {
+            pendingRebuild?.cancel()
+            pendingRebuild = nil
+            return
+        }
+        // Con un borrado armado la foto no se hace: lo dice `updateCacheNow`, en el acto y sin trabajo.
+        guard !isWipeArmed else {
+            publishPendingNow()
+            return
+        }
+        if !stagedBuildIsRunning || pendingRebuild == nil {
+            pendingRebuild?.cancel()
+            pendingRebuild = Task { @MainActor in await rebuildPendingInStages() }
+        }
+        guard let build = pendingRebuild else { return }
+        let assertion = BackgroundAssertion()
+        assertion.begin(name: "yala.widgets.foto") {
+            // Se acabó el permiso: la foto a medias se tira y queda pedida.
+            guard pendingRebuild == build else { return }
+            pendingRebuild?.cancel()
+            pendingRebuild = nil
+            if let context = pendingContext { updateCache(context: context) }
+        }
+        Task { @MainActor in
+            await build.value
+            assertion.end()
+        }
+    }
+
+    /// El permiso de iOS para seguir trabajando un rato en segundo plano, terminado una sola vez.
+    @MainActor
+    private final class BackgroundAssertion {
+        private var identifier: UIBackgroundTaskIdentifier = .invalid
+
+        func begin(name: String, onExpiration: @escaping @MainActor @Sendable () -> Void) {
+            identifier = UIApplication.shared.beginBackgroundTask(withName: name) { [weak self] in
+                MainActor.assumeIsolated {
+                    onExpiration()
+                    self?.end()
+                }
+            }
+        }
+
+        func end() {
+            guard identifier != .invalid else { return }
+            UIApplication.shared.endBackgroundTask(identifier)
+            identifier = .invalid
+        }
+    }
+
+    /// Hace YA la foto pedida, de una vez, si la hay. Lo llaman el final de la foto por etapas (que la toma hecha,
+    /// `takeStagedSnapshot`) y el borrado armado (que no la hace).
+    private static func publishPendingNow() {
         pendingRebuild?.cancel()
         pendingRebuild = nil
         guard let context = pendingContext else { return }

@@ -160,6 +160,15 @@ paths:
   (`PanelViewModel.hasInterruptedWork`, `RecalculationDebouncer.hasUnfinishedWork`): sin la recarga incondicional, un
   recálculo de filtros o de tasas pedido con la app fuera se perdería. Pin: `YalaTests/EficienciaVolverSinRecalcular/`
   (ningún `onChange(of: scenePhase)` de `Yala/App` recarga a pelo).
+  **Y al irse, nada largo de una vez en el hilo principal (2026-11-26, lote 3 de eficiencia).** iOS pide la foto de la
+  escena al pasar a segundo plano y cierra la app (`0x8BADF00D`) si el hilo no la atiende en 10 s: medido en el iPhone 14
+  con 16 k, abrir Yala en frío y salir a los 3 s la cerraba 4 de 5 veces (el cálculo del Panel y, detrás, la foto de los
+  widgets). Ahora el cálculo del Panel va por etapas que miran el freno entre una y otra
+  (`PanelViewModel.performCalculationInStages`), la foto de widgets al irse sigue por etapas con permiso de segundo plano
+  (`WidgetDataCache.flushPendingUpdate`) y Spotlight lee por tramos y se corta (`SpotlightIndexService`). ⇒ **un trabajo
+  nuevo que corra al pasar a segundo plano, o que pueda estar en vuelo en ese momento, cede el hilo y se corta**; si
+  necesita terminar fuera, por etapas y con `beginBackgroundTask`. Tirar para actualizar también mira la firma del Panel
+  (`refreshIfStale`). Pin: `YalaTests/EficienciaSegundoPlano/`.
 
 - **«Solo grupos» tiene dos orígenes desde el 2026-10-26 (card p0iu), y la shell los lee juntos.** Sin sesión privada
   (`!hasPrivateSession`, el eje) o con sesión privada y «Solo grupos» elegido en «Cómo usas Yala» (`GroupsOnlyViewMark`,
