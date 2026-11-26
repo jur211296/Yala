@@ -270,10 +270,13 @@ struct GroupsAttestTabNoticeWiringTests {
                 }
                 refreshAttestTerminalNotice()
                 """),
+            // Desde el lote 1 de eficiencia (26-nov-2026) la vuelta no recarga si nada cambió; el aviso se relee igual al
+            // soltar el freno (`VueltaAPrimerPlano`).
             ("volver de background", """
-                viewModel.setBackground(false)
-                viewModel.reloadAndRecalculate()
-                refreshAttestTerminalNotice()
+                soltarFreno: {
+                    viewModel.setBackground(false)
+                    refreshAttestTerminalNotice()
+                },
                 """),
             ("el pull-to-refresh", """
                 .refreshable {

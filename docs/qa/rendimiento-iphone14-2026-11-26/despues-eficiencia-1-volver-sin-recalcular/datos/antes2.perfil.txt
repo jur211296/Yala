@@ -1,0 +1,140 @@
+
+=== fuera: 175.3 s, 67874 muestras hilo principal (≈38.7 % de un núcleo)
+  -- inclusivo, funciones de Yala --
+   54368  <deduplicated_symbol>
+   34532  PanelViewModel.performCalculation()
+   34532  PanelViewModel.finishRecalculation()
+   34532  closure #1 in PanelViewModel.scheduleRecalculation(reload:)
+   25733  PanelViewModel.calculateHealthWidget(paidAmounts:)
+   25719  specialized static FinancialScoreCalculator.calculate(transactions:budgets:scheduledPayments:accounts:paidAmounts:period:customRange:preferredCurrency
+   22402  specialized static BudgetsViewModel.calculateSpending(budget:transactions:interval:adjustment:converter:)
+   22050  specialized static BudgetsViewModel.filterTransactions(_:forBudget:in:adjustment:)
+   14065  closure #1 in static SpotlightIndexService.scheduleReconcile(context:delay:)
+   14064  static SpotlightIndexService.reconcile(context:)
+   13463  main
+   13236  specialized static SpotlightIndexService.desiredEntries(context:)
+  -- exclusivo (hoja) --
+    2289  swift_getTypeByMangledName  [libswiftCore.dylib]
+    1991  bool swift::RefCounts<swift::RefCountBitsT<(swift::RefCountInlinedness)1>>::doDecrementSlow<(swift::PerformDeinit)1>(swift::RefCountBitsT<(swift::RefC
+    1815  swift::RefCounts<swift::RefCountBitsT<(swift::RefCountInlinedness)1>>::incrementSlow(swift::RefCountBitsT<(swift::RefCountInlinedness)1>, unsigned int
+    1655  swift_beginAccess  [libswiftCore.dylib]
+    1602  tryCast(swift::OpaqueValue*, swift::TargetMetadata<swift::InProcess> const*, swift::OpaqueValue*, swift::TargetMetadata<swift::InProcess> const*, swif
+    1525  objc_msgSend  [libobjcMsgSend.dylib]
+    1344  swift::Demangle::__runtime::Demangler::demangleType(__swift::__runtime::llvm::StringRef, std::__1::function<swift::Demangle::__runtime::Node* (swift::
+    1165  _platform_memmove  [libsystem_platform.dylib]
+    1164  Hasher._combine(_:)  [libswiftCore.dylib]
+    1156  swift_conformsToProtocolMaybeInstantiateSuperclasses(swift::TargetMetadata<swift::InProcess> const*, swift::TargetProtocolDescriptor<swift::InProcess>
+     867  swift::MetadataResponse performOnMetadataCache<swift::MetadataResponse, swift_checkMetadataState::CheckStateCallbacks>(swift::TargetMetadata<swift::In
+     855  specialized _pop<A>(from:as:count:)  [libswiftCore.dylib]
+
+=== volver (hasta el scroll): 22.8 s, 5325 muestras hilo principal (≈23.4 % de un núcleo)
+  -- inclusivo, funciones de Yala --
+    4058  main
+    1273  <deduplicated_symbol>
+     976  static SpotlightIndexService.reconcile(context:)
+     976  closure #1 in static SpotlightIndexService.scheduleReconcile(context:delay:)
+     974  specialized static SpotlightIndexService.desiredEntries(context:)
+     526  YalaApp.handleScenePhase(_:)
+     526  partial apply for closure #2 in YalaApp.body.getter
+     524  AppBootstrapper.handleBecameActive(context:)
+     493  closure #1 in static SpotlightIndexService.desiredEntries(context:)
+     247  specialized static SiriIntentContextCache.refresh(context:defaultCurrency:)
+     211  TrendChartView.liquidTrendChart.getter
+     211  TrendChartView.body.getter
+  -- exclusivo (hoja) --
+     269  objc_msgSend  [libobjcMsgSend.dylib]
+      95  Hasher._combine(_:)  [libswiftCore.dylib]
+      80  swift_beginAccess  [libswiftCore.dylib]
+      80  AG::Graph::propagate_dirty(AG::AttributeID)  [AttributeGraph]
+      75  objc_msgSend  [libobjcMsgSend1.dylib]
+      64  find(_:key:filter:)  [SwiftUICore]
+      62  mach_msg2_trap  [libsystem_kernel.dylib]
+      62  0x1a1633098  [libsqlite3.dylib]
+      61  _platform_memmove  [libsystem_platform.dylib]
+      61  AG::Graph::UpdateStack::update()  [AttributeGraph]
+      59  bool swift::RefCounts<swift::RefCountBitsT<(swift::RefCountInlinedness)1>>::doDecrementSlow<(swift::PerformDeinit)1>(swift::RefCountBitsT<(swift::RefC
+      58  swift_retain  [libswiftCore.dylib]
+
+=== scroll: 12.6 s, 11301 muestras hilo principal (≈89.4 % de un núcleo)
+  -- inclusivo, funciones de Yala --
+   10965  <deduplicated_symbol>
+   10333  closure #1 in PanelViewModel.scheduleRecalculation(reload:)
+    5076  PanelViewModel.fetchTransactionsInSlices()
+    2979  PanelViewModel.loadData(stamp:preloadedTransactions:)
+    2268  PanelViewModel.performCalculation()
+    2268  PanelViewModel.finishRecalculation()
+    2267  PanelViewModel.calculateTrendData(accounts:transactions:defaultCurrencyCode:context:sessionState:)
+    2247  PanelViewModel.buildCalculationContext(accounts:transactions:defaultCurrencyCode:)
+    1470  PanelViewModel.calculateAccountBalances()
+    1459  specialized static AccountBalanceCalculator.batchCalculateBalances(accounts:transactions:asOf:converter:)
+    1280  specialized static FilterService.matchesCriteria(_:criteria:)
+    1007  specialized static OrphanedRecordsService.orphanCount(in:context:)
+  -- exclusivo (hoja) --
+     315  swift_beginAccess  [libswiftCore.dylib]
+     311  bool swift::RefCounts<swift::RefCountBitsT<(swift::RefCountInlinedness)1>>::doDecrementSlow<(swift::PerformDeinit)1>(swift::RefCountBitsT<(swift::RefC
+     300  _platform_memmove  [libsystem_platform.dylib]
+     281  swift_getTypeByMangledName  [libswiftCore.dylib]
+     277  0x1a1633098  [libsqlite3.dylib]
+     254  swift::RefCounts<swift::RefCountBitsT<(swift::RefCountInlinedness)1>>::incrementSlow(swift::RefCountBitsT<(swift::RefCountInlinedness)1>, unsigned int
+     241  Hasher.init(_seed:)  [libswiftCore.dylib]
+     238  tryCast(swift::OpaqueValue*, swift::TargetMetadata<swift::InProcess> const*, swift::OpaqueValue*, swift::TargetMetadata<swift::InProcess> const*, swif
+     228  swift_conformsToProtocolMaybeInstantiateSuperclasses(swift::TargetMetadata<swift::InProcess> const*, swift::TargetProtocolDescriptor<swift::InProcess>
+     192  swift::Demangle::__runtime::Demangler::demangleType(__swift::__runtime::llvm::StringRef, std::__1::function<swift::Demangle::__runtime::Node* (swift::
+     165  Hasher.combine(bytes:)  [libswiftCore.dylib]
+     140  Hasher._finalize()  [libswiftCore.dylib]
+
+=== quieta tras scroll: 40.5 s, 40442 muestras hilo principal (≈100.0 % de un núcleo)
+  -- inclusivo, funciones de Yala --
+   40413  closure #1 in PanelViewModel.scheduleRecalculation(reload:)
+   40413  <deduplicated_symbol>
+   39756  PanelViewModel.performCalculation()
+   39756  PanelViewModel.finishRecalculation()
+   28883  PanelViewModel.calculateTrendData(accounts:transactions:defaultCurrencyCode:context:sessionState:)
+   10873  specialized PanelViewModel.calculateBudgetsWidget(budgets:transactions:defaultCurrencyCode:)
+   10872  specialized PanelViewModel.calculateBudgetSummary(budget:transactions:defaultCurrencyCode:)
+   10670  specialized static BudgetsViewModel.calculateSpending(budget:transactions:interval:adjustment:converter:)
+   10522  specialized static BudgetsViewModel.filterTransactions(_:forBudget:in:adjustment:)
+    8810  specialized static ProjectedFlowBuilder.build(_:context:)
+    8810  PanelViewModel.calculateTrendProjection(context:realPoints:liveAnchorValue:modelContext:now:)
+    8271  specialized static ProjectedFlowBuilder.othersRemaining(_:occurrences:)
+  -- exclusivo (hoja) --
+    2030  swift_getTypeByMangledName  [libswiftCore.dylib]
+    1866  bool swift::RefCounts<swift::RefCountBitsT<(swift::RefCountInlinedness)1>>::doDecrementSlow<(swift::PerformDeinit)1>(swift::RefCountBitsT<(swift::RefC
+    1601  swift::RefCounts<swift::RefCountBitsT<(swift::RefCountInlinedness)1>>::incrementSlow(swift::RefCountBitsT<(swift::RefCountInlinedness)1>, unsigned int
+    1407  tryCast(swift::OpaqueValue*, swift::TargetMetadata<swift::InProcess> const*, swift::OpaqueValue*, swift::TargetMetadata<swift::InProcess> const*, swif
+    1280  swift::Demangle::__runtime::Demangler::demangleType(__swift::__runtime::llvm::StringRef, std::__1::function<swift::Demangle::__runtime::Node* (swift::
+     994  swift_beginAccess  [libswiftCore.dylib]
+     951  _platform_memmove  [libsystem_platform.dylib]
+     756  swift::MetadataResponse performOnMetadataCache<swift::MetadataResponse, swift_checkMetadataState::CheckStateCallbacks>(swift::TargetMetadata<swift::In
+     727  specialized _pop<A>(from:as:count:)  [libswiftCore.dylib]
+     718  swift_conformsToProtocolMaybeInstantiateSuperclasses(swift::TargetMetadata<swift::InProcess> const*, swift::TargetProtocolDescriptor<swift::InProcess>
+     712  specialized static AnyKeyPath.== infix(_:_:)  [libswiftCore.dylib]
+     676  swift::Demangle::__runtime::Demangler::demangleOperator()  [libswiftCore.dylib]
+
+=== reposo inicial (incluye arranque): 28.7 s, 27006 muestras hilo principal (≈94.0 % de un núcleo)
+  -- inclusivo, funciones de Yala --
+   25740  <deduplicated_symbol>
+   16842  closure #1 in PanelViewModel.scheduleRecalculation(reload:)
+   14975  PanelViewModel.performCalculation()
+   14975  PanelViewModel.finishRecalculation()
+    6615  specialized static BudgetsViewModel.calculateSpending(budget:transactions:interval:adjustment:converter:)
+    6521  specialized static BudgetsViewModel.filterTransactions(_:forBudget:in:adjustment:)
+    6451  PanelViewModel.calculateTrendData(accounts:transactions:defaultCurrencyCode:context:sessionState:)
+    6192  static WidgetDataCache.rebuildPendingInStages()
+    5121  PanelViewModel.calculateHealthWidget(paidAmounts:)
+    5117  specialized static FinancialScoreCalculator.calculate(transactions:budgets:scheduledPayments:accounts:paidAmounts:period:customRange:preferredCurrency
+    3405  closure #8 in static WidgetDataCache.buildSnapshot(context:now:stages:)
+    3397  specialized static WidgetDataCache.buildPeriodSummary(transactions:periodStart:periodEnd:currencyCode:allTransactionsForBalance:adjustment:converter:)
+  -- exclusivo (hoja) --
+    1183  swift_getTypeByMangledName  [libswiftCore.dylib]
+     980  bool swift::RefCounts<swift::RefCountBitsT<(swift::RefCountInlinedness)1>>::doDecrementSlow<(swift::PerformDeinit)1>(swift::RefCountBitsT<(swift::RefC
+     863  swift::RefCounts<swift::RefCountBitsT<(swift::RefCountInlinedness)1>>::incrementSlow(swift::RefCountBitsT<(swift::RefCountInlinedness)1>, unsigned int
+     814  tryCast(swift::OpaqueValue*, swift::TargetMetadata<swift::InProcess> const*, swift::OpaqueValue*, swift::TargetMetadata<swift::InProcess> const*, swif
+     678  swift::Demangle::__runtime::Demangler::demangleType(__swift::__runtime::llvm::StringRef, std::__1::function<swift::Demangle::__runtime::Node* (swift::
+     673  swift_beginAccess  [libswiftCore.dylib]
+     655  _platform_memmove  [libsystem_platform.dylib]
+     535  swift_conformsToProtocolMaybeInstantiateSuperclasses(swift::TargetMetadata<swift::InProcess> const*, swift::TargetProtocolDescriptor<swift::InProcess>
+     426  swift::MetadataResponse performOnMetadataCache<swift::MetadataResponse, swift_checkMetadataState::CheckStateCallbacks>(swift::TargetMetadata<swift::In
+     407  specialized static AnyKeyPath.== infix(_:_:)  [libswiftCore.dylib]
+     405  specialized _pop<A>(from:as:count:)  [libswiftCore.dylib]
+     398  swift::Demangle::__runtime::Demangler::demangleOperator()  [libswiftCore.dylib]

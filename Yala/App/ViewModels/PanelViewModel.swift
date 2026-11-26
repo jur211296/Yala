@@ -2951,6 +2951,9 @@ final class PanelViewModel {
     func setBackground(_ value: Bool) {
         isInBackground = value
         if value {
+            // Un recálculo en vuelo que el freno corta queda a medias: la vuelta lo rehace (lote 1 de eficiencia; antes la
+            // vuelta recargaba siempre y no hacía falta apuntarlo).
+            if recalculateTask != nil || pendingReload || missedWhileInactive { hasInterruptedWork = true }
             recalculateTask?.cancel()
             recalculateTask = nil
             pendingReload = false
@@ -2960,7 +2963,7 @@ final class PanelViewModel {
 
     /// La app pasó a activa (`UIApplication.didBecomeActiveNotification`, `PanelActivationObserver`): repite el
     /// recálculo que el freno descartó mientras no lo estaba, con la recarga si alguno la pedía. Sin nada pendiente,
-    /// no hace nada: la vuelta a primer plano normal ya recarga por su cuenta.
+    /// no hace nada: la vuelta a primer plano normal ya comprueba la firma por su cuenta (`VueltaAPrimerPlano`).
     func applicationDidBecomeActive() {
         guard missedWhileInactive, !isInBackground else { return }
         missedWhileInactive = false
@@ -3044,7 +3047,9 @@ final class PanelViewModel {
     /// del arranque retrasaba así el primer contenido del Panel (card `tablero-el-primer-contenido-del-panel-espera-a-q-h1hy`).
     /// Una ráfaga dentro de la ventana sigue siendo UN cálculo, que corre con todo lo pedido (`pendingReload`).
     private func scheduleRecalculation(reload: Bool) {
-        guard !isInBackground else { return }
+        // Con el freno puesto no se calcula, pero se apunta: la vuelta a primer plano solo recarga si su firma cambió, y un
+        // recálculo de filtros o de tasas pedido con la app fuera no la cambia (lote 1 de eficiencia).
+        guard !isInBackground else { hasInterruptedWork = true; return }
         // Card 7e60: un Panel de un almacén ya soltado no recalcula — sus filas en memoria son de ese almacén.
         guard !boundStore.isDetached else { return }
         // Merge 2.2 → 2.3: el freno es «primer plano» (2.3) y lo que descarta se repite al activarse (2.2).

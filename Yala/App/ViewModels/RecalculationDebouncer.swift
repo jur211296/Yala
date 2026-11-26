@@ -36,6 +36,9 @@ final class RecalculationDebouncer {
     private var pendingReload = false
     /// Suprime el recálculo en segundo plano (trabajo inútil y traps de snapshot).
     private(set) var isInBackground = false
+    /// Hay un recálculo pedido que no corrió: en su espera, cortado al ponerse el freno o descartado con la app fuera. La
+    /// vuelta a primer plano lo mira para decidir si recarga (lote 1 de eficiencia: antes recargaba siempre).
+    private(set) var hasUnfinishedWork = false
 
     #if DEBUG
     /// Peticiones que entraron en la ventana actual. Solo para la traza: el guion de device-QA de dos
@@ -62,6 +65,7 @@ final class RecalculationDebouncer {
     /// a leer del disco (`true` si ALGUNA petición de la ventana lo pidió) y corre como mucho una vez
     /// por ventana.
     func schedule(reload: Bool, perform: @escaping (_ reload: Bool) -> Void) {
+        hasUnfinishedWork = true
         guard !isInBackground else { return }
         guard isApplicationActive() else { return }
         if reload { pendingReload = true }
@@ -80,6 +84,7 @@ final class RecalculationDebouncer {
             print("RecalculationDebouncer[\(label)]: un recálculo para \(requestsInWindow) peticiones (reload: \(shouldReload))")
             requestsInWindow = 0
             #endif
+            hasUnfinishedWork = false
             perform(shouldReload)
         }
     }

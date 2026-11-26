@@ -54,7 +54,13 @@ struct RecordsStandaloneView: View {
     @State private var recalculateTask: Task<Void, Never>?
     @State private var pendingReload = false
     @Environment(\.scenePhase) private var scenePhase
+    /// `false` con Registros montado detrás de otra pestaña: al volver a primer plano no calcula (lote 1 de eficiencia).
+    @Environment(\.isRootPageShown) private var isRootPageShown
     @State private var isInBackground = false
+    /// Lo que tenía el mundo al irse la app: volver solo recarga si cambió (`FrescuraAlVolver`, lote 1 de eficiencia).
+    @State private var frescura = FrescuraAlVolver()
+    /// Hay una pasada pedida que aún no terminó (en su espera, cortada por el freno o descartada con la app fuera).
+    @State private var calculationInFlight = false
     /// Qué columna enseña el split cuando está plegado (ventana compacta). `.detail` solo mientras hay
     /// un registro abierto en columna: al estrecharse la ventana, el registro sigue a la vista, empujado.
     @State private var compactColumn: NavigationSplitViewColumn = .sidebar
@@ -146,7 +152,7 @@ struct RecordsStandaloneView: View {
             ))
             .onAppear {
                 dataViewModel.setContext(modelContext)
-                performRecalculation()
+                appearAfterSetContext()
             }
             .onDisappear {
                 recalculateTask?.cancel()
@@ -161,22 +167,7 @@ struct RecordsStandaloneView: View {
             .onChange(of: sessionState.dataVersion) { _, _ in
                 reloadAndRecalculate()
             }
-            .onChange(of: scenePhase) { _, newPhase in
-                switch newPhase {
-                case .background, .inactive:
-                    isInBackground = true
-                    recalculateTask?.cancel()
-                case .active:
-                    // Con la app aún sin activar, espera a que lo esté en vez de dejar el freno puesto (`ForegroundResume`).
-                    ForegroundResume.whenApplicationActive("registros") {
-                        guard isInBackground else { return }
-                        isInBackground = false
-                        reloadAndRecalculate()
-                    }
-                @unknown default:
-                    break
-                }
-            }
+            .onChange(of: scenePhase) { _, newPhase in handleScenePhase(newPhase) }
             .aiConsentAlert(isPresented: $showAIConsentAlert, pendingInput: $pendingAIInput) { input in
                 switch input {
                 case .voice: showVoiceRecording = true
@@ -470,6 +461,8 @@ struct RecordsStandaloneView: View {
 
     private func scheduleRecalculation(reload: Bool) {
         if reload { pendingReload = true }
+        // Pedida y no terminada: si el freno la descarta o la corta, la vuelta a primer plano la rehace.
+        calculationInFlight = true
         guard !isInBackground else { return }
         recalculateTask?.cancel()
         recalculateTask = Task { @MainActor in
@@ -481,6 +474,64 @@ struct RecordsStandaloneView: View {
                 pendingReload = false
             }
             performCalculation()
+            calculationInFlight = false
+        }
+    }
+
+    // MARK: - Vuelta a primer plano (lote 1 de eficiencia)
+
+    /// Lo que puede cambiar la lista sin que Registros lo oiga mientras la app está fuera.
+    private func currentFirma() -> FirmaAlVolver {
+        FirmaAlVolver.tomar(
+            dataVersion: sessionState.dataVersion, storeSaves: StoreSaveCounter.shared.count, now: .now, calendar: .current)
+    }
+
+    /// Irse pone el freno y apunta la firma; volver solo recarga si algo cambió, y oculta no calcula: lo hará al aparecer.
+    /// Antes cada vuelta recargaba y recalculaba la lista entera, también con Registros detrás de otra pestaña.
+    private func handleScenePhase(_ newPhase: ScenePhase) {
+        switch newPhase {
+        case .background, .inactive:
+            frescura.alIrse(currentFirma())
+            if recalculateTask != nil { recalculateTask?.cancel() }
+            isInBackground = true
+        case .active:
+            guard isInBackground else { return }
+            VueltaAPrimerPlano.alVolver(
+                "registros",
+                paginaVisible: isRootPageShown,
+                soltarFreno: { isInBackground = false },
+                comprobar: { reloadIfChangedWhileAway() },
+                alQuedarOculta: { frescura.alVolverOculta() }
+            )
+        @unknown default:
+            break
+        }
+    }
+
+    private func reloadIfChangedWhileAway() {
+        let reload = frescura.alVolverVisible(
+            ahora: currentFirma(),
+            trabajoSinTerminar: calculationInFlight || pendingReload,
+            cambiosSinGuardar: modelContext.hasChanges
+        )
+        #if DEBUG
+        print("RecordsStandaloneView: volver → \(reload ? "recarga" : "sin cambios, no recarga")")
+        #endif
+        if reload { reloadAndRecalculate() }
+    }
+
+    /// Aparecer tras una vuelta con la página oculta: recarga si algo cambió desde que la app se fue; si no, la pasada de
+    /// siempre sobre lo cargado.
+    private func appearAfterSetContext() {
+        let reload = frescura.alAparecer(
+            ahora: currentFirma(),
+            trabajoSinTerminar: calculationInFlight || pendingReload,
+            cambiosSinGuardar: modelContext.hasChanges
+        )
+        if reload == true {
+            reloadAndRecalculate()
+        } else {
+            performRecalculation()
         }
     }
 
