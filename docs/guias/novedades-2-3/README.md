@@ -1,16 +1,18 @@
-# Guía de novedades 2.3 (TestFlight 2.3 (10))
+# Guía de novedades 2.3 (TestFlight 2.3 (11))
 
-Artifact para que Jürgen recorra como usuario antiguo o nuevo todo lo que cambió de la 2.2 publicada a la 2.3 (9) de
-TestFlight, con lo que todavía no llegó, y deje notas «me gusta / mejorar / bug»: https://claude.ai/artifact/G74UBFLDowih9f2Rt5xaoS
-(cuenta de la Mini: solo se publica desde la Mini). La versión de la 2.3 (7) queda en
-https://claude.ai/artifact/3PhSbBHvWRMX3pohZw5Gty, de la cuenta de la Max.
+Artifact para que Jürgen recorra como usuario antiguo o nuevo todo lo que cambió de la 2.2 publicada a la 2.3 (11) de
+TestFlight, con lo que todavía no llegó, y deje notas «me gusta / mejorar / bug»: https://claude.ai/artifact/NqVZFcKkUpXLP6p44QFtzJ
+(publicada desde la Max el 26-nov, pública con enlace). Las versiones anteriores quedan en
+https://claude.ai/artifact/G74UBFLDowih9f2Rt5xaoS (hasta la 2.3 (10), cuenta de la Mini) y
+https://claude.ai/artifact/3PhSbBHvWRMX3pohZw5Gty (2.3 (7)); la sesión de la Max solo puede leerlas, por eso la
+build 11 estrena URL. La colección `notas` de la anterior estaba vacía el 26-nov: no se perdió ninguna nota.
 
 Sus notas se guardan en la base del artifact, colección `notas` (un documento por ítem, con `veredicto`,
 `comentario`, `titulo` y `area`). Una sesión las lee con `ArtifactData list` sobre esa URL.
 
 ## Qué hay aquí
 
-- `inventario.json`: los 375 ítems (sin capturas). Campos: `id` (`<PR>-<n>`, estable entre versiones: las notas se
+- `inventario.json`: los 401 ítems (sin capturas). Campos: `id` (`<PR>-<n>`, estable entre versiones: las notas se
   guardan por id), `pr`, `titulo`, `area`, `seccion` (`nuevo` · `existente` · `ambos` · `fuera`), `tipo`, `ruta`,
   `que_cambio`, `por_que`, `estado` (`listo` · `activable` · `todavia_no` · `retirado` · `fuera`), `activar`, `pro`, `como_probar`,
   `orden` (recorrido del usuario nuevo), `build` (`1` a `8` · `web` · `no`), `nuevo_guia` y `cambio_guia` (qué cambió
@@ -113,3 +115,21 @@ Sus notas se guardan en la base del artifact, colección `notas` (un documento p
 - **Capturas:** se conservan las anteriores y se suma 1 del simulador: «Esto leí» con la moneda cambiada a dólares.
 - **Recorrido del usuario antiguo:** suma 2 pasos («Esto leí» con moneda y la hoja de varios).
 - **Script:** `actualizar_2026_11_25_build10.py` aplica el delta (ya aplicado; no se repite).
+
+## Actualización del 26-nov-2026 (TestFlight 2.3 (11))
+
+- **Alcance:** los PR mergeados en `2.3` desde el corte de la 2.3 (10) hasta el de la 2.3 (11), con la oferta Pro y el
+  mazo centrado dentro. 8 PR revisados: 16 ítems nuevos de 4 PR (los tres lotes de Primeros pasos del iPhone 14 y la
+  oferta del mes gratis con el mazo centrado), 3 cambios sobre ítems existentes («Solo gastos» empieza de cero, el
+  final con la oferta dentro y el paso 7) y 4 PR descartados (build 10, bitácora, maquetas y barrido) con su motivo en
+  `delta_2026_11_26_build11.json`.
+- **iCloud:** la build 11 no escribe campos nuevos; el esquema de Producción de `yala` y `yala_dev` coincide con el del
+  repo (`cktool export-schema`, 26-nov).
+- **Medido en producción el 26-nov:** `/config` del gateway igual que el 25-nov (`aiCloudExploreRolloutPercent` 100,
+  `appleWebSignInRolloutPercent` 0); `mcp.yala-app.pe` y `app.yala-app.pe` responden 200.
+- **Capturas:** se conservan las 26 anteriores y se suman 7 del simulador con el código de la build: «Otra moneda», la
+  fila de pasos, «¡Listo por ahora!», «… viven en Más» con la barra desplegada, el foco del paso 6, el mazo centrado
+  con saludo y la oferta del mes gratis en la tarjeta final.
+- **Recorridos:** el del usuario nuevo suma 9 pasos de Primeros pasos; el del antiguo, 2 (widget de pagos y nombre del
+  presupuesto).
+- **Script:** `actualizar_2026_11_26_build11.py` aplica el delta (ya aplicado; no se repite).

@@ -1,0 +1,20 @@
+Novedades desde la build 2.3 (10), casi todo en Primeros pasos:
+• Paso 1: el mazo va centrado, con un saludo con tu nombre («Hola, Ana»). Al crear u omitir la cuenta, el saludo se va y el mazo sube.
+• Al terminar Primeros pasos, si puedes usar la prueba de Yala Pro, el mes gratis va dentro de la tarjeta final: «Empezar mi mes gratis» abre los planes, «Ahora no» pliega la oferta y «Cerrar» quita la tarjeta. La hoja de Pro ya no sube sola.
+• La tarjeta de Pro del Panel ofrece «Empezar mes gratis» si aún puedes usar la prueba.
+• «Solo gastos» empieza de cero: ya no se crea «Gastos Soles» y tu primera cuenta la creas en el paso 1.
+• Los pasos 5 y 7 quedan hechos al ver la intro de Grupos o pasar las historias hasta «Terminar».
+• Las historias responden al toque en toda la pantalla, no solo sobre el texto.
+• Los avisos «… viven en Más» despliegan la barra y marcan la pestaña. En el paso 6, «Entendido» te devuelve al Panel.
+• La intro de Grupos no vuelve a salir al cerrar sesión y volver a entrar.
+• Si dejas pasos para después, el final dice «¡Listo por ahora!» y el confeti ya no tapa «Cerrar».
+• Paso 1: «Otra moneda», con los nombres como se escriben («sol peruano»).
+• Las siete etiquetas de la fila de pasos tienen el mismo tamaño.
+• El widget de Pagos planificados muestra el próximo pago aunque venza el mes que viene.
+• El nombre de un presupuesto largo se lee entero, en dos líneas.
+• Si la App Store no responde, los planes dicen «Ahora no podemos mostrar los precios» sin culpar a tu conexión.
+
+Qué probar:
+1. Con una cuenta de Sandbox que no haya usado la prueba: completa Primeros pasos, toca «Empezar mi mes gratis» y llega a la hoja de la App Store con «1 mes gratis». No confirmes la compra si no quieres activar la prueba.
+2. Elimina tu cuenta en Ajustes y empieza de nuevo con una cuenta nueva, una vez en «Solo gastos» y otra en «Gastos e ingresos». Mira el saludo del paso 1 y recorre los siete pasos.
+Si algo falla, envía una captura desde TestFlight.
