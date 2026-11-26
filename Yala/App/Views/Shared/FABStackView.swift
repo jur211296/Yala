@@ -40,6 +40,8 @@ struct FABStackView: View {
     // MARK: - Internal State
 
     @State private var showFABMenu = false
+    /// Los botones del menú laten solo con el menú abierto, su página a la vista y la app activa (lote 2 de eficiencia).
+    @State private var menuBeating = false
     @State private var showAIConsentAlert = false
     @State private var pendingAIInput: PendingAIInput = .voice
     /// L13-8 · «Grupo» sin ningún grupo: la hoja que explica el paso que falta.
@@ -105,6 +107,7 @@ struct FABStackView: View {
             }
             // Implícita: en una pestaña un `withAnimation` no anima (card oxyr).
             .animation(reduceMotion ? nil : Self.fabSpring, value: showFABMenu)
+            .animaSoloVisible($menuBeating, si: showFABMenu && !reduceMotion)
             .padding(.trailing, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)
             .onChange(of: navigation.selectedMainTab) { _, _ in
@@ -394,7 +397,7 @@ struct FABStackView: View {
             .shadow(color: (isLocked ? DS.Semantic.disabledForeground : color).opacity(0.3), radius: DS.Shadow.medium.radius, x: 0, y: DS.Shadow.medium.y)
         }
         .buttonStyle(.plain)
-        .phaseAnimator(reduceMotion ? [false] : [false, true]) { content, phase in
+        .phaseAnimator(menuBeating ? [false, true] : [false]) { content, phase in
             content.scaleEffect(phase ? 1.03 : 1.0)
         } animation: { _ in
             .easeInOut(duration: 0.6).repeatForever(autoreverses: true)

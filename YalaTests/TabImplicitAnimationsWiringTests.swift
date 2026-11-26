@@ -195,7 +195,7 @@ struct TabImplicitAnimationsWiringTests {
         ("Yala/App/Tips/CoachMarkOverlay.swift",
          ".animation(reduceMotion ? nil : DS.Animation.selection, value: currentIndex)"),
         ("Yala/App/Views/Shared/SkeletonView.swift",
-         ".animation(reduceMotion ? nil : Self.sweep, value: phase)"),
+         ".animation(sweeping ? .linear(duration: 1.5).repeatForever(autoreverses: false) : nil, value: sweeping)"),
     ]
 
     /// Card C2: los sitios de la lista ya no envuelven el cambio en un `withAnimation` / `dsWithAnimation`, que dentro de

@@ -139,3 +139,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de correr tests, el gate o
 - [Los scans leen el árbol, no el binario](feedback_las_pruebas_de_cableado_leen_el_arbol.md) — test-without-building con otra rama: rojos falsos en los WiringTests.
 - [Perfilar ciclos en el iPhone con xctrace](reference_perfilar_ciclos_en_el_iphone_con_xctrace.md) — volver sin relanzar, `--launch` y no `--attach`, signposts en ventana, consola con `--`, informes de iOS.
 - [Calor: con cable y por incrementos](feedback_medir_calor_con_cable_y_por_incrementos.md) — Jürgen prefiere comparar ventanas y antes-después, no desconectar.
+- [El «antes» del informe vale si el código no cambió](feedback_el_antes_de_un_informe_vale_si_el_codigo_no_cambio.md) — git log del commit medido a la base sobre Yala/App; 0 ⇒ reusar E/J y medir solo el después.

@@ -53,7 +53,12 @@ struct TrendChartView: View {
     /// barras se quedan.
     @Environment(\.amountsHidden) private var amountsHidden
     @State private var draggingDate: Date?  // For transient drag state
+    /// El halo del saldo vivo late dos veces y se queda quieto, y solo con la gráfica a la vista y la app activa
+    /// (`animaSoloVisible`, lote 2 de eficiencia, 26-nov-2026): latiendo sin fin, con el Panel montado detrás de otra
+    /// pestaña, obligaba a repintar la app cada fotograma (35-38 % de un núcleo en reposo en el iPhone 14).
     @State private var pulseAnimate = false
+    /// Lo que VoiceOver dice de la gráfica, calculado cuando cambian sus datos y no en cada pasada del `body`.
+    @State private var spoken = SpokenTrend.empty
     @State private var showEducationSheet = false
     /// Ancho de la píldora «Hoy»: con él se mantiene dentro del área de dibujo y no tapa la escala de la derecha
     /// (UX 2.2 · L3-17).
@@ -69,34 +74,25 @@ struct TrendChartView: View {
         )
     }
 
-    /// Los puntos que se dicen: los reales (sin suavizar) y, con saldo vivo, el de hoy, que es la cifra de la tarjeta.
-    private var spokenPoints: [(date: Date, value: Double)] {
-        var points = (rawPoints.isEmpty ? trendPoints : rawPoints).map { (date: $0.date, value: $0.value) }
-        if let liveAnchor, liveAnchor.date > (points.map(\.date).max() ?? .distantPast) {
-            points.append((date: liveAnchor.date, value: liveAnchor.value))
-        }
-        return points
-    }
-
     private var amountFormat: ChartAmountFormat {
         appPreferences.chartAmountFormat(currencyCode: currencyCode, hidden: amountsHidden)
     }
 
-    /// V1 de la decisión 26 de 2.3: de dónde a dónde fue y el punto más alto o más bajo, con cifras («7 puntos» antes).
-    private var spokenSummary: String {
-        ChartSpokenSummary.trend(points: spokenPoints, grouping: grouping, format: amountFormat)
+    /// De qué sale lo que se dice: si no cambia, el resumen y los puntos de `spoken` siguen valiendo.
+    private var spokenKey: SpokenTrend.Key {
+        SpokenTrend.Key(trendPoints: trendPoints, rawPoints: rawPoints, liveAnchor: liveAnchor,
+                        grouping: grouping, format: amountFormat)
     }
 
-    /// V2: la línea para el rotor «Describir gráfica» y el sonido.
+    /// V2: la línea para el rotor «Describir gráfica» y el sonido, con lo ya calculado.
     private var chartDescriptor: ChartAccessibilityDescriptor {
         ChartAccessibilityDescriptor(
             title: L10n.Accessibility.trendChart(trendType.displayName),
-            summary: spokenSummary,
+            summary: spoken.summary,
             xTitle: L10n.Accessibility.Chart.axisDate,
             xAxis: .dates(grouping: grouping),
             yTitle: trendType.displayName,
-            series: [.init(name: trendType.displayName, isContinuous: true,
-                           points: spokenPoints.map { .at($0.date, $0.value) })],
+            series: [.init(name: trendType.displayName, isContinuous: true, points: spoken.points)],
             format: amountFormat
         )
     }
@@ -384,18 +380,14 @@ struct TrendChartView: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(L10n.Accessibility.trendChart(trendType.displayName))
-        .accessibilityValue(spokenSummary)
+        .accessibilityValue(spoken.summary)
         .accessibilityChartDescriptor(chartDescriptor)
         .accessibilityIdentifier("trend_chart")
         .compactChartAxes(compact: compact)
         .frame(height: chartHeight)
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { chartWidth = $0 }
-        .onAppear {
-            if !reduceMotion { pulseAnimate = true }
-        }
-        .onDisappear {
-            pulseAnimate = false
-        }
+        .onChange(of: spokenKey, initial: true) { _, key in spoken = SpokenTrend.make(key) }
+        .animaSoloVisible($pulseAnimate, si: !reduceMotion && !compact && liveAnchor != nil)
         .sheet(isPresented: $showEducationSheet) {
             if let breakdown = liveAnchorBreakdown,
                let anchor = liveAnchor {
@@ -460,12 +452,7 @@ struct TrendChartView: View {
                         .frame(width: 18, height: 18)
                         .scaleEffect(pulseAnimate ? 1.3 : 1.0)
                         .opacity(pulseAnimate ? 0.0 : 0.25)
-                        .animation(
-                            reduceMotion ? nil :
-                                .easeInOut(duration: 1.4)
-                                .repeatForever(autoreverses: false),
-                            value: pulseAnimate
-                        )
+                        .animation(SpokenTrend.pulse(active: pulseAnimate), value: pulseAnimate)
 
                     // Ring exterior fino
                     Circle()
@@ -766,5 +753,39 @@ private extension View {
         } else {
             self
         }
+    }
+}
+
+/// Lo que VoiceOver dice de la tendencia (decisión 26 de 2.3) y el pulso del saldo vivo, fuera del `body`.
+struct SpokenTrend: Equatable {
+    struct Key: Equatable {
+        let trendPoints: [PanelViewModel.BarPoint]
+        let rawPoints: [PanelViewModel.BarPoint]
+        let liveAnchor: PanelViewModel.BarPoint?
+        let grouping: TrendGrouping
+        let format: ChartAmountFormat
+    }
+
+    let summary: String
+    let points: [ChartAccessibilityDescriptor.Point]
+
+    static let empty = SpokenTrend(summary: "", points: [])
+
+    /// Los puntos que se dicen: los reales (sin suavizar) y, con saldo vivo, el de hoy, que es la cifra de la tarjeta.
+    /// V1: de dónde a dónde fue y el punto más alto o más bajo, con cifras («7 puntos» antes).
+    static func make(_ key: Key) -> SpokenTrend {
+        var said = (key.rawPoints.isEmpty ? key.trendPoints : key.rawPoints).map { (date: $0.date, value: $0.value) }
+        if let anchor = key.liveAnchor, anchor.date > (said.map(\.date).max() ?? .distantPast) {
+            said.append((date: anchor.date, value: anchor.value))
+        }
+        return SpokenTrend(
+            summary: ChartSpokenSummary.trend(points: said, grouping: key.grouping, format: key.format),
+            points: said.map { .at($0.date, $0.value) }
+        )
+    }
+
+    /// Dos latidos del halo y quieto; apagado (o con «Reducir movimiento»), nada.
+    static func pulse(active: Bool) -> Animation? {
+        active ? .easeInOut(duration: 1.4).repeatCount(2, autoreverses: false) : nil
     }
 }

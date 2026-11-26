@@ -1575,3 +1575,4 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | zone-decisions-still-per-row | backlog | tickets/backlog/zone-decisions-still-per-row.md |
 | 2026-11-26-maquetas-dividir-boleta-sin-grupo | done | tickets/done/2026-11-26-maquetas-dividir-boleta-sin-grupo.md |
 | 2026-11-26-deudas-directas-con-personas | done | tickets/done/2026-11-26-deudas-directas-con-personas.md |
+| 2026-11-26-eficiencia-2-animaciones-solo-visibles | done | tickets/done/2026-11-26-eficiencia-2-animaciones-solo-visibles.md |
