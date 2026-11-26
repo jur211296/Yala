@@ -5,10 +5,13 @@
 //  Detalle read-only de un gasto compartido (Grupos), propuesta B de
 //  `group-expense-views-redesign` («recibo»): lo que se abre a buscar va primero.
 //
-//  1. Cabecera: categoría, descripción, total y fecha.
-//  2. «Tu parte»: una frase con lo que te toca («Le debes a Ana» · S/ 40).
-//  3. «Reparto»: la lista de quién pone cuánto; la barra por persona, solo si no es a partes iguales.
-//  4. Detalles: categoría, nota y, si el gasto llegó a tu registro personal, dónde quedó.
+//  1. Cabecera compacta, como el detalle de un registro personal: icono y total en una línea, descripción · fecha.
+//  2. Una tarjeta con «Tu parte» (una frase con lo que te toca: «Le debes a Ana» · S/ 40) y, debajo, el reparto:
+//     quién pone cuánto y su tipo real («Todo tuyo», «Partes iguales»…); la barra, solo con partes distintas.
+//  3. Detalles: categoría, nota y, si el gasto llegó a tu registro personal, dónde quedó.
+//
+//  Desde el 2026-11-26 (pedido de Jürgen) lo importante cabe a media altura, y en grande las tarjetas se despegan
+//  del fondo del tema en vez de quedar planas sobre el de la hoja.
 //
 //  La edición sigue siendo un paso aparte (botón Editar → el padre presenta
 //  GroupExpenseFormView en el `onDismiss`): un gasto de grupo lo ven todos los miembros,
@@ -50,12 +53,19 @@ struct GroupExpenseDetailSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(AppPreferences.self) private var appPreferences
 
-    @ScaledMetric(relativeTo: .body) private var avatarSize: CGFloat = 32 // A11Y-DT: @ScaledMetric
+    @Environment(\.usesLargeSheets) private var usesLargeSheets
+
+    @ScaledMetric(relativeTo: .body) private var avatarSize: CGFloat = 28 // A11Y-DT: @ScaledMetric
+
+    @State private var selectedDetent: PresentationDetent = .medium
+
+    /// A media altura, el cristal del sistema; en grande, el fondo del tema, para que las tarjetas no queden planas.
+    private var isLargeDetent: Bool { selectedDetent == .large || usesLargeSheets }
 
     var body: some View {
         detailContent
             // A media pantalla, como el detalle de un registro (lienzo «Una sola Yala»); se estira para ver el resto.
-            .yalaSheetDetents([.medium, .large])
+            .yalaSheetDetents([.medium, .large], selection: $selectedDetent)
             .presentationDragIndicator(.visible)
     }
 
@@ -64,15 +74,16 @@ struct GroupExpenseDetailSheet: View {
     private var detailContent: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: DS.Spacing.lg) {
+                VStack(spacing: DS.Spacing.md) {
                     hero
-                    yourPartCard
-                    breakdownCard
+                    splitCard
                     detailsCard
                 }
                 .padding(.horizontal, DS.Spacing.lg)
-                .padding(.top, DS.Spacing.sm)
+                .padding(.top, DS.Spacing.xs)
                 .padding(.bottom, DS.Spacing.xl)
+                .frame(maxWidth: DS.Adaptive.readableWidth)
+                .frame(maxWidth: .infinity)
             }
             .scrollBounceBehavior(.basedOnSize)
             .navigationBarTitleDisplayMode(.inline)
@@ -92,7 +103,7 @@ struct GroupExpenseDetailSheet: View {
                     .accessibilityIdentifier("group_expense_detail_edit")
                 }
             }
-            .yalaScreenBackground(.partialSheet)
+            .yalaScreenBackground(isLargeDetent ? .subtle : .transparent)
         }
         .accessibilityIdentifier("group_expense_detail_sheet")
     }
@@ -122,22 +133,22 @@ struct GroupExpenseDetailSheet: View {
         displayName(for: expense.paidByMemberID)
     }
 
+    /// El tipo de reparto que dicen los montos reales, no solo el tipo guardado: un «es todo de Pia» se guarda como
+    /// `equal` con un único participante y salía «Partes iguales» (`GroupSplitLabelLogic`).
+    private var splitKind: GroupSplitLabelLogic.Kind {
+        GroupSplitLabelLogic.kind(
+            splitType: expense.splitType,
+            shares: allShares.map { (memberID: $0.memberID, amount: $0.amount) },
+            currentMemberID: currentMemberID
+        )
+    }
+
     private var splitTypeLabel: String {
-        switch expense.splitType {
-        case "percentage": return L10n.Split.typePercentage
-        case "exact": return L10n.Split.typeExact
-        case "shares": return L10n.Split.typeShares
-        default: return L10n.Split.typeEqual
-        }
+        GruposPulidoDivisionDetalleText.splitLabel(for: splitKind) { displayName(for: $0) }
     }
 
     private var splitTypeIcon: String {
-        switch expense.splitType {
-        case "percentage": return "percent"
-        case "exact": return "number"
-        case "shares": return "chart.pie.fill"
-        default: return "equal.circle.fill"
-        }
+        GroupSplitLabelLogic.iconName(for: splitKind)
     }
 
     /// Subcategoría del bridge personal (si la auto-match fue exitosa y no es de sistema).
@@ -214,35 +225,40 @@ struct GroupExpenseDetailSheet: View {
 
     // MARK: - Hero
 
+    /// Como el detalle de un registro personal: icono y total en una línea, descripción · fecha debajo.
     private var hero: some View {
         VStack(spacing: DS.Spacing.xs) {
-            heroBadge
-                .padding(.bottom, DS.Spacing.xxs)
-
-            let desc = expense.expenseDescription.trimmingCharacters(in: .whitespacesAndNewlines)
-            if !desc.isEmpty {
-                Text(desc)
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.primary)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2)
+            HStack(spacing: DS.Spacing.sm) {
+                heroBadge
+                AmountText(
+                    value: expense.amount,
+                    currencyCode: expense.currencyCode,
+                    font: DS.Typography.largeTitle,
+                    secondaryFont: DS.Typography.body,
+                    tint: .primary,
+                    forceFullPrecision: true
+                )
             }
-
-            AmountText(
-                value: expense.amount,
-                currencyCode: expense.currencyCode,
-                font: DS.Typography.largeTitle,
-                secondaryFont: DS.Typography.body,
-                tint: .primary,
-                forceFullPrecision: true
-            )
-
-            Text(Self.dateFormatter.string(from: expense.date))
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
+            descriptionAndDateLine
         }
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .combine)
+    }
+
+    /// «Descripción · fecha» en una línea; sin descripción queda solo la fecha.
+    private var descriptionAndDateLine: some View {
+        let desc = expense.expenseDescription.trimmingCharacters(in: .whitespacesAndNewlines)
+        let datePart = Text(Self.dateFormatter.string(from: expense.date)).foregroundStyle(.secondary)
+        return Group {
+            if desc.isEmpty {
+                datePart
+            } else {
+                Text("\(Text(desc).foregroundStyle(.primary))\(Text(" · ").foregroundStyle(.secondary))\(datePart)")
+            }
+        }
+        .font(DS.Typography.subheadline)
+        .multilineTextAlignment(.center)
+        .lineLimit(2)
     }
 
     /// Fill sólido: color de la categoría resuelta (bridge o nombre del creador), sino un
@@ -262,28 +278,39 @@ struct GroupExpenseDetailSheet: View {
         }
     }
 
-    // MARK: - Tu parte
+    // MARK: - Tarjeta del reparto: tu parte + quién pone cuánto
+
+    private var splitCard: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.none) {
+            if status != .identityUnresolved {
+                yourPartRow
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.vertical, DS.Spacing.md)
+                Divider()
+                    .padding(.leading, DS.Spacing.lg)
+            }
+            breakdownSection
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.md)
+        }
+        .background(
+            RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
+                .fill(.thCard)
+        )
+    }
 
     /// Lo que te toca en una frase. Sin identidad resuelta no se pinta: afirmar algo sin
     /// saber quién eres es el bug de device del 2026-08-28 (`PersonalShareStatus`).
     @ViewBuilder
-    private var yourPartCard: some View {
+    private var yourPartRow: some View {
         switch status {
         case .youOwe(let amount):
-            yourPartContent(
-                sentence: L10n.Groups.Card.youOwe(payerName),
-                amount: amount,
-                // En el color del texto, te deban o debas, como la fila de la lista (Jürgen, 2026-10-30).
-                tint: Color.primary
-            )
+            // En el color del texto, te deban o debas, como la fila de la lista (Jürgen, 2026-10-30).
+            yourPartContent(sentence: L10n.Groups.Card.youOwe(payerName), amount: amount)
         case .youAreOwed(let amount):
-            yourPartContent(
-                sentence: owedToYouSentence,
-                amount: amount,
-                tint: Color.primary
-            )
+            yourPartContent(sentence: owedToYouSentence, amount: amount)
         case .notIncluded:
-            yourPartContent(sentence: L10n.Groups.Expense.notIncluded, amount: nil, tint: .primary)
+            yourPartContent(sentence: L10n.Groups.Expense.notIncluded, amount: nil)
         case .identityUnresolved:
             EmptyView()
         }
@@ -298,7 +325,7 @@ struct GroupExpenseDetailSheet: View {
         return L10n.Groups.Summary.owedToMe
     }
 
-    private func yourPartContent(sentence: String, amount: Double?, tint: Color) -> some View {
+    private func yourPartContent(sentence: String, amount: Double?) -> some View {
         HStack(spacing: DS.Spacing.md) {
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(L10n.Split.yourPortion)
@@ -316,39 +343,31 @@ struct GroupExpenseDetailSheet: View {
                     currencyCode: expense.currencyCode,
                     font: DS.Typography.title3,
                     secondaryFont: DS.Typography.caption,
-                    tint: .color(tint),
+                    tint: .primary,
                     forceFullPrecision: true
                 )
             }
         }
-        .padding(DS.Spacing.lg)
-        .background(
-            RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
-                .fill(.thCard)
-        )
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("group_expense_detail_your_part")
     }
 
-    // MARK: - Reparto
-
-    private var breakdownCard: some View {
+    private var breakdownSection: some View {
         let entries = breakdownEntries
         let colors = memberColors
-        return VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            HStack {
+        let kind = splitKind
+        return VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            HStack(spacing: DS.Spacing.sm) {
                 Text(L10n.Groups.Expense.breakdownTitle)
                     .font(DS.Typography.subheadlineEmphasized)
                     .foregroundStyle(.primary)
-                Spacer()
-                Text(splitTypeLabel)
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.secondary)
+                Spacer(minLength: DS.Spacing.sm)
+                splitKindChip
             }
 
-            // La barra solo cuando el reparto no es igual: ahí la proporción informa. Con partes
-            // iguales repetía la lista y era ruido a primera vista (feedback del 2026-10-04).
-            if expense.splitType != SplitType.equal.rawValue {
+            // La barra solo cuando las partes son distintas: ahí la proporción informa. Con partes iguales o todo de
+            // una persona repetía la lista y era ruido a primera vista (feedback del 2026-10-04).
+            if GroupSplitLabelLogic.showsProportionBar(for: kind) {
                 GroupSplitBar(
                     segments: entries.map {
                         GroupSplitBarSegment(id: $0.id, amount: $0.amount, color: colors[$0.id] ?? .secondary)
@@ -363,13 +382,25 @@ struct GroupExpenseDetailSheet: View {
                 }
             }
         }
-        .padding(DS.Spacing.lg)
-        .background(
-            RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
-                .fill(.thCard)
-        )
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("group_expense_detail_breakdown")
+    }
+
+    /// El tipo real del reparto, en una cápsula discreta junto a «Reparto».
+    private var splitKindChip: some View {
+        HStack(spacing: DS.Spacing.xxs) {
+            Image(systemName: splitTypeIcon)
+                .accessibilityHidden(true)
+            Text(splitTypeLabel)
+                .lineLimit(1)
+        }
+        .font(DS.Typography.caption)
+        .foregroundStyle(.secondary)
+        .padding(.horizontal, DS.Spacing.sm)
+        .padding(.vertical, DS.Spacing.xxs)
+        .background(Color.secondary.opacity(0.15), in: Capsule())
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("group_expense_detail_split_kind")
     }
 
     private func breakdownRow(_ entry: BreakdownEntry, color: Color) -> some View {
@@ -379,12 +410,12 @@ struct GroupExpenseDetailSheet: View {
                     .fill(color)
                     .frame(width: avatarSize, height: avatarSize)
                 Text(String(entry.name.prefix(1)).uppercased())
-                    .font(DS.Typography.label)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(.white)
             }
             .accessibilityHidden(true)
 
-            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+            VStack(alignment: .leading, spacing: DS.Spacing.none) {
                 Text(entry.name)
                     .font(DS.Typography.body)
                     .foregroundStyle(.primary)
