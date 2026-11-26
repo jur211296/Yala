@@ -33,10 +33,12 @@ struct BudgetWidgetRow: View {
             // con la fila de Planificación, L9-1). Antes la cifra era lo gastado, sin «gastado» ni «de S/ 1,800».
             VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                 HStack(alignment: .firstTextBaseline) {
+                    // Hasta dos líneas, como la fila del widget pequeño (observación del iPhone 14, 25-nov-2026).
                     Text(summary.budget.name)
                         .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
-                        .lineLimit(1)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
 
                     Spacer(minLength: DS.Spacing.sm)
 

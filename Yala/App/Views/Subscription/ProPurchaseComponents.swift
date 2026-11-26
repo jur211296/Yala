@@ -221,7 +221,9 @@ struct ProPricesUnavailable: View {
 
     var body: some View {
         VStack(spacing: DS.Spacing.sm) {
-            Text(L10n.TrialOffer.pricesUnavailable)
+            // Neutro: con la lista vacía de la tienda no es la conexión, y vale igual si lo fuera (observación del
+            // iPhone 14, 25-nov-2026).
+            Text(PulidoPrimerosPasosPaywallText.pricesUnavailable)
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.thSecondaryText)
                 .multilineTextAlignment(.center)

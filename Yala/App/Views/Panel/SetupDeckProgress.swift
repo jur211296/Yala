@@ -43,6 +43,15 @@ enum SetupDeckProgressLogic {
     }
 }
 
+/// Cómo se reparte la fila de pasos debajo del mazo.
+enum SetupDeckStepsLayoutLogic {
+    /// La rejilla de respaldo: dos filas de cuatro.
+    static let fallbackColumns = 4
+
+    /// Con texto de accesibilidad ni se intenta la fila de siete: va directo a la rejilla.
+    static func triesSingleRow(isAccessibilitySize: Bool) -> Bool { !isAccessibilitySize }
+}
+
 /// Los siete segmentos de la carta de adelante: llenos los hechos, punteados los de después, marcado el de ahora.
 struct SetupDeckSegments: View {
     let steps: [SetupStep]
@@ -89,18 +98,24 @@ struct SetupDeckStepsRow: View {
     @Environment(\.yalaTheme) private var theme
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
-    /// Siete en una fila; con texto de accesibilidad, en dos (la maqueta: «ahí pasa a dos líneas»).
+    /// La rejilla de respaldo: cuatro por fila, en dos (la maqueta: «ahí pasa a dos líneas»).
     private var columns: [GridItem] {
         Array(repeating: GridItem(.flexible(), spacing: DS.Spacing.xxs, alignment: .top),
-              count: dynamicTypeSize.isAccessibilitySize ? 4 : max(steps.count, 1))
+              count: SetupDeckStepsLayoutLogic.fallbackColumns)
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-            LazyVGrid(columns: columns, spacing: DS.Spacing.sm) {
-                ForEach(steps) { step in
-                    item(step)
+            // Las siete etiquetas al mismo tamaño (observación del iPhone 14, 25-nov-2026): en columnas iguales,
+            // «Presupuesto» se encogía y quedaba más chica que sus vecinas. Ahora cada columna mide lo que su palabra y
+            // los huecos se reparten; si la fila no cabe (iPhone chico, texto grande), pasa a dos filas de cuatro.
+            if SetupDeckStepsLayoutLogic.triesSingleRow(isAccessibilitySize: dynamicTypeSize.isAccessibilitySize) {
+                ViewThatFits(in: .horizontal) {
+                    singleRow
+                    grid
                 }
+            } else {
+                grid
             }
             if let line = caption ?? summary, !line.isEmpty {
                 Text(line)
@@ -115,13 +130,34 @@ struct SetupDeckStepsRow: View {
         .accessibilityIdentifier("setup_deck_progress")
     }
 
+    /// Una fila con cada paso a la medida de su etiqueta y huecos iguales entre ellos.
+    private var singleRow: some View {
+        HStack(alignment: .top, spacing: 0) {
+            ForEach(Array(steps.enumerated()), id: \.element.id) { index, step in
+                if index > 0 { Spacer(minLength: DS.Spacing.xs) }
+                item(step, fitsLabel: true)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var grid: some View {
+        LazyVGrid(columns: columns, spacing: DS.Spacing.sm) {
+            ForEach(steps) { step in
+                item(step, fitsLabel: false)
+            }
+        }
+    }
+
     private var summary: String? {
         let counts = SetupDeckProgressLogic.counts(steps)
         return T.summary(done: counts.done, later: counts.later)
     }
 
     @ViewBuilder
-    private func item(_ step: SetupStep) -> some View {
+    /// `fitsLabel`: en la fila de siete, la etiqueta a su tamaño entero (nunca se encoge; si no cabe, la fila cede a la
+    /// rejilla). En la rejilla, la columna es fija y encoger queda de último recurso.
+    private func item(_ step: SetupStep, fitsLabel: Bool) -> some View {
         let state = SetupDeckProgressLogic.state(of: step, current: current)
         let content = VStack(spacing: DS.Spacing.xxs) {
             badge(step, state: state)
@@ -130,9 +166,10 @@ struct SetupDeckStepsRow: View {
                 .foregroundStyle(state == .later || state == .pending ? theme.secondaryText : theme.primaryText)
                 .multilineTextAlignment(.center)
                 .lineLimit(1)
-                .minimumScaleFactor(0.6)
+                .minimumScaleFactor(fitsLabel ? 1 : 0.6)
+                .fixedSize(horizontal: fitsLabel, vertical: false)
         }
-        .frame(maxWidth: .infinity, minHeight: 44)
+        .frame(minWidth: fitsLabel ? 44 : nil, maxWidth: fitsLabel ? nil : .infinity, minHeight: 44)
         .contentShape(Rectangle())
         if SetupDeckProgressLogic.opens(step) {
             Button {

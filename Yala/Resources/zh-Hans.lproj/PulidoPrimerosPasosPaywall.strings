@@ -1,0 +1,12 @@
+/*
+  PulidoPrimerosPasosPaywall.strings
+  Yala
+
+  Pulido de Primeros pasos y del paywall (observación del iPhone 14, 25-nov-2026): el título del selector al añadir
+  otra moneda, el título final con pasos para después y el aviso neutro cuando no hay precios.
+  Tabla propia, leída con el idioma de la app (`PulidoPrimerosPasosPaywallText`).
+*/
+
+"pulidoPPP.currency.otherTitle" = "其他货币";
+"pulidoPPP.final.doneForNowTitle" = "暂时就到这里！";
+"pulidoPPP.paywall.pricesUnavailable" = "暂时无法显示价格，请稍后再试。";
