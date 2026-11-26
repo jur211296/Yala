@@ -17,9 +17,11 @@ final class Bienvenida23AltaUITests: XCTestCase {
         continueAfterFailure = false
     }
 
-    private func launchWelcome(_ app: XCUIApplication, cloud: Bool) {
+    /// `showsDeck`: deja salir Primeros pasos, que bajo `-uitest` no sale.
+    private func launchWelcome(_ app: XCUIApplication, cloud: Bool, showsDeck: Bool = false) {
         app.launchForUITest(reset: true, skipOnboarding: false, seed: nil,
-                            extraArguments: cloud ? ["-uitest-cloud-chooser"] : [])
+                            extraArguments: (cloud ? ["-uitest-cloud-chooser"] : [])
+                                + (showsDeck ? ["-uitest-show-setup-deck"] : []))
         XCTAssertTrue(app.staticTexts["welcome_showcase_title"].waitForExistence(timeout: 60)
                       || app.descendants(matching: .any)["welcome_showcase_title"].waitForExistence(timeout: 5),
                       "No apareció la vitrina de la bienvenida.")
@@ -71,10 +73,10 @@ final class Bienvenida23AltaUITests: XCTestCase {
     }
 
     /// Y23-03 + Y23-04 · iCloud sin datos sigue a la conversación; nombre, moneda y «Solo gastos» llenan «Tu Yala» y
-    /// terminan en la app con la cuenta de gastos que Yala crea sola.
+    /// terminan en la app con Primeros pasos en el paso 1 (desde el 25-nov-2026 Yala ya no crea la cuenta de gastos).
     func test_iCloud_conversationOfThreeQuestions_landsInTheApp() throws {
         let app = XCUIApplication()
-        launchWelcome(app, cloud: false)
+        launchWelcome(app, cloud: false, showsDeck: true)
 
         XCTAssertFalse(app.buttons["welcome_access_google"].exists,
                        "Sin entrada a la cuenta de Yala, Google no se pinta (no llevaría a ninguna parte).")
@@ -105,8 +107,11 @@ final class Bienvenida23AltaUITests: XCTestCase {
         XCTAssertTrue(enter.waitForExistence(timeout: 10), "La conversación no terminó.")
         enter.tap()
 
-        XCTAssertTrue(app.buttons["panel_account_chip_0"].waitForExistence(timeout: 20),
-                      "No llegó a la app con la cuenta de gastos de «Solo gastos».")
+        // Desde el 25-nov-2026 «Solo gastos» no crea cuenta: llega al Panel con Primeros pasos en el paso 1.
+        let deck = app.buttons["setup_deck_current"]
+        XCTAssertTrue(deck.waitForExistence(timeout: 20), "No llegó a la app con Primeros pasos tras «Solo gastos».")
+        XCTAssertTrue(deck.label.contains("1 de 7"), "Con «Solo gastos» el paso 1 se hace de cero: «\(deck.label)».")
+        XCTAssertFalse(app.buttons["panel_account_chip_0"].exists, "«Solo gastos» no debe crear una cuenta sola.")
     }
 
     /// Y23-03 · iCloud con datos: la puerta ofrece «Traer mis datos». La revisión de iCloud se finge con

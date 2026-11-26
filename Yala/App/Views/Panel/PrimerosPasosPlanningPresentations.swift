@@ -96,9 +96,11 @@ struct PrimerosPasosPlanningPresentations: ViewModifier {
             seedSystemGroupCategoriesIfNeeded(in: modelContext)
             appPreferences.hasShownGroupsOnboarding = true
         }
-        // El mazo pasa al 6; el grupo, cuando llegue, da el paso por hecho (`autoDetect` al volver al Panel).
-        if GroupsTutorialLogic.advancesDeck(record.exit) {
-            SetupChecklistManager.shared.markSkipped(.groups)
+        // El mazo pasa al 6: hecho si vio la intro, para después si la omitió (`GroupsTutorialLogic.deckResolution`).
+        switch GroupsTutorialLogic.deckResolution(record.exit) {
+        case .completed: SetupChecklistManager.shared.markCompleted(.groups)
+        case .skipped: SetupChecklistManager.shared.markSkipped(.groups)
+        case nil: break
         }
         sheets.pendingGroupsPlaceGuide = GroupsTutorialLogic.showsPlaceGuide(record.exit)
         switch record.exit {

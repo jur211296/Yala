@@ -83,26 +83,16 @@ struct PanelLlegadaSoloPrimerosPasosTests {
 
     @Test("Al entrar (mazo a medias, sin cuenta) no sale el saldo grande")
     func arrival_hidesTheBalanceHero() {
-        let gate = PrimerosPasosPanelGate.make(deckInProgress: true, expensesOnly: false, accountStepResolved: false,
+        let gate = PrimerosPasosPanelGate.make(deckInProgress: true, accountStepResolved: false,
                                                recordStepResolved: false, planningShown: false)
         #expect(gate.showsBalanceHero == false)
     }
 
     @Test("Con la cuenta hecha, el saldo vuelve")
     func withTheAccount_theBalanceShows() {
-        let gate = PrimerosPasosPanelGate.make(deckInProgress: true, expensesOnly: false, accountStepResolved: true,
+        let gate = PrimerosPasosPanelGate.make(deckInProgress: true, accountStepResolved: true,
                                                recordStepResolved: false, planningShown: false)
         #expect(gate.showsBalanceHero)
-    }
-
-    @Test("«Solo gastos»: el saldo sale con el paso 2, como la cuenta")
-    func expensesOnly_followsTheAccount() {
-        let before = PrimerosPasosPanelGate.make(deckInProgress: true, expensesOnly: true, accountStepResolved: true,
-                                                 recordStepResolved: false, planningShown: false)
-        let after = PrimerosPasosPanelGate.make(deckInProgress: true, expensesOnly: true, accountStepResolved: true,
-                                                recordStepResolved: true, planningShown: false)
-        #expect(before.showsBalanceHero == false)
-        #expect(after.showsBalanceHero)
     }
 
     @Test("Sin mazo a medias, el Panel de siempre")

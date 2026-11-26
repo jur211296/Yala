@@ -56,20 +56,21 @@ struct PrimerosPasosPanelGate: Equatable {
     static let inactive = PrimerosPasosPanelGate(isActive: false, showsAccounts: true, showsLatestRecords: true,
                                                  showsPlanning: true)
 
+    /// La misma regla en «Ingresos y gastos» y en «Solo gastos»: desde el 25-nov-2026 (Jürgen) Yala ya no crea sola la
+    /// cuenta de «Solo gastos», así que en los dos la cuenta sale al hacer (u omitir) el paso 1. Hasta entonces, con
+    /// «Solo gastos» esperaba al paso 2 y el paso 1 salía hecho sin su tarjeta.
+    ///
     /// - Parameters:
     ///   - deckInProgress: el mazo se ve y no está terminado (`SetupChecklistManager.isPrimerosPasosShown`).
-    ///   - expensesOnly: «Solo gastos». Ahí Yala crea sola la cuenta y el paso 1 sale hecho sin que la persona haga
-    ///     nada; la cuenta aparece con el primer paso que sí hace ella, aprender a registrar. Así, al entrar, solo
-    ///     el mazo, igual que con «Ingresos y gastos».
     ///   - accountStepResolved: el paso 1 está hecho u omitido.
     ///   - recordStepResolved: el paso 2 está hecho u omitido.
     ///   - planningShown: dijo «Sí» al Panel en el paso 3 o en el 4 (`SetupChecklistManager.isPlanningShownInPanel`).
-    static func make(deckInProgress: Bool, expensesOnly: Bool, accountStepResolved: Bool,
-                     recordStepResolved: Bool, planningShown: Bool) -> PrimerosPasosPanelGate {
+    static func make(deckInProgress: Bool, accountStepResolved: Bool, recordStepResolved: Bool,
+                     planningShown: Bool) -> PrimerosPasosPanelGate {
         guard deckInProgress else { return .inactive }
         return PrimerosPasosPanelGate(
             isActive: true,
-            showsAccounts: expensesOnly ? recordStepResolved : accountStepResolved,
+            showsAccounts: accountStepResolved,
             showsLatestRecords: recordStepResolved,
             showsPlanning: planningShown)
     }

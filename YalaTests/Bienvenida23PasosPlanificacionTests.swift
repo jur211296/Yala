@@ -130,10 +130,12 @@ struct Bienvenida23PasosPlanificacionTests {
     }
 
     /// El mazo pasa al 6 en toda salida menos «Atrás» desde la primera parte; la guía de la pestaña, solo al ir a crear.
+    /// Desde el 25-nov-2026 (Jürgen) ver la intro basta: «Ahora no», crear y unirse lo dejan hecho; «Omitir», para después.
     @Test func groups_exit_advancesTheDeck_andOnlyCreatingShowsTheTabGuide() {
         typealias E = GroupsTutorialLogic.Exit
-        #expect(!GroupsTutorialLogic.advancesDeck(E.closed))
-        #expect([E.skipped, .seenNotNow, .createGroup, .joinWithLink].allSatisfy(GroupsTutorialLogic.advancesDeck))
+        #expect(GroupsTutorialLogic.deckResolution(E.closed) == nil)
+        #expect(GroupsTutorialLogic.deckResolution(E.skipped) == .skipped)
+        #expect([E.seenNotNow, .createGroup, .joinWithLink].allSatisfy { GroupsTutorialLogic.deckResolution($0) == .completed })
         #expect(GroupsTutorialLogic.showsPlaceGuide(E.createGroup))
         #expect(![E.closed, .skipped, .seenNotNow, .joinWithLink].contains(where: GroupsTutorialLogic.showsPlaceGuide))
     }

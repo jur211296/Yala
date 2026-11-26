@@ -3751,6 +3751,20 @@ final class PanelViewModel {
         }
     }
 
+    private func scheduledPaymentIcon(_ payment: ScheduledPayment) -> String {
+        payment.subcategory?.iconName
+            ?? payment.subcategory?.category?.iconName
+            ?? (payment.paymentCategory == PaymentCategory.subscription.rawValue
+                ? PaymentCategory.subscription.iconName
+                : PaymentCategory.recurring.iconName)
+    }
+
+    private func scheduledPaymentColor(_ payment: ScheduledPayment) -> String {
+        payment.subcategory?.colorHex
+            ?? payment.subcategory?.category?.colorHex
+            ?? AppConstants.defaultColorHex
+    }
+
     private func formatScheduledDueDate(days: Int, date: Date) -> String {
         if days < 0 {
             return String(format: L10n.Scheduled.Widget.daysAgo, abs(days))
@@ -3879,6 +3893,8 @@ final class PanelViewModel {
         // 4. Build upcoming payments list (moves from widget's getUpcomingPayments())
         let today = calendar.startOfDay(for: Date.now)
         var listItems: [ScheduledPaymentListItem] = []
+        /// Los pagos con algo pendiente en el mes a la vista: esos no suman su vencimiento del mes siguiente.
+        var paymentsWithPendingInMonth: Set<UUID> = []
 
         for payment in filtered {
             let dates = ScheduledPaymentDateCalculator.paymentDatesInMonth(
@@ -3887,14 +3903,8 @@ final class PanelViewModel {
             let paidCount = paidAmounts[payment.id.uuidString]?.count ?? 0
             var remainingPaid = paidCount
 
-            let icon = payment.subcategory?.iconName
-                ?? payment.subcategory?.category?.iconName
-                ?? (payment.paymentCategory == PaymentCategory.subscription.rawValue
-                    ? PaymentCategory.subscription.iconName
-                    : PaymentCategory.recurring.iconName)
-            let color = payment.subcategory?.colorHex
-                ?? payment.subcategory?.category?.colorHex
-                ?? AppConstants.defaultColorHex
+            let icon = scheduledPaymentIcon(payment)
+            let color = scheduledPaymentColor(payment)
 
             for date in dates.sorted() {
                 let dueDate = calendar.startOfDay(for: date)
@@ -3903,6 +3913,7 @@ final class PanelViewModel {
                 let isSkipped = payment.isDateSkipped(date)
                 let isPaid = remainingPaid > 0 && !isSkipped
                 if isPaid { remainingPaid -= 1 }
+                if !isPaid && !isSkipped { paymentsWithPendingInMonth.insert(payment.id) }
 
                 listItems.append(ScheduledPaymentListItem(
                     id: "\(payment.persistentModelID)-\(date.timeIntervalSince1970)",
@@ -3922,12 +3933,43 @@ final class PanelViewModel {
             }
         }
 
-        // Filter to pending only, sort by date, limit to 3
+        // Filter to pending only
+        var pendingItems = listItems.filter { !$0.isPaid && !$0.isSkipped }
+
+        // 4b. Con el mes de hoy a la vista, cada pago que ya no tiene nada pendiente este mes suma su siguiente
+        // vencimiento, aunque caiga el mes que viene (opción 1 de Jürgen, 25-nov-2026; `ScheduledPaymentsUpcomingLogic`).
+        // Los totales de arriba siguen siendo del mes.
+        if ScheduledPaymentsUpcomingLogic.looksAhead(displayMonth: displayMonth, now: Date.now, calendar: calendar) {
+            for payment in filtered where !paymentsWithPendingInMonth.contains(payment.id) {
+                guard let date = ScheduledPaymentsUpcomingLogic.nextOccurrence(
+                    afterMonthOf: displayMonth, params: payment.dateCalculatorParams,
+                    isSkipped: { payment.isDateSkipped($0) }, calendar: calendar)
+                else { continue }
+                let dueDate = calendar.startOfDay(for: date)
+                let days = calendar.dateComponents([.day], from: today, to: dueDate).day ?? 0
+                pendingItems.append(ScheduledPaymentListItem(
+                    id: "\(payment.persistentModelID)-\(date.timeIntervalSince1970)",
+                    name: payment.name,
+                    amount: payment.amount,
+                    currencyCode: payment.currencyCode,
+                    isIncome: payment.transactionType == "income",
+                    isVariableAmount: payment.isVariableAmount,
+                    icon: scheduledPaymentIcon(payment),
+                    color: scheduledPaymentColor(payment),
+                    dueDate: dueDate,
+                    dueStatus: .upcoming,
+                    dueDateLabel: formatScheduledDueDate(days: days, date: date),
+                    isPaid: false,
+                    isSkipped: false
+                ))
+            }
+        }
+
+        // Sort by date, limit to 3
         let upcomingPayments = Array(
-            listItems
-                .filter { !$0.isPaid && !$0.isSkipped }
+            pendingItems
                 .sorted { $0.dueDate < $1.dueDate }
-                .prefix(3)
+                .prefix(ScheduledPaymentsUpcomingLogic.maxItems)
         )
 
         // 5. Build calendar paymentsByDay (moves from widget's calendarGrid)

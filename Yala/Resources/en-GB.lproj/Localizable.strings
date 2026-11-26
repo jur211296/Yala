@@ -6109,6 +6109,9 @@
 /* Widget help, planned payments: total this month and how many are still to pay. %1$@ = amount, %2$d = count */
 "panel.widgetInfo.yourData.scheduled" = "Planned payments this month: %1$@. Still to pay: %2$d.";
 
+/* Widget help, planned payments: nothing left this month, the next due payment. %1$@ = payment name, %2$@ = date (e.g. 20 de diciembre) */
+"panel.widgetInfo.yourData.scheduledNext" = "Next payment: %1$@, on %2$@.";
+
 /* Widget help, weekday chart: the day with the highest average spending. %@ = weekday name */
 "panel.widgetInfo.yourData.weekday" = "The day you spend the most on average: %@.";
 
@@ -8309,7 +8312,6 @@
 "setup.deck.then" = "Then: %@";
 "setup.deck.resume" = "Back to where I was";
 "setup.deck.firstExpense" = "Note your first expense";
-"setup.deck.firstExpense.note" = "Your expenses go to “%@”, which Yala creates for you.";
 "setup.deck.currentValue" = "Current step";
 "setup.deck.skippedValue" = "Skipped";
 "setup.deck.step.account" = "Create your first account";
@@ -8881,7 +8883,7 @@
 "pasos23.groups.what.createHint" = "A trip, home, friends…";
 "pasos23.groups.what.link" = "I have an invite link";
 "pasos23.groups.what.linkHint" = "Someone already created the group";
-"pasos23.groups.alreadySeen" = "You already know Groups: you saw it when you joined. On to step 6.";
+"pasos23.groups.alreadySeen" = "You already know Groups. On to step 6.";
 
 /* VoiceOver: name of the Show only / Hide segmented control in Records filters */
 "a11y.selectores.filterMode" = "Filter mode";

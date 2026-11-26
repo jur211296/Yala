@@ -6877,6 +6877,9 @@
 /* Widget help, planned payments: total this month and how many are still to pay. %1$@ = amount, %2$d = count */
 "panel.widgetInfo.yourData.scheduled" = "本月计划付款：%1$@。待付：%2$d 笔。";
 
+/* Widget help, planned payments: nothing left this month, the next due payment. %1$@ = payment name, %2$@ = date (e.g. 20 de diciembre) */
+"panel.widgetInfo.yourData.scheduledNext" = "下一笔付款：%1$@，%2$@。";
+
 /* Widget help, weekday chart: the day with the highest average spending. %@ = weekday name */
 "panel.widgetInfo.yourData.weekday" = "平均花费最多的一天：%@。";
 
@@ -9077,7 +9080,6 @@
 "setup.deck.then" = "然后:%@";
 "setup.deck.resume" = "回到刚才的位置";
 "setup.deck.firstExpense" = "记下第一笔支出";
-"setup.deck.firstExpense.note" = "你的支出会记入“%@”,Yala 会自动创建它。";
 "setup.deck.currentValue" = "当前步骤";
 "setup.deck.skippedValue" = "已跳过";
 "setup.deck.step.account" = "创建你的第一个账户";
@@ -9649,7 +9651,7 @@
 "pasos23.groups.what.createHint" = "旅行、合住、朋友……";
 "pasos23.groups.what.link" = "我有邀请链接";
 "pasos23.groups.what.linkHint" = "已经有人建好了群组";
-"pasos23.groups.alreadySeen" = "群组你已经了解过了：进来时看过。接着做第 6 步。";
+"pasos23.groups.alreadySeen" = "群组你已经了解过了。接着做第 6 步。";
 
 /* VoiceOver: name of the Show only / Hide segmented control in Records filters */
 "a11y.selectores.filterMode" = "筛选模式";

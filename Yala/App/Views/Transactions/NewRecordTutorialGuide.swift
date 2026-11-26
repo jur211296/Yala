@@ -48,6 +48,16 @@ nonisolated enum NewRecordTutorialGuide {
 }
 
 extension NewRecordTutorialGuide {
+    /// «Tu cuenta ya está puesta» sale con una sola cuenta de la persona. Cuenta las cuentas que ella ve como suyas
+    /// (`billableUserAccounts`: ni archivadas, ni de sistema de Grupos, ni líneas de otra moneda), no las filas: una
+    /// cuenta con soles y dólares se guarda como dos filas (la principal y su línea en USD) y la guía se saltaba el paso
+    /// (observación del iPhone 14, 25-nov-2026). Un enlace que no se reconoce como línea (su principal no está) cuenta
+    /// como cuenta aparte, como en el límite Free.
+    @MainActor
+    static func hasSingleAccount(_ accounts: [Account]) -> Bool {
+        accounts.billableUserAccounts.count <= 1
+    }
+
     @MainActor
     static var steps: [CoachMarkStep] {
         typealias T = L10n.PrimerosPasos23.Record

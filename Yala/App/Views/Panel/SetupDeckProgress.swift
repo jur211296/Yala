@@ -41,14 +41,6 @@ enum SetupDeckProgressLogic {
     static func later(_ steps: [SetupStep]) -> [SetupStepID] {
         steps.filter { !$0.isCompleted && $0.isSkipped }.map(\.id)
     }
-
-    /// La línea extra del paso 1 cuando el modo la cambia. Con «Solo gastos» (Jürgen, 19-nov-2026) el paso 1 lo hizo Yala
-    /// al crear la cuenta de gastos: la línea la nombra («Tus gastos van a «Gastos Soles», que Yala crea sola.»). `nil`:
-    /// sin línea.
-    static func detail(for step: SetupStepID, expensesAccountName: String?) -> String? {
-        guard step == .firstAccount, let expensesAccountName, !expensesAccountName.isEmpty else { return nil }
-        return L10n.SetupChecklist.Deck.firstExpenseNote(expensesAccountName)
-    }
 }
 
 /// Los siete segmentos de la carta de adelante: llenos los hechos, punteados los de después, marcado el de ahora.
@@ -92,8 +84,6 @@ struct SetupDeckStepsRow: View {
     let current: SetupStepID?
     /// La línea de debajo (`nil`: «Hechos · Para después · Toca un paso»; vacía: ninguna, la del final ya lo dice).
     var caption: String?
-    /// «Solo gastos»: la línea del paso 1 (`SetupDeckProgressLogic.detail`).
-    var note: String?
     let onOpen: (SetupStepID) -> Void
 
     @Environment(\.yalaTheme) private var theme
@@ -118,13 +108,6 @@ struct SetupDeckStepsRow: View {
                     .foregroundStyle(.thSecondaryText)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("setup_deck_progress_caption")
-            }
-            if let note {
-                Text(note)
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.thSecondaryText)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("setup_deck_progress_note")
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

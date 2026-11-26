@@ -62,13 +62,14 @@ final class PrimerosPasosTrasElAltaUITests: XCTestCase {
         attach(app, "gastos-e-ingresos-mazo")
     }
 
-    /// «Solo gastos»: la cuenta de gastos ya existe, así que el mazo empieza más adelante, pero sale.
+    /// «Solo gastos»: desde el 25-nov-2026 el alta no crea la cuenta de gastos, así que el mazo empieza en el paso 1, como
+    /// con «Gastos e ingresos».
     func test_soloGastos_enUnTelefonoDeAntes_saleElMazo() throws {
         let app = XCUIApplication()
         signUpWithICloud(app, tracking: "welcome_chat_tracking_expenses")
         let deck = app.buttons["setup_deck_current"]
         XCTAssertTrue(deck.waitForExistence(timeout: 15), "Tras el alta con «Solo gastos» no salió Primeros pasos.")
-        XCTAssertTrue(deck.label.contains("de 7"), "El mazo de siete pasos: «\(deck.label)».")
+        XCTAssertTrue(deck.label.contains("1 de 7"), "El mazo empieza en el paso 1: «\(deck.label)».")
         attach(app, "solo-gastos-mazo")
     }
 }

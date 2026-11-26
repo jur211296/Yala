@@ -56,9 +56,9 @@ enum WelcomeConversationLogic {
             }
         }
 
-        /// Con «Solo gastos» Yala crea sola la cuenta de gastos («Gastos Soles»), como hoy; con «Gastos e ingresos» la
-        /// primera cuenta la crea la persona en el paso 1 de «Primeros pasos».
-        var createsExpensesAccount: Bool { self == .expensesOnly }
+        // Ninguno de los dos crea cuenta: la primera la crea la persona en el paso 1 de «Primeros pasos», también con
+        // «Solo gastos» (Jürgen, 25-nov-2026, revierte la del 19-nov: Yala creaba sola «Gastos Soles» y daba el paso 1
+        // por hecho sin que su tarjeta se viera).
     }
 
     /// El primer nombre de lo que trae Google o Apple («Ana García» → «Ana»). `nil` si no trae nada útil: entonces se

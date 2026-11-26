@@ -6877,6 +6877,9 @@
 /* Widget help, planned payments: total this month and how many are still to pay. %1$@ = amount, %2$d = count */
 "panel.widgetInfo.yourData.scheduled" = "今月の予定支払い：%1$@。未払い：%2$d件。";
 
+/* Widget help, planned payments: nothing left this month, the next due payment. %1$@ = payment name, %2$@ = date (e.g. 20 de diciembre) */
+"panel.widgetInfo.yourData.scheduledNext" = "次の支払い：%1$@（%2$@）。";
+
 /* Widget help, weekday chart: the day with the highest average spending. %@ = weekday name */
 "panel.widgetInfo.yourData.weekday" = "平均支出が最も多い曜日：%@。";
 
@@ -9077,7 +9080,6 @@
 "setup.deck.then" = "その次:%@";
 "setup.deck.resume" = "さっきの続きへ";
 "setup.deck.firstExpense" = "最初の支出を記録";
-"setup.deck.firstExpense.note" = "支出は「%@」に入ります。Yalaが自動で作成します。";
 "setup.deck.currentValue" = "現在のステップ";
 "setup.deck.skippedValue" = "スキップ済み";
 "setup.deck.step.account" = "最初の口座を作成";
@@ -9649,7 +9651,7 @@
 "pasos23.groups.what.createHint" = "旅行、家、友だち…";
 "pasos23.groups.what.link" = "招待リンクがある";
 "pasos23.groups.what.linkHint" = "誰かがもうグループを作っています";
-"pasos23.groups.alreadySeen" = "グループはもう見ましたね。ステップ6に進みます。";
+"pasos23.groups.alreadySeen" = "グループはもうご存じですね。ステップ6に進みます。";
 
 /* VoiceOver: name of the Show only / Hide segmented control in Records filters */
 "a11y.selectores.filterMode" = "フィルターモード";

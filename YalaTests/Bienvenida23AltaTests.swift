@@ -105,7 +105,9 @@ struct Bienvenida23ConversationTests {
         #expect(WelcomeConversationLogic.currencyOptions(region: .usd) == [.usd])
     }
 
-    @Test("«Solo gastos» crea la cuenta de gastos; categorías siempre por defecto",
+    /// Desde el 25-nov-2026 (Jürgen) ningún modo crea cuenta: con «Solo gastos» Yala creaba sola «Gastos Soles» y el paso 1
+    /// salía hecho sin su tarjeta. Ahora la primera cuenta es el paso 1 de «Primeros pasos» en los dos.
+    @Test("El alta no crea cuenta en ningún modo; categorías siempre por defecto",
           arguments: [WelcomeConversationLogic.Tracking.expensesOnly, .incomeAndExpenses])
     func storeGetsWhatTheAltaWrites(tracking: WelcomeConversationLogic.Tracking) throws {
         let context = try makeTestContext()
@@ -115,12 +117,7 @@ struct Bienvenida23ConversationTests {
         let categories = try context.fetch(FetchDescriptor<Yala.Category>())
         #expect(!categories.isEmpty, "Las categorías van siempre por defecto: «Prefiero crearlas yo» salió del alta.")
         let accounts = try context.fetch(FetchDescriptor<Account>())
-        if tracking == .expensesOnly {
-            #expect(accounts.count == 1, "Con «Solo gastos» Yala crea sola la cuenta de gastos.")
-            #expect(accounts.first?.currencyCode == "PEN")
-        } else {
-            #expect(accounts.isEmpty, "Con «Gastos e ingresos» la primera cuenta es el paso 1 de «Primeros pasos».")
-        }
+        #expect(accounts.isEmpty, "La primera cuenta es el paso 1 de «Primeros pasos», también con «Solo gastos».")
     }
 
     @Test("Cada modo guarda el modo de uso y la mentalidad del alta de siempre")

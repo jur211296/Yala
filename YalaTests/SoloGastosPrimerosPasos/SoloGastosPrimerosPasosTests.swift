@@ -15,13 +15,14 @@ import Testing
 @Suite("Solo gastos · Primeros pasos")
 struct SoloGastosPrimerosPasosTests {
 
-    /// Yala crea la cuenta de gastos, así que el paso 1 sale hecho y el mazo arranca en «Aprender a registrar», 2 de 7.
-    @Test func deck_startsAtLearningToRecord_twoOfSeven() throws {
-        let deck = try #require(SetupDeckLogic.deck(order: SetupStepID.deck, isResolved: { $0 == .firstAccount }))
-        #expect(deck.current == .firstExpense)
-        #expect(deck.position == 2)
+    /// Desde el 25-nov-2026 (Jürgen) Yala ya no crea la cuenta de gastos: el mazo arranca en el paso 1, 1 de 7, como con
+    /// «Ingresos y gastos». Hasta entonces arrancaba en «Aprender a registrar», 2 de 7, con el paso 1 hecho por Yala.
+    @Test func deck_startsAtTheFirstAccount_oneOfSeven() throws {
+        let deck = try #require(SetupDeckLogic.deck(order: SetupStepID.deck, isResolved: { _ in false }))
+        #expect(deck.current == .firstAccount)
+        #expect(deck.position == 1)
         #expect(deck.total == 7)
-        #expect(deck.upcoming == [.firstBudget, .scheduledPayment])
+        #expect(deck.upcoming == [.firstExpense, .firstBudget])
     }
 
     /// Los mismos siete pasos y en el mismo orden en los dos modos: cambiar de modo no mueve lo ya hecho. Los flujos de
@@ -29,49 +30,6 @@ struct SoloGastosPrimerosPasosTests {
     @Test func deck_isTheSameSevenStepsInBothModes() {
         #expect(SetupStepID.deck == [.firstAccount, .firstExpense, .firstBudget, .scheduledPayment, .groups,
                                      .whereMoneyGoes, .homeScreen])
-    }
-
-    /// Bajo la fila de pasos del mazo, la línea del paso 1 dice a qué cuenta van los gastos; los demás pasos no cambian.
-    @Test func stepsList_firstStepNamesTheExpensesAccount() {
-        let detail = SetupDeckProgressLogic.detail(for: .firstAccount, expensesAccountName: "Gastos Soles")
-        #expect(detail == L10n.SetupChecklist.Deck.firstExpenseNote("Gastos Soles"))
-        #expect(detail?.contains("Gastos Soles") == true)
-        for step in SetupStepID.deck where step != .firstAccount {
-            #expect(SetupDeckProgressLogic.detail(for: step, expensesAccountName: "Gastos Soles") == nil)
-        }
-        // «Ingresos y gastos» (sin cuenta de gastos) o sin nombre: la línea de siempre.
-        #expect(SetupDeckProgressLogic.detail(for: .firstAccount, expensesAccountName: nil) == nil)
-        #expect(SetupDeckProgressLogic.detail(for: .firstAccount, expensesAccountName: "") == nil)
-    }
-}
-
-@MainActor
-@Suite("Solo gastos · cambiar de modo con pasos hechos")
-struct SoloGastosCambioDeModoTests {
-
-    /// Con el paso 1 hecho (la cuenta de gastos) y el 2 sin hacer: en «Solo gastos» la cuenta espera al paso 2; al pasar a
-    /// «Ingresos y gastos» sale, porque ahí el paso 1 ya cuenta. Los pasos hechos no cambian.
-    @Test func switchingModes_keepsTheStepsAndOnlyMovesTheAccount() {
-        let soloGastos = PrimerosPasosPanelGate.make(deckInProgress: true, expensesOnly: true,
-                                                     accountStepResolved: true, recordStepResolved: false,
-                                                     planningShown: false)
-        let completo = PrimerosPasosPanelGate.make(deckInProgress: true, expensesOnly: false,
-                                                   accountStepResolved: true, recordStepResolved: false,
-                                                   planningShown: false)
-        #expect(!soloGastos.showsAccounts)
-        #expect(completo.showsAccounts)
-        #expect(soloGastos.showsLatestRecords == completo.showsLatestRecords)
-    }
-
-    /// Con el paso 2 hecho, los dos modos enseñan lo mismo.
-    @Test func afterTheRecordStep_bothModesShowTheSame() {
-        let soloGastos = PrimerosPasosPanelGate.make(deckInProgress: true, expensesOnly: true,
-                                                     accountStepResolved: true, recordStepResolved: true,
-                                                     planningShown: true)
-        let completo = PrimerosPasosPanelGate.make(deckInProgress: true, expensesOnly: false,
-                                                   accountStepResolved: true, recordStepResolved: true,
-                                                   planningShown: true)
-        #expect(soloGastos == completo)
     }
 }
 
@@ -98,12 +56,16 @@ struct SoloGastosPrimerosPasosWiringTests {
         #expect(!progress.contains("struct SetupFirstExpenseAction"))
     }
 
-    /// La lista recibe la cuenta de gastos solo en «Solo gastos».
-    @Test func panel_passesTheExpensesAccountOnlyInExpensesOnly() throws {
+    /// Ya no hay línea «Tus gastos van a…» ni cuenta de gastos que pasar a la lista (25-nov-2026): el paso 1 se hace de
+    /// cero en los dos modos, y el Panel progresivo es el mismo (`PrimerosPasosPanelGate.make` ya no recibe el modo).
+    @Test func panel_noLongerPassesAnExpensesAccount() throws {
         let panel = try Self.code("Yala/App/Views/Panel/PanelView.swift")
-        #expect(panel.contains("expensesAccountName: sessionState.isExpensesOnlyMode"))
+        #expect(!panel.contains("expensesAccountName"))
+        #expect(panel.contains("SetupChecklistManager.shared.panelGate()"))
         let card = try Self.code("Yala/App/Views/Panel/SetupChecklistCard.swift")
-        #expect(card.contains("SetupDeckProgressLogic.detail(for: .firstAccount, expensesAccountName: expensesAccountName)"))
+        #expect(!card.contains("expensesAccountName"))
+        let progress = try Self.code("Yala/App/Views/Panel/SetupDeckProgress.swift")
+        #expect(!progress.contains("firstExpenseNote"))
     }
 
     /// Ningún coach mark sale con Primeros pasos a medias, salvo la guía del paso 2.

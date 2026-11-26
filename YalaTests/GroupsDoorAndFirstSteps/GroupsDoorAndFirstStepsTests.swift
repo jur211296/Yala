@@ -143,7 +143,7 @@ struct SetupStepsListTests {
     func tappedStepOpensLikeTheDeck() throws {
         let card = try Source.code("Yala/App/Views/Panel/SetupChecklistCard.swift")
         #expect(!card.contains("SetupStepsListSheet"))
-        #expect(card.contains("SetupDeckStepsRow(steps: manager.steps, current: deck.current, note: stepsNote, onOpen: onStepTapped)"))
+        #expect(card.contains("SetupDeckStepsRow(steps: manager.steps, current: deck.current, onOpen: onStepTapped)"))
     }
 }
 

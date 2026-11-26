@@ -262,10 +262,6 @@ extension L10n {
             static var resume: String {
                 NSLocalizedString("setup.deck.resume", comment: "Getting started list: close and go back to where I was")
             }
-            /// «Solo gastos», en «Ver los 7 pasos»: el paso 1 lo hizo Yala, y la línea dice a qué cuenta van los gastos.
-            static func firstExpenseNote(_ accountName: String) -> String {
-                String(format: NSLocalizedString("setup.deck.firstExpense.note", comment: "Expenses-only arrival: your expenses go to «%@», which Yala creates on its own"), accountName)
-            }
             /// VoiceOver: el paso que toca en la lista.
             static var currentValue: String {
                 NSLocalizedString("setup.deck.currentValue", comment: "Accessibility: this is the current step")
