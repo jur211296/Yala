@@ -1,0 +1,13 @@
+vuelta,evento,epoch_ms,detalle
+1,lanza_frio,1795729361539,
+1,sale,1795729386600,com.apple.mobilesafari
+1,vuelve,1795729389869,
+1,fin,1795729405522,
+2,lanza_frio,1795729411054,
+2,sale,1795729436617,com.apple.Preferences
+2,vuelve,1795729439945,
+2,fin,1795729452255,
+3,lanza_frio,1795729452283,
+3,sale,1795729477303,com.apple.mobilenotes
+3,vuelve,1795729480603,
+3,fin,1795729492876,

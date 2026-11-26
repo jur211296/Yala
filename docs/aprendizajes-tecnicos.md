@@ -830,3 +830,16 @@ duración finita, el gesto se completa al cumplirse el tiempo y el cierre de «s
 `.task` lo rehace si ve otra (`TutorialStoryPage.clockPart`). (2) Para «mientras el dedo esté puesto», duración
 `.infinity`: el gesto no se completa nunca y avisa al levantar el dedo. El toque que llega tras una pausa larga se descarta
 (`TutorialStoryLogic.wasAHold`). Medido con `axe touch --down` / `--up` y con `press(forDuration:)` de XCUITest.
+
+### iPhone: `devicectl device process launch` se come los argumentos de la app que empiezan por `-` (2026-11-26)
+
+**Qué pasó.** En el lote 3 de eficiencia, un guion lanzaba Yala Dev en el iPhone 14 con
+`devicectl device process launch --device <udid> com.jurgenschmidt.yala.dev -uitest -uitest-skip-onboarding`. La pasada
+entera no lanzó Yala ni una vez: `devicectl` leyó `-uitest` como su opción `-t` y salió con «Missing value for '-t
+<seconds>'», con el error en la salida que el guion tiraba a `/dev/null`.
+
+**Qué hacer.** Los argumentos de la app van detrás de `--`: `… launch --device <udid> <bundle> -- -uitest
+-uitest-skip-onboarding`. Y mira la salida de la primera vuelta antes de dar una medición por buena. Sin `-uitest`, Yala
+Dev abre el almacén real, no el de pruebas: un argumento que no llega no es un detalle. Para leer los `Logger`
+(`os_log`) de la app por la consola de `devicectl` (`--console`), lánzala con
+`--environment-variables '{"OS_ACTIVITY_DT_MODE":"enable"}'`.

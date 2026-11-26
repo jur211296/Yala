@@ -1,0 +1,34 @@
+ciclo,evento,epoch_ms,detalle
+0,lanza_frio,1795728499961,
+1,vuelve,1795728540021,
+1,tira,1795728541307,
+1,sale,1795728542790,com.apple.mobilesafari queda=2s
+2,vuelve,1795728546110,
+2,tira,1795728547400,
+2,sale,1795728549807,com.apple.Preferences queda=3s
+3,vuelve,1795728553132,
+3,tira,1795728554486,
+3,sale,1795728557937,com.apple.mobilenotes queda=4s
+4,vuelve,1795728561260,
+4,tira,1795728562541,
+4,sale,1795728566978,com.apple.calculator queda=5s
+5,vuelve,1795728570304,
+5,tira,1795728571648,
+5,sale,1795728573104,com.apple.Maps queda=2s
+6,vuelve,1795728576347,
+6,tira,1795728577625,
+6,sale,1795728580076,com.apple.mobilesafari queda=3s
+7,vuelve,1795728583735,
+7,tira,1795728585017,
+7,sale,1795728588458,com.apple.Preferences queda=4s
+8,vuelve,1795728591761,
+8,tira,1795728593011,
+8,sale,1795728597385,com.apple.mobilenotes queda=5s
+9,vuelve,1795728600622,
+9,tira,1795728601914,
+9,sale,1795728603299,com.apple.calculator queda=2s
+10,vuelve,1795728606538,
+10,tira,1795728607806,
+10,sale,1795728610217,com.apple.Maps queda=3s
+10,vuelve_final,1795728614003,
+fin,fin,1795728629283,

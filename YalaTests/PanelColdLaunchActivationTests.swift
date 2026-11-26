@@ -32,9 +32,10 @@ struct PanelColdLaunchActivationTests {
         return viewModel
     }
 
-    /// Sondea hasta que el Panel esté listo, con tope: la carga llega tras el freno de 150 ms.
+    /// Sondea hasta que el Panel esté listo y su cálculo terminado, con tope: la carga llega tras el freno de 150 ms. Desde
+    /// el lote 3 de eficiencia el cálculo va por etapas y termina después de `isReady` (que pone la carga).
     private func waitForReady(_ viewModel: PanelViewModel) async throws {
-        for _ in 0..<50 where !viewModel.isReady {
+        for _ in 0..<50 where !viewModel.isReady || viewModel.debugCalculationRuns == 0 {
             try await Task.sleep(for: .milliseconds(20))
         }
     }

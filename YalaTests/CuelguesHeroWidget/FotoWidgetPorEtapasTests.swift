@@ -4,8 +4,9 @@
 //
 //  Sentry YALA-IOS-M (2026-11-18): la foto de los widgets (`WidgetDataCache.buildSnapshot`) recorría el historial unas
 //  quince veces de un tirón en el hilo principal —~3 s con 20.000 movimientos en el simulador— y la app dejaba de
-//  responder. Ahora la foto diferida (la de `updateCache`) se hace por etapas y cede el hilo entre una y otra; el paso a
-//  segundo plano y las tareas de fondo la siguen haciendo de una vez.
+//  responder. Ahora la foto diferida (la de `updateCache`) se hace por etapas y cede el hilo entre una y otra; las tareas
+//  de fondo la siguen haciendo de una vez. El paso a segundo plano también va por etapas desde el lote 3 de eficiencia
+//  (`YalaTests/EficienciaSegundoPlano/FotoWidgetsAlIrseTests`).
 //
 //  Se fija: (1) por etapas sale la misma foto que de una vez; (2) mientras se hace, el hilo principal atiende otras
 //  tareas —de una vez, ninguna— y al acabar queda publicada; y (3) un guardado a mitad tira la foto a medias y pide
