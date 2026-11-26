@@ -1,0 +1,7 @@
+/* Grupos: «¿Cómo se dividió?» en tarjetas y la etiqueta real del reparto (encargo del 2026-11-26). */
+
+"gpdd.twoPerson.youPaidHeader" = "Du hast bezahlt";
+"gpdd.twoPerson.theyPaidHeader" = "%@ hat bezahlt";
+"gpdd.split.allForMe" = "Alles für dich";
+"gpdd.split.allFor" = "Alles für %@";
+"gpdd.split.custom" = "Individuell";
