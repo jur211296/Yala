@@ -129,6 +129,7 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de correr tests, el gate o
 - [Contar recálculos con latido y sonda](reference_contar_recalculos_con_latido_y_sonda.md) — latido de 5 ms en el main actor + sonda de pila; separa escenarios del ciclo de 60 s.
 - [Rojo de suite entera: junto a tu test nuevo](feedback_un_rojo_de_suite_entera_junto_a_tu_test_nuevo.md) — aislado verde y junto a lo tuyo rojo = tuyo; la base, con el mismo scheme.
 - [Lote de decisiones ya incorporado por otra sesión](feedback_lote_de_decisiones_puede_estar_ya_incorporado.md) — mira `git log --all -- docs/DECISIONS.md` antes; duplicarlo choca en el índice.
+- [Encargo de hallazgos que contradice una decisión](feedback_encargo_de_hallazgos_puede_contradecir_una_decision.md) — fecha el pendiente y busca en DECISIONS una posterior; la vigente manda, sin pregunta vital.
 - [Medir miles de filas en la nube contra staging](reference_medir_miles_de_filas_en_la_nube_contra_staging.md) — dos stores en el sim; B al día antes; ~14 min con 3.000.
 - [Medir el cambio de chip con sample](reference_medir_cambio_de_chip_con_sample.md) — semilla pesado + axe; descuenta mshMIGPerform (AX del conductor); el scroll se mide en el teléfono.
 - [Simular un aviso de banco con un recordatorio](reference_simular_un_aviso_de_banco_con_un_recordatorio.md) — sin app de banco: Recordatorios dispara; texto con PEN; elegir la acción por la app.
