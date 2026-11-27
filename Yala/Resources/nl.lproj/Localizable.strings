@@ -9898,12 +9898,10 @@
 /* Recurrente desde un registro (encargo 15-nov): menú y detalle del registro, Bandeja y Planificación */
 "rfr.action.makeRecurring" = "Terugkerend maken";
 "rfr.inbox.approveAndMakeRecurring" = "Opslaan en terugkerend maken";
-"rfr.planning.fromRecord" = "Vanuit een transactie";
 "rfr.picker.title" = "Kies een transactie";
 "rfr.picker.searchPrompt" = "Zoek op omschrijving of categorie";
 "rfr.picker.empty" = "Er zijn geen transacties die terugkerend kunnen worden.";
 "rfr.picker.noResults" = "Geen transacties komen overeen met ‘%@’";
-"rfr.picker.footer" = "Transacties van de afgelopen 6 maanden. Groepstransacties, overboekingen en transacties die al bij een terugkerende betaling horen, staan er niet bij.";
 "rfr.choice.headline" = "Je hebt al een vergelijkbare terugkerende betaling";
 "rfr.choice.body" = "Is deze transactie een betaling daarvan, koppel haar dan: ze telt als betaald en er wordt geen nieuwe aangemaakt.";
 "rfr.choice.link" = "Koppelen aan ‘%@’";

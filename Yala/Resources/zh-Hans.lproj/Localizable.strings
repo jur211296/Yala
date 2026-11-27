@@ -9898,12 +9898,10 @@
 /* Recurrente desde un registro (encargo 15-nov): menú y detalle del registro, Bandeja y Planificación */
 "rfr.action.makeRecurring" = "设为定期付款";
 "rfr.inbox.approveAndMakeRecurring" = "保存并设为定期付款";
-"rfr.planning.fromRecord" = "从记录创建";
 "rfr.picker.title" = "选择一条记录";
 "rfr.picker.searchPrompt" = "按描述或分类搜索";
 "rfr.picker.empty" = "没有可以设为定期付款的记录。";
 "rfr.picker.noResults" = "没有与“%@”匹配的记录";
-"rfr.picker.footer" = "最近 6 个月的记录。群组记录、转账以及已关联定期付款的记录不会显示。";
 "rfr.choice.headline" = "你已经有一个类似的定期付款";
 "rfr.choice.body" = "如果这条记录是该定期付款的一次付款，请关联它：它会计为已付，不会再新建。";
 "rfr.choice.link" = "关联到“%@”";

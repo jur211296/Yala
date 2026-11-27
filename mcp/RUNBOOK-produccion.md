@@ -289,14 +289,31 @@ alerta de facturación en Cloudflare a partir de 10 USD. Supabase producción ya
 
 ## Otras IA: ChatGPT y Grok
 
-**ChatGPT** ya está en la lista de vueltas OAuth (`authorize.ts`). **Grok** no publica la suya: el primer intento de
-conectarlo deja la vuelta rechazada en el log,
+**ChatGPT** y **Grok** ya están en la lista de vueltas OAuth (`HOSTED_CALLBACKS` en `src/authorize.ts`), sin tocar
+`EXTRA_REDIRECT_URIS`. Grok tiene dos entradas y el código acepta las dos:
+
+- **Grok web** vuelve a `https://grok.com/connectors-oauth-exchange-code/`.
+- **Grok Bot** se registra con el documento de cliente que publica Cursor (`https://cursor.com/oauth/mcp-client.json`),
+  que trae juntas la vuelta de Grok web, las dos de `www.cursor.com` (`/agents/mcp/oauth/callback` y
+  `/bot/mcp/oauth/callback`), `cursor://anysphere.cursor-mcp/oauth/callback` y el loopback `:8787/callback`. El registro
+  exige que pasen TODAS: con una sola fuera, el alta entera falla con `invalid_redirect_uri` (era el fallo de antes).
+
+Cada vuelta entra exacta: otra ruta, host, query o fragmento sigue fuera. En la app, la conexión sale como «Grok» si su
+cliente trae la vuelta de grok.com, y como «Cursor» si solo trae las de Cursor.
+
+**Estado en producción (medido el 27-nov con `npx wrangler deployments list --env production`):** desplegado. El
+arreglo entró en `2.3` el 24-nov («el conector acepta las vueltas OAuth de Grok Bot y Grok web») y el despliegue de
+producción del 25-nov sale de un commit de `2.3` que ya lo contiene; `mcp/src` no ha cambiado después.
+
+**Para otra IA que no publique su vuelta**, el camino de siempre: el primer intento de conectarla deja la vuelta
+rechazada en el log,
 ```bash
 npx wrangler tail --env production --format pretty | grep vuelta_no_permitida
 ```
-y se añade exacta en `[env.production.vars]` como `EXTRA_REDIRECT_URIS = "https://…"` (varias, separadas por comas).
-Si el log dice `+query`, la vuelta traía query y la lista compara la URL entera. Una entrada mal escrita no tumba el
-Worker: se ignora y se avisa (`vuelta_extra_mal_escrita`). Cómo dar de alta cada IA, para la persona: `CONECTAR-TU-IA.md`.
+y se añade exacta en `[env.production.vars]` como `EXTRA_REDIRECT_URIS = "https://…"` (varias, separadas por comas; solo
+https). Si el log dice `+query`, la vuelta traía query y la lista compara la URL entera. Una entrada mal escrita no tumba
+el Worker: se ignora y se avisa (`vuelta_extra_mal_escrita`). Cómo dar de alta cada IA, para la persona:
+`CONECTAR-TU-IA.md`.
 
 ## Dominio propio
 

@@ -1,6 +1,6 @@
 ---
 description: Gate único antes de commitear — build, unit, XCUITest de las áreas tocadas, audit de calidad, revisor con checklist (observar) y validación del índice de QA
-allowed-tools: Bash(git:*), Bash(python3 -I /tmp/checklist-elegir.py:*), Agent, SendMessage, Bash(xcodebuild:*), Bash(bash qa/scripts/sim-lock.sh:*), Bash(bash qa/scripts/sim-libre.sh:*), Bash(bash qa/validate-coverage.sh:*), Bash(bash qa/scripts/gate-ci-checks.sh:*), Bash(python3 -I qa/scripts/suites-de-fichero.py:*), Bash(touch:*), Bash(bash qa/scripts/worktree-stamp.sh:*), Bash(bash qa/scripts/verificado-en-commit.sh:*), Bash(python3 qa/qa-sync.py:*), Bash(grep:*), Bash(jq:*), Read, Glob, Grep
+allowed-tools: Bash(git:*), Bash(python3 -I /tmp/checklist-elegir.py:*), Agent, SendMessage, Bash(xcodebuild:*), Bash(bash qa/scripts/sim-lock.sh:*), Bash(bash qa/scripts/sim-libre.sh:*), Bash(bash qa/scripts/sim-reiniciar.sh:*), Bash(bash qa/validate-coverage.sh:*), Bash(bash qa/scripts/gate-ci-checks.sh:*), Bash(python3 -I qa/scripts/suites-de-fichero.py:*), Bash(touch:*), Bash(bash qa/scripts/worktree-stamp.sh:*), Bash(bash qa/scripts/verificado-en-commit.sh:*), Bash(python3 qa/qa-sync.py:*), Bash(grep:*), Bash(jq:*), Read, Glob, Grep
 ---
 
 Verificación completa de los cambios actuales. Sustituye a `/verify-ios` + `/test-smart` + `/swift-audit` corridos por separado. Un solo informe; el commit se apoya en él.
@@ -88,11 +88,14 @@ del ticket `diez-worktrees-comparten-un-simulador`): **lock de fichero, la segun
 ```bash
 python3 -I qa/scripts/interfaz-de-lo-tocado.py --formato only-testing > /tmp/gate-ui-args.txt
 # Vacía = nada que correr. Sin esta guarda, `xcodebuild test` sin -only-testing corre la suite ENTERA.
+[ -s /tmp/gate-ui-args.txt ] && bash qa/scripts/sim-reiniciar.sh     # apaga, arranca y espera; con su turno
 [ -s /tmp/gate-ui-args.txt ] && bash qa/scripts/sim-lock.sh -- \
   xcodebuild -scheme "Yala Dev" -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
   test $(cat /tmp/gate-ui-args.txt) 2>&1 \
   | grep -E "(Test run with|Test Case|Executed|passed|failed|warning:|\*\* TEST)"
 ```
+
+**Antes de la interfaz, el simulador se reinicia** (desde el 2026-11-27). Al menos siete cierres de noviembre lo cuentan igual: la primera corrida de XCUITest tras la suite unitaria muere sin ejecutar casos, con «AX loaded» en el log, y pasa tras reiniciar el simulador. `sim-reiniciar.sh` pide el turno de `sim-lock.sh` (no apaga el simulador con la corrida de otra sesión dentro), apaga el «iPhone 17 Pro» si está encendido (`xcodebuild test` suele apagarlo al terminar la unitaria), lo arranca, espera a que esté listo (techo de 3 min) y deja 15 s de reposo; queda encendido hasta el cierre. Si sale 1, anótalo en el informe y corre la interfaz igual: sin reinicio vuelve el riesgo de «AX loaded», no un rojo. Si aun así ves «AX loaded» con cero casos, es infraestructura: reinicia y repite una vez, no lo cuentes como rojo.
 
 El informe (stderr) dice qué clases corren, por qué capa y cuántos minutos estimados, con **techo de 30 min** por defecto (`--techo-min N` lo sube: con 40, el PR de categorías a un toque habría corrido las dos clases que rompió; con 30, una). **Lo que queda FUERA por el techo se copia al informe del gate** como «no corrido», con su motivo: no es un verde. Si el cambio toca de verdad una de esas clases (el informe dice cuál y por qué), súbela a mano. Si la lista sale vacía, el script lo dice y nombra los ficheros de la app por los que no pasa ninguna clase: eso es «sin áreas con XCUITest» y va así al informe. Si el diff solo toca documentación, el script devuelve vacío y el paso se salta.
 
@@ -111,6 +114,7 @@ turno llega solo. `bash qa/scripts/sim-lock.sh --estado` contesta «¿hay cola?�
 **El lock no sustituye al centinela, porque el lock vive en el árbol de trabajo.** Un worktree con una rama anterior al 2026-09-12 no trae `sim-lock.sh` y por tanto no hace cola; un `xcodebuild` lanzado a mano, tampoco. Esos son justo los que no puedes ver, así que la corrida se sigue vigilando entera:
 
 ```bash
+bash qa/scripts/sim-reiniciar.sh
 bash qa/scripts/sim-lock.sh -- \
   xcodebuild -scheme "Yala Dev" -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
   test $(cat /tmp/gate-ui-args.txt) > /tmp/gate-ui.log 2>&1 &

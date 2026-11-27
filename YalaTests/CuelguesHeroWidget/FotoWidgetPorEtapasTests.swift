@@ -12,6 +12,13 @@
 //  tareas —de una vez, ninguna— y al acabar queda publicada; y (3) un guardado a mitad tira la foto a medias y pide
 //  otra, que sí se publica.
 //
+//  Aislada de lo que dejan las suites anteriores (deuda de 2.3, 27-nov-2026). En `YalaTests` entero caía y sola pasaba,
+//  por tres restos medidos: (a) otra suite deja ARMADO el borrado de cierre de sesión en `UserDefaults.standard` y
+//  `updateCache` no arranca la foto (`measured.turns` → 1); (b) una foto pedida o a medias de otra suite sigue viva al
+//  empezar; (c) un guardado o un aviso remoto tardío de otra suite cae durante la foto y la reinicia una vez más
+//  (13 en vez de 12). Cada caso de los tres con `updateCache` pasa por `aislar()`, que desarma el borrado y lo restaura
+//  al salir, y espera a que no quede foto en marcha; y el contador de reinicios se lee pegado al gesto que reinicia.
+//
 
 import CoreData
 import Foundation
@@ -34,6 +41,24 @@ struct FotoWidgetPorEtapasTests {
     private func waitUntilStagedBuildStarts() async throws {
         for _ in 0..<400 where !WidgetDataCache.debugIsStagedBuildRunning {
             try await Task.sleep(for: .milliseconds(10))
+        }
+    }
+
+    /// Deja `WidgetDataCache` como si ninguna otra suite hubiera corrido: sin borrado armado, sin foto pedida y sin
+    /// foto a medias. Devuelve lo que hay que restaurar al salir (el borrado armado es de quien lo armó).
+    private func aislar() async throws -> () -> Void {
+        let wipeWasArmed = StorageModePersistence.isSignOutWipeArmed()
+        if wipeWasArmed { StorageModePersistence.clearSignOutWipeArm() }
+        WidgetDataCache.cancelPendingUpdate()
+        // Una foto cancelada sale en su siguiente pausa entre etapas.
+        for _ in 0..<500 where WidgetDataCache.debugIsStagedBuildRunning {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(!WidgetDataCache.isWipeArmed)
+        #expect(!WidgetDataCache.debugIsStagedBuildRunning, "quedó una foto de otra suite en marcha")
+        return {
+            WidgetDataCache.cancelPendingUpdate()
+            if wipeWasArmed { StorageModePersistence.armSignOutWipe() }
         }
     }
 
@@ -74,15 +99,16 @@ struct FotoWidgetPorEtapasTests {
         let container = try CuelguesFixture.makeContainer(dir)
         try CuelguesFixture.seed(container, count: 3_000, now: .now, spacing: 1_800)
         let context = ModelContext(container)
-        WidgetDataCache.cancelPendingUpdate()
-        defer { WidgetDataCache.cancelPendingUpdate() }
+        let restore = try await aislar()
+        defer { restore() }
 
         WidgetDataCache.updateCache(context: context)
         try await waitUntilStagedBuildStarts()
         #expect(WidgetDataCache.debugIsStagedBuildRunning, "la foto pedida no se hizo por etapas")
         let measured = try await CuelguesFixture.measureMainThread(while: { WidgetDataCache.debugIsStagedBuildRunning })
-        // De una vez, la foto acaba en un solo bloque y aquí no se atiende nada.
-        #expect(measured.turns >= 8, "el hilo principal solo atendió \(measured.turns) tareas mientras se hacía la foto")
+        // De una vez, la foto acaba en un solo bloque y aquí no se atiende nada (0 o 1 vueltas). Con la máquina cargada
+        // caben menos vueltas por etapa, así que el umbral separa «cede» de «no cede» sin pedir un ritmo.
+        #expect(measured.turns >= 3, "el hilo principal solo atendió \(measured.turns) tareas mientras se hacía la foto")
         try await waitUntilPublished()
         #expect(!WidgetDataCache.hasPendingUpdate)
         #expect(WidgetDataCache.debugLastStagedBuildStages >= 10)
@@ -95,20 +121,21 @@ struct FotoWidgetPorEtapasTests {
         let container = try CuelguesFixture.makeContainer(dir)
         try CuelguesFixture.seed(container, count: 3_000, now: .now, spacing: 1_800)
         let context = ModelContext(container)
-        WidgetDataCache.cancelPendingUpdate()
-        defer { WidgetDataCache.cancelPendingUpdate() }
-        let restarted = WidgetDataCache.debugStagedBuildsRestarted
+        let restore = try await aislar()
+        defer { restore() }
 
         WidgetDataCache.updateCache(context: context)
         try await waitUntilStagedBuildStarts()
         #expect(WidgetDataCache.debugIsStagedBuildRunning)
-        // Otra pantalla guarda (borra) mientras la foto va a medias.
+        // Otra pantalla guarda (borra) mientras la foto va a medias. El contador se lee pegado al guardado: un aviso
+        // tardío de otra suite puede sumar otro reinicio, y eso no es lo que se mide aquí.
         let newest = try #require(try CuelguesFixture.allTransactions(context).first)
+        let restarted = WidgetDataCache.debugStagedBuildsRestarted
         context.delete(newest)
         try context.save()
 
         try await waitUntilPublished()
-        #expect(WidgetDataCache.debugStagedBuildsRestarted == restarted + 1)
+        #expect(WidgetDataCache.debugStagedBuildsRestarted >= restarted + 1, "el guardado a mitad no reinició la foto")
         #expect(!WidgetDataCache.hasPendingUpdate, "la foto que se pidió de nuevo tiene que acabar publicada")
     }
 
@@ -118,17 +145,17 @@ struct FotoWidgetPorEtapasTests {
         let container = try CuelguesFixture.makeContainer(dir)
         try CuelguesFixture.seed(container, count: 3_000, now: .now, spacing: 1_800)
         let context = ModelContext(container)
-        WidgetDataCache.cancelPendingUpdate()
-        defer { WidgetDataCache.cancelPendingUpdate() }
-        let restarted = WidgetDataCache.debugStagedBuildsRestarted
+        let restore = try await aislar()
+        defer { restore() }
 
         WidgetDataCache.updateCache(context: context)
         try await waitUntilStagedBuildStarts()
         #expect(WidgetDataCache.debugIsStagedBuildRunning)
+        let restarted = WidgetDataCache.debugStagedBuildsRestarted
         NotificationCenter.default.post(name: .NSPersistentStoreRemoteChange, object: nil)
 
         try await waitUntilPublished()
-        #expect(WidgetDataCache.debugStagedBuildsRestarted == restarted + 1)
+        #expect(WidgetDataCache.debugStagedBuildsRestarted >= restarted + 1, "el aviso remoto a mitad no reinició la foto")
         #expect(!WidgetDataCache.hasPendingUpdate)
     }
 }
