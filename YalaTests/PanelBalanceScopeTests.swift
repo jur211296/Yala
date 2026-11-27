@@ -102,7 +102,8 @@ struct PanelBalanceScopeTests {
         let code = try String(
             contentsOf: Self.repoRoot.appendingPathComponent("Yala/App/ViewModels/PanelViewModel.swift"), encoding: .utf8)
         #expect(code.contains("let balanceAccounts = PanelBalanceScopeLogic.accounts("))
-        #expect(code.contains("let balanceTransactions = PanelBalanceScopeLogic.transactions("))
+        // Por trozos que ceden el hilo desde el lote 4 de eficiencia (26-nov-2026): la misma regla, trozo a trozo.
+        #expect(code.contains("let balanceTransactions = try await cesion.porTrozos(transactions) {\n            PanelBalanceScopeLogic.transactions($0, accountIDs: balanceAccountIDs)"))
         #expect(!code.contains("let balanceCriteria"), "el saldo volvió a pasar por los chips")
         // Las dos llamadas al ancla viva (curva del widget y comparativa) cuentan las cuentas del saldo.
         let anclas = code.components(separatedBy: "LiveBalanceCalculator.liveBalanceOverride(").dropFirst()

@@ -1,0 +1,3 @@
+1795734724364 PERF panel-calculo completo total 8697 ms · tendencia 0 ms · tendencia.contexto 566 ms · tendencia.grafica 1497 ms · tendencia.widgets 636 ms · tendencia.saldo 1207 ms · presupuestos 1710 ms · salud 2681 ms · gastosPorCuenta 399 ms · hero 0 ms
+1795734724738 2026-11-26 18:12:04.740138-0500 Yala[3182:1683913] [carga] PERF arranque 11004.4 ms
+1795734739876 PERF panel-calculo completo total 7432 ms · tendencia 0 ms · tendencia.contexto 558 ms · tendencia.grafica 1591 ms · tendencia.widgets 673 ms · tendencia.saldo 333 ms · presupuestos 1627 ms · salud 2478 ms · gastosPorCuenta 171 ms · hero 0 ms

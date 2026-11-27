@@ -316,6 +316,10 @@ final class PanelViewModel {
     @ObservationIgnored
     private(set) var debugCalculationsStarted = 0
 
+    /// Las marcas del cálculo en curso (lote 4 de eficiencia): las etapas de dentro de la tendencia se apuntan aquí.
+    @ObservationIgnored
+    private var marcasEnCurso: MarcasRecalculoPanel?
+
     /// Cuántas esperas de 150 ms se han abierto. Una petición que llega con otra esperando se suma a ella y no abre
     /// otra: los tests lo cuentan sin depender del reloj (card h1hy).
     @ObservationIgnored
@@ -1551,19 +1555,27 @@ final class PanelViewModel {
     /// Calculates trend data and status based on the current period, selected account, and selected category.
     /// Refactored for smooth UX - all calculations done first, then state updated in one batch.
     /// Optimized with lazy evaluation - only calculates visible widgets.
+    ///
+    /// Por tramos (lote 4 de eficiencia, 26-nov-2026): los filtros del contexto recorren el historial en trozos y entre
+    /// widget y widget se cede el hilo si el tramo pasó de 25 ms (`CesionDelHilo`). Lo calculado se publica al final, de
+    /// una vez, como antes; si se corta, la etapa no publica y se conserva lo de antes hasta el próximo cálculo.
     func calculateTrendData(
         accounts: [Account],
         transactions: [TransactionItem],
         defaultCurrencyCode: String,
         context: ModelContext,
-        sessionState: SessionState
-    ) {
+        sessionState: SessionState,
+        cesion: CesionDelHilo
+    ) async throws {
         // 1. Build shared calculation context
-        let calcContext = buildCalculationContext(
+        marcasEnCurso?.etapa("tendencia.contexto")
+        let calcContext = try await buildCalculationContext(
             accounts: accounts,
             transactions: transactions,
-            defaultCurrencyCode: defaultCurrencyCode
+            defaultCurrencyCode: defaultCurrencyCode,
+            cesion: cesion
         )
+        try await cesion.cederSiToca()
 
         // Per-widget visibility (P20-03 promoted guards from section- to widget-level).
         let trendVisible = isWidgetVisible(.trend)
@@ -1587,11 +1599,13 @@ final class PanelViewModel {
         var newTrendFinalBalanceIsApproximate = false
         var newTrendProjection: ProjectedFlowCalculator.Projection? = nil
         var newTrendPeriodStartBalance: Double? = nil
+        marcasEnCurso?.etapa("tendencia.grafica")
         if trendVisible {
             // For balance, use all transactions (no date filter) to calculate running balance
             let transactionsForTrend = trendType == .balance
                 ? calcContext.balanceTransactions
                 : calcContext.filteredTransactions
+            try await cesion.cederSiToca()
             let liveBalanceOverride = LiveBalanceCalculator.liveBalanceOverride(
                 for: trendType,
                 interval: calcContext.effectiveInterval,
@@ -1602,6 +1616,8 @@ final class PanelViewModel {
                 // (`panel-balance-chart-contradicts-its-own-figure`).
                 converter: calcContext.converter
             )
+            try await cesion.cederSiToca()
+            marcasEnCurso?.etapa("tendencia.grafica.curva")
             let result = TrendDataProcessor.processTrendData(
                 transactions: transactionsForTrend,
                 accounts: calcContext.eligibleAccounts,
@@ -1622,6 +1638,8 @@ final class PanelViewModel {
             newTrendLiveAnchorBreakdown = result.liveAnchorNativeBalances
             newTrendLiveAnchorIsApproximate = result.liveAnchorIsApproximate
             newTrendFinalBalanceIsApproximate = result.finalBalanceIsApproximate
+            try await cesion.cederSiToca()
+            marcasEnCurso?.etapa("tendencia.grafica.inicio")
             if trendType == .balance {
                 // La misma fuente que «Empezaste con» del flujo de caja: el saldo antes del día 1, no el cierre del día 1.
                 newTrendPeriodStartBalance = PanelTrendSummaryLogic.periodStartBalance(
@@ -1634,6 +1652,8 @@ final class PanelViewModel {
                     calendar: .current
                 )
             }
+            try await cesion.cederSiToca()
+            marcasEnCurso?.etapa("tendencia.grafica.proyeccion")
             newTrendProjection = calculateTrendProjection(
                 context: calcContext,
                 realPoints: result.rawPoints,
@@ -1643,6 +1663,8 @@ final class PanelViewModel {
         }
 
         // Categories — Distribución
+        marcasEnCurso?.etapa("tendencia.widgets")
+        try await cesion.cederSiToca()
         var newTopSpendingCategories = topSpendingCategories
         var newPreviousCategoriesTotal = categoriesWidget.previousTotalAmount
         var newCategoriesTotalIsApproximate = categoriesWidget.totalIsApproximate
@@ -1653,6 +1675,7 @@ final class PanelViewModel {
             newCategoriesTotalIsApproximate = categoriesResult.totalIsApproximate
         }
 
+        try await cesion.cederSiToca()
         // Subcategories — Distribución
         var newTopSubcategories = topSubcategories
         var newPreviousSubcategoriesTotal = subcategoriesWidget.previousTotalAmount
@@ -1664,6 +1687,7 @@ final class PanelViewModel {
             newSubcategoriesTotalIsApproximate = subcategoriesResult.totalIsApproximate
         }
 
+        try await cesion.cederSiToca()
         // Cash Flow — Tendencias
         var newCashFlowSummary = cashFlowWidget.cashFlowSummary
         var newCashFlowPreviousNet = cashFlowWidget.previousNetFlow
@@ -1673,6 +1697,7 @@ final class PanelViewModel {
             newCashFlowPreviousNet = cashFlowResult.previousNetFlow
         }
 
+        try await cesion.cederSiToca()
         // Need Trend — Tendencias
         var newNeedTrendPoints = needWidget.needTrendPoints
         var newPreviousNeedTotal = needWidget.previousTotalAmount
@@ -1684,21 +1709,27 @@ final class PanelViewModel {
             newPreviousNeedAmounts = needResult.previousAmounts
         }
 
+        try await cesion.cederSiToca()
         if weekdayVisible {
             calculateWeekdayWidget(context: calcContext)
         }
 
+        try await cesion.cederSiToca()
         if tagsVisible {
             calculateTagsWidget(context: calcContext)
         }
 
+        try await cesion.cederSiToca()
         // Second page of the Trends carousel — same visibility guard as the trend chart
         if trendVisible {
             calculatePeriodComparisonWidget(context: calcContext)
         }
 
+        try await cesion.cederSiToca()
         // Latest Records — always computes (non-toggleable section)
+        marcasEnCurso?.etapa("tendencia.saldo")
         let newLatestRecords = calculateLatestRecordsWidget(context: calcContext)
+        try await cesion.cederSiToca()
 
         // 3. BATCH STATE UPDATE — Atomic struct assignments collapse ~21 individual
         // @Observable notifications into ~6 struct-level comparisons.
@@ -2046,8 +2077,9 @@ final class PanelViewModel {
     private func buildCalculationContext(
         accounts: [Account],
         transactions: [TransactionItem],
-        defaultCurrencyCode: String
-    ) -> PanelCalculationContext {
+        defaultCurrencyCode: String,
+        cesion: CesionDelHilo
+    ) async throws -> PanelCalculationContext {
         let calendar = Calendar.current
 
         // Toggle "incluir gastos de grupo en stats" (default ON). OFF excluye las TX bridgeadas
@@ -2061,7 +2093,8 @@ final class PanelViewModel {
 
         // Filter transactions by account + date + global filters
         let fullCriteria = buildFilterCriteria(dateInterval: panelDateInterval)
-        let filtered = transactions.filter { transaction in
+        // Por trozos que ceden el hilo (lote 4): el mismo filtro, los mismos elementos y en el mismo orden.
+        let filtered = try await cesion.porTrozos(transactions) { $0.filter { transaction in
             guard let account = transaction.account else { return false }
             if !eligibleAccountIDs.contains(account.persistentModelID) { return false }
 
@@ -2077,12 +2110,12 @@ final class PanelViewModel {
             ) else { return false }
 
             return FilterService.matchesCriteria(transaction, criteria: fullCriteria)
-        }
+        } }
 
         // Transactions filtered by all criteria EXCEPT date and categories (for previous period comparison)
         // Excludes adjustments like expenseFiltered does
         let comparisonCriteria = buildFilterCriteria(includeCategories: false)
-        let transactionsWithoutDateFilter = transactions.filter { transaction in
+        let transactionsWithoutDateFilter = try await cesion.porTrozos(transactions) { $0.filter { transaction in
             guard transaction.balanceAdjustmentType == nil else { return false }
             guard let account = transaction.account else { return false }
             if !eligibleAccountIDs.contains(account.persistentModelID) { return false }
@@ -2092,7 +2125,7 @@ final class PanelViewModel {
                 includeGroupsToggle: includeGroupTxs
             ) else { return false }
             return FilterService.matchesCriteria(transaction, criteria: comparisonCriteria)
-        }
+        } }
 
         // Un saldo es lo que hay en las cuentas (decisión de Jürgen, 2026-10-22): las mismas cuentas que el número de
         // arriba —el interruptor de Grupos incluido— y todos sus movimientos, sin los chips de filtro. Hasta ese día la
@@ -2103,10 +2136,10 @@ final class PanelViewModel {
             includeGroups: appPreferences?.includeGroupsInPanelTotal ?? true,
             selectedAccountIDs: selectedAccountIDs
         )
-        let balanceTransactions = PanelBalanceScopeLogic.transactions(
-            transactions,
-            accountIDs: Set(balanceAccounts.map { $0.persistentModelID })
-        )
+        let balanceAccountIDs = Set(balanceAccounts.map { $0.persistentModelID })
+        let balanceTransactions = try await cesion.porTrozos(transactions) {
+            PanelBalanceScopeLogic.transactions($0, accountIDs: balanceAccountIDs)
+        }
 
         // Expense-filtered transactions (excludes adjustments and initial balances)
         let expenseFiltered = filtered.filter { $0.balanceAdjustmentType == nil }
@@ -2149,11 +2182,13 @@ final class PanelViewModel {
             finalContextTransactions = contextTransactions
         }
 
-        let pieContextTransactions = buildPieContextTransactions(
-            from: transactions,
-            eligibleAccountIDs: eligibleAccountIDs,
-            effectiveInterval: effectiveInterval
-        )
+        let pieContextTransactions = try await cesion.porTrozos(transactions) {
+            buildPieContextTransactions(
+                from: $0,
+                eligibleAccountIDs: eligibleAccountIDs,
+                effectiveInterval: effectiveInterval
+            )
+        }
         let needFiltered = buildNeedFilteredTransactions(from: pieContextTransactions)
         let fullyFiltered = buildFullyFilteredTransactions(from: needFiltered)
 
@@ -2713,14 +2748,10 @@ final class PanelViewModel {
             }
         }
 
-        // Recalculate immediately to ensure UI is in sync
-        calculateTrendData(
-            accounts: accounts,
-            transactions: transactions,
-            defaultCurrencyCode: defaultCurrencyCode,
-            context: context,
-            sessionState: sessionState
-        )
+        // Recálculo por la vía de siempre, por tramos (lote 4 de eficiencia): antes se calculaba aquí la etapa de la
+        // tendencia entera de una vez, en el toque, y el cambio de filtro pedía además su propio recálculo
+        // (`observeSessionFilters`); los dos se juntan en una sola vuelta.
+        recalculateData()
     }
 
     /// Convenience for widget sections that don't have access to raw params
@@ -2857,6 +2888,36 @@ final class PanelViewModel {
         transactions: [TransactionItem],
         defaultCurrencyCode: String
     ) {
+        let indice = IndiceFechasMovimientos(transactions, fecha: \.date)
+        let shown = budgetsShownInWidget(budgets)
+        let computed = shown.budgets.compactMap { budget -> BudgetSummary? in
+            calculateBudgetSummary(budget: budget, indice: indice, defaultCurrencyCode: defaultCurrencyCode)
+        }
+        publishBudgetsWidget(computed, hasBudgetsButNoFavorites: shown.hasBudgetsButNoFavorites)
+    }
+
+    /// Lo mismo, por tramos (lote 4 de eficiencia): cada presupuesto mira solo los movimientos de su período (el índice,
+    /// en su orden: la cifra no cambia) y entre presupuesto y presupuesto cede el hilo si toca. Con 24 presupuestos y
+    /// 16.004 movimientos, cada uno recorría los 16 mil dos veces (lo gastado y lo de hoy).
+    func calculateBudgetsWidget(
+        budgets: [Budget],
+        indice: IndiceFechasMovimientos<TransactionItem>,
+        defaultCurrencyCode: String,
+        cesion: CesionDelHilo
+    ) async throws {
+        let shown = budgetsShownInWidget(budgets)
+        var computed: [BudgetSummary] = []
+        for budget in shown.budgets {
+            if let summary = calculateBudgetSummary(budget: budget, indice: indice, defaultCurrencyCode: defaultCurrencyCode) {
+                computed.append(summary)
+            }
+            try await cesion.cederSiToca()
+        }
+        publishBudgetsWidget(computed, hasBudgetsButNoFavorites: shown.hasBudgetsButNoFavorites)
+    }
+
+    /// Qué presupuestos enseña el widget: los favoritos por su orden o, sin favoritos, los activos.
+    private func budgetsShownInWidget(_ budgets: [Budget]) -> (budgets: [Budget], hasBudgetsButNoFavorites: Bool) {
         // Check if there are budgets but none are favorites
         let hasBudgets = !budgets.isEmpty
         let favoriteBudgets = budgets.filter { $0.isFavorite }
@@ -2868,13 +2929,10 @@ final class PanelViewModel {
         // Sin favoritos, los dos presupuestos más usados (UX 2.2 · L3-13): antes el widget decía «Sin presupuestos
         // favoritos» a quien tenía presupuestos, y parecía que no se habían guardado. La estrella sigue eligiendo.
         let shown = newHasBudgetsButNoFavorites ? budgets.filter { $0.isActive } : sortedFavorites
-        let computed = shown.compactMap { budget -> BudgetSummary? in
-            calculateBudgetSummary(
-                budget: budget,
-                transactions: transactions,
-                defaultCurrencyCode: defaultCurrencyCode
-            )
-        }
+        return (shown, newHasBudgetsButNoFavorites)
+    }
+
+    private func publishBudgetsWidget(_ computed: [BudgetSummary], hasBudgetsButNoFavorites newHasBudgetsButNoFavorites: Bool) {
         let summaries = newHasBudgetsButNoFavorites
             ? PanelBudgetsFallbackLogic.mostUsed(computed, percentage: \.percentage)
             : computed
@@ -2889,11 +2947,14 @@ final class PanelViewModel {
     /// Calculate summary for a single budget
     private func calculateBudgetSummary(
         budget: Budget,
-        transactions: [TransactionItem],
+        indice: IndiceFechasMovimientos<TransactionItem>,
         defaultCurrencyCode: String
     ) -> BudgetSummary? {
         // Get budget period date interval
         let interval = getBudgetDateInterval(budget: budget)
+        // Solo los de su período, en su orden (lote 4): lo gastado y lo de hoy filtran por dentro igual que con todos, y
+        // «hoy» cae dentro del período (`DailyAllowanceLogic.todayInterval` lo recorta a él).
+        let transactions = indice.elementos(en: interval)
 
         // Lo gastado sale de la MISMA función que Planificación (`BudgetsViewModel.calculateSpending`, que también usan
         // las alertas de presupuesto), con el neteo de gastos de grupo del Panel. Hasta el 2026-10-23 el Panel filtraba
@@ -3136,8 +3197,16 @@ final class PanelViewModel {
     private func finishRecalculation() async {
         calculationRequestedMidway = false
         isCalculatingInStages = true
+        calculationLostRowsToADeletion = false
         let completed = await performCalculationInStages()
         isCalculatingInStages = false
+        if !completed, calculationLostRowsToADeletion, !Task.isCancelled {
+            // Cortado por un borrado (lote 4): lo que tenía ya no se puede leer; la recarga trae lo de ahora.
+            calculationLostRowsToADeletion = false
+            recalculateTask = nil
+            scheduleRecalculation(reload: true)
+            return
+        }
         guard completed else {
             if !Task.isCancelled {
                 // Cortado sin cancelar (la app dejó de estar en primer plano antes de que llegara su `setBackground`).
@@ -3260,7 +3329,13 @@ final class PanelViewModel {
     /// movimientos en el iPhone 14 el cálculo entero tardaba 7 s (16 s compitiendo) de una vez, y si la persona se iba
     /// a otra app en ese rato, iOS no podía tomar la foto de la escena y la cerraba a los 10 s (`0x8BADF00D` en segundo
     /// plano, `docs/qa/rendimiento-iphone14-2026-11-26/`). Entre etapa y etapa la app atiende el paso a segundo plano, y el
-    /// freno (`setBackground`) corta lo que falta. Cada etapa sigue siendo de una vez: partirlas por dentro es el lote 4.
+    /// freno (`setBackground`) corta lo que falta.
+    ///
+    /// Y por tramos dentro de cada etapa (lote 4 de eficiencia, 26-nov-2026): `CesionDelHilo` cede el hilo cuando un tramo
+    /// pasa de 25 ms y corta si el cálculo ya no sigue (`calculationContinues`). Los recorridos por fecha de presupuestos,
+    /// nota de salud y gastos por cuenta van por un índice armado una vez (`IndiceFechasMovimientos`), que devuelve los
+    /// mismos movimientos y en el mismo orden: las cifras no cambian. Las marcas «Panel.performCalculation» y las de cada
+    /// etapa (`MarcasRecalculoPanel`) lo miden en Instruments.
     /// `false` si se cortó: las etapas hechas ya pintan, las demás conservan lo de antes hasta el próximo cálculo.
     private func performCalculationInStages() async -> Bool {
         guard let sessionState, let context = modelContext else { return true }
@@ -3268,20 +3343,47 @@ final class PanelViewModel {
         debugCalculationsStarted += 1
         print("PanelViewModel: performCalculation #\(debugCalculationsStarted)")
         #endif
-        calculateTrendData(
-            accounts: accounts,
-            transactions: transactions,
-            defaultCurrencyCode: defaultCurrencyCode,
-            context: context,
-            sessionState: sessionState
-        )
-        guard await continuesAfterStage(context: context) else { return false }
-        if isWidgetVisible(.budgets) {
-            calculateBudgetsWidget(
-                budgets: budgets,
+        let marcas = MarcasRecalculoPanel()
+        marcasEnCurso = marcas
+        savesAtCalculationCheck = StoreSaveCounter.shared.count
+        let cesion = CesionDelHilo { [weak self] in
+            self?.calculationContinues(context: context) ?? false
+        }
+        var completado = false
+        defer {
+            cesion.cerrar()
+            marcas.terminar(completado: completado, cesion: cesion)
+            marcasEnCurso = nil
+        }
+        marcas.etapa("indice")
+        let indice: IndiceFechasMovimientos<TransactionItem>
+        do {
+            indice = try await IndiceFechasMovimientos.armar(transactions, fecha: \.date, cesion: cesion)
+            marcas.etapa("tendencia")
+            try await calculateTrendData(
+                accounts: accounts,
                 transactions: transactions,
-                defaultCurrencyCode: defaultCurrencyCode
+                defaultCurrencyCode: defaultCurrencyCode,
+                context: context,
+                sessionState: sessionState,
+                cesion: cesion
             )
+        } catch {
+            return false
+        }
+        guard await continuesAfterStage(context: context) else { return false }
+        marcas.etapa("presupuestos")
+        if isWidgetVisible(.budgets) {
+            do {
+                try await calculateBudgetsWidget(
+                    budgets: budgets,
+                    indice: indice,
+                    defaultCurrencyCode: defaultCurrencyCode,
+                    cesion: cesion
+                )
+            } catch {
+                return false
+            }
         }
         // Shared paidAmounts fetch between the scheduled-payments widget and the
         // Salud Financiera section when both target the current calendar month.
@@ -3314,6 +3416,7 @@ final class PanelViewModel {
             calculateScheduledPaymentsWidget(injectedPaidAmounts: sharedPaidAmounts)
         }
         guard await continuesAfterStage(context: context) else { return false }
+        marcas.etapa("salud")
 
         if healthVisible {
             // El score Salud Financiera ahora reacciona a `selectedPeriod`. Para el
@@ -3333,12 +3436,18 @@ final class PanelViewModel {
                     for: activePayments, interval: scoreInterval, context: context
                 )
             }
-            calculateHealthWidget(paidAmounts: paidForHealth)
+            do {
+                try await calculateHealthWidget(paidAmounts: paidForHealth, indice: indice, cesion: cesion)
+            } catch {
+                return false
+            }
         }
         guard await continuesAfterStage(context: context) else { return false }
+        marcas.etapa("gastosPorCuenta")
 
-        calculateAccountPeriodExpenses()
+        calculateAccountPeriodExpenses(indice: indice)
         guard await continuesAfterStage(context: context) else { return false }
+        marcas.etapa("hero")
         // Hero always computes — it replaces the Panel title and cannot be
         // hidden (see epic out-of-scope). Cheap O(n) pass over `transactions`;
         // the equality guard in `calculateHeroWidget()` suppresses no-op
@@ -3352,6 +3461,7 @@ final class PanelViewModel {
         #if DEBUG
         debugCalculationRuns += 1
         #endif
+        completado = true
         return true
     }
 
@@ -3362,7 +3472,38 @@ final class PanelViewModel {
         do { try await Task.sleep(for: .milliseconds(1)) } catch { return false }
         guard !Task.isCancelled, !isInBackground, isApplicationInForeground() else { return false }
         guard !boundStore.isDetached, let current = modelContext, current === context else { return false }
-        return true
+        return !lostRowsToADeletion()
+    }
+
+    /// Lo mismo, para los tramos de dentro de una etapa (`CesionDelHilo`, lote 4 de eficiencia), sin la espera: la
+    /// cesión ya esperó.
+    private func calculationContinues(context: ModelContext) -> Bool {
+        guard !Task.isCancelled, !isInBackground, isApplicationInForeground() else { return false }
+        guard !boundStore.isDetached, let current = modelContext, current === context else { return false }
+        return !lostRowsToADeletion()
+    }
+
+    /// Guardados vistos en la última comprobación del cálculo en curso.
+    @ObservationIgnored private var savesAtCalculationCheck = 0
+    /// El cálculo se cortó porque un guardado borró movimientos que tenía en la mano: lo rehace una recarga.
+    @ObservationIgnored private var calculationLostRowsToADeletion = false
+
+    /// ¿Hubo un guardado desde la última comprobación y dejó borrado algún movimiento del cálculo? (lote 4 de eficiencia)
+    ///
+    /// Con cesiones dentro de las etapas, otra tarea del hilo principal puede borrar entre dos tramos (un «Deshacer» que
+    /// vence, una página de la nube), y leer un `@Model` borrado aborta en el iPhone. Un guardado sin borrados no corta:
+    /// con una importación o la sincronización en marcha el Panel no terminaría nunca.
+    private func lostRowsToADeletion() -> Bool {
+        let saves = StoreSaveCounter.shared.count
+        guard saves != savesAtCalculationCheck else { return calculationLostRowsToADeletion }
+        savesAtCalculationCheck = saves
+        if transactions.contains(where: { $0.isDeleted || $0.modelContext == nil }) {
+            #if DEBUG
+            print("PanelViewModel: un guardado borró movimientos a mitad del cálculo → se corta y recarga")
+            #endif
+            calculationLostRowsToADeletion = true
+        }
+        return calculationLostRowsToADeletion
     }
 
     private func calculateWeekdayWidget(context: PanelCalculationContext) {
@@ -3576,9 +3717,15 @@ final class PanelViewModel {
     /// Pre-computes the Financial Score for the Panel 2.0 "Salud Financiera" section.
     /// Called from `performCalculation()` only when `.health` section is visible.
     /// El score reacciona a `selectedPeriod` — cada cambio de período recalcula.
-    private func calculateHealthWidget(paidAmounts: [String: [PaidOccurrenceInfo]]) {
+    /// Por partes que ceden el hilo entre una y otra (lote 4 de eficiencia): `FinancialScoreCalculator.plan`, los mismos
+    /// pasos que `calculate`.
+    private func calculateHealthWidget(
+        paidAmounts: [String: [PaidOccurrenceInfo]],
+        indice: IndiceFechasMovimientos<TransactionItem>,
+        cesion: CesionDelHilo
+    ) async throws {
         let includeBridgedGroupTx = (UserDefaults.standard.object(forKey: AppPreferences.Keys.includeGroupTransactionsInStats) as? Bool) ?? true
-        let newScore = FinancialScoreCalculator.calculate(
+        let plan = FinancialScoreCalculator.plan(
             transactions: transactions,
             budgets: budgets,
             scheduledPayments: scheduledPayments,
@@ -3593,9 +3740,14 @@ final class PanelViewModel {
             // hoja de Salud financiera (20-nov-2026).
             coverageAccounts: FinancialScoreCalculator.coverageAccounts(accounts, scope: healthCoverageScope),
             // «Lo que te queda» no cuenta en «Solo gastos»: sin ingresos no hay nada que medir (lote 2 de la nota).
-            countsSavings: !SessionState.shared.isExpensesOnlyMode
+            countsSavings: !SessionState.shared.isExpensesOnlyMode,
+            indice: indice
         )
-        let newData = PanelHealthData(score: newScore)
+        for paso in plan.pasos {
+            paso()
+            try await cesion.cederSiToca()
+        }
+        let newData = PanelHealthData(score: plan.resultado())
         if newData != healthWidget { healthWidget = newData }
     }
 
@@ -3803,9 +3955,11 @@ final class PanelViewModel {
     /// Pre-computes period-specific expenses per account (expenses-only mode). La regla es `AccountSpendingLogic`, la
     /// misma de la vista de cuenta: una devolución resta.
     /// Called from performCalculation() — recalculates on period/filter changes.
-    private func calculateAccountPeriodExpenses() {
+    /// Con `indice` (lote 4 de eficiencia), solo los movimientos del período, en su orden: `spentByAccount` filtra igual
+    /// por dentro y da la misma cifra.
+    private func calculateAccountPeriodExpenses(indice: IndiceFechasMovimientos<TransactionItem>? = nil) {
         let newExpenses = AccountSpendingLogic.spentByAccount(
-            transactions,
+            indice?.elementos(en: panelDateInterval) ?? transactions,
             accounts: accounts.map(\.persistentModelID),
             in: panelDateInterval,
             key: \.persistentModelID

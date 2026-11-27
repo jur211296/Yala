@@ -47,13 +47,14 @@ enum FinancialScoreAlertsLogic {
         now: Date,
         calendar: Calendar,
         adjustment: GroupBridgeStatsAdjustment,
-        converter: CurrencyConverting
+        converter: CurrencyConverting,
+        movimientosEn: ((DateInterval) -> [TransactionItem])? = nil
     ) -> FinancialScoreAlerts {
         guard periodInterval.contains(now) else { return FinancialScoreAlerts() }
         return FinancialScoreAlerts(
             overBudgets: overBudgets(
                 transactions: transactions, budgets: budgets, now: now, calendar: calendar,
-                adjustment: adjustment, converter: converter
+                adjustment: adjustment, converter: converter, movimientosEn: movimientosEn
             ),
             negativeAccounts: negativeAccounts(
                 accounts: accounts, transactions: transactions, now: now, converter: converter
@@ -63,13 +64,18 @@ enum FinancialScoreAlertsLogic {
 
     /// Lo gastado con la cuenta de Planificación (`BudgetsViewModel.calculateSpending`) en el período EN CURSO de cada
     /// presupuesto (`BudgetPeriodInterval.current`), y «pasado» con la regla de la fila (`BudgetRemainingLogic.isOver`).
+    ///
+    /// `movimientosEn` (lote 4 de eficiencia) da los movimientos de un intervalo sin recorrer los 16 mil por presupuesto
+    /// (`IndiceFechasMovimientos`, en el orden original): `calculateSpending` filtra igual por dentro, así que la cifra es
+    /// la misma.
     static func overBudgets(
         transactions: [TransactionItem],
         budgets: [Budget],
         now: Date,
         calendar: Calendar,
         adjustment: GroupBridgeStatsAdjustment,
-        converter: CurrencyConverting
+        converter: CurrencyConverting,
+        movimientosEn: ((DateInterval) -> [TransactionItem])? = nil
     ) -> [String] {
         budgets
             .filter { $0.isActive && $0.limitAmount > 0 }
@@ -77,7 +83,7 @@ enum FinancialScoreAlertsLogic {
                 let current = BudgetPeriodInterval.current(for: budget, now: now, calendar: calendar)
                 guard current.contains(now) else { return nil }
                 let spent = BudgetsViewModel.calculateSpending(
-                    budget: budget, transactions: transactions, interval: current,
+                    budget: budget, transactions: movimientosEn?(current) ?? transactions, interval: current,
                     adjustment: adjustment, converter: converter
                 )
                 guard BudgetRemainingLogic.isOver(limit: budget.limitAmount, spent: spent) else { return nil }

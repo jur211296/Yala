@@ -169,6 +169,15 @@ paths:
   nuevo que corra al pasar a segundo plano, o que pueda estar en vuelo en ese momento, cede el hilo y se corta**; si
   necesita terminar fuera, por etapas y con `beginBackgroundTask`. Tirar para actualizar también mira la firma del Panel
   (`refreshIfStale`). Pin: `YalaTests/EficienciaSegundoPlano/`.
+  **Y dentro de cada etapa, por tramos (2026-11-26, lote 4 de eficiencia).** El cálculo del Panel cede el hilo cada ~25 ms
+  (`CesionDelHilo`, `Logic/RecalculoPanel/`) y lo que busca por fecha va por un índice armado una vez por recálculo
+  (`IndiceFechasMovimientos`, que devuelve los movimientos en el orden original: las sumas no cambian). Medido en el
+  iPhone 14 con 16 k: bloqueos del Panel al arrancar de 16,7 s a 5,3 s. ⇒ **un recorrido nuevo del historial dentro del
+  cálculo va por `cesion.porTrozos` o pide su intervalo al índice**, nunca un `transactions.filter` de una vez, y **una
+  parte nueva se publica al final de su etapa**: si la cesión la corta, no publica. Con más cesiones, otra tarea puede
+  borrar un movimiento entre dos tramos: un guardado que deja borrado algo del cálculo lo corta y pide la recarga
+  (`lostRowsToADeletion`). Lo que sigue de una vez: la proyección del saldo (~0,9 s, motor del flujo de caja). Pin:
+  `YalaTests/EficienciaRecalculoPanel/`.
 
 - **«Solo grupos» tiene dos orígenes desde el 2026-10-26 (card p0iu), y la shell los lee juntos.** Sin sesión privada
   (`!hasPrivateSession`, el eje) o con sesión privada y «Solo grupos» elegido en «Cómo usas Yala» (`GroupsOnlyViewMark`,

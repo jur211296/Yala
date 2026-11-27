@@ -154,10 +154,63 @@ enum FinancialScoreCalculator {
         includeBridgedGroupTx: Bool = true,
         adjustment: GroupBridgeStatsAdjustment = .none,
         coverageAccounts: [Account]? = nil,
-        countsSavings: Bool = true
+        countsSavings: Bool = true,
+        indice: IndiceFechasMovimientos<TransactionItem>? = nil
     ) -> FinancialScore {
+        let plan = Self.plan(
+            transactions: transactions, budgets: budgets, scheduledPayments: scheduledPayments, accounts: accounts,
+            paidAmounts: paidAmounts, period: period, customRange: customRange,
+            preferredCurrencyCode: preferredCurrencyCode, converter: converter, now: now, calendar: calendar,
+            includeBridgedGroupTx: includeBridgedGroupTx, adjustment: adjustment, coverageAccounts: coverageAccounts,
+            countsSavings: countsSavings, indice: indice
+        )
+        plan.pasos.forEach { $0() }
+        return plan.resultado()
+    }
+
+    /// La nota por partes (lote 4 de eficiencia, 26-nov-2026): `pasos` calcula cada parte (presupuesto, ritmo,
+    /// compromisos, lo que te queda, alertas) y `resultado` las junta. `calculate` los corre seguidos; el Panel cede el
+    /// hilo entre uno y otro (`CesionDelHilo`), porque con 16.004 movimientos la nota entera era un bloque de más de un
+    /// segundo. Mismos pasos y en el mismo orden: la misma nota.
+    struct Plan {
+        let pasos: [() -> Void]
+        let resultado: () -> FinancialScore
+    }
+
+    /// Lo que cada paso deja calculado.
+    private final class Partes {
+        var budget: Int?
+        var rhythm: Int?
+        var commitments: Int?
+        var savingsFigures: SavingsFigures?
+        var alerts = FinancialScoreAlerts()
+    }
+
+    static func plan(
+        transactions: [TransactionItem],
+        budgets: [Budget],
+        scheduledPayments: [ScheduledPayment],
+        accounts: [Account],
+        paidAmounts: [String: [PaidOccurrenceInfo]],
+        period: DetailPeriod,
+        customRange: DateInterval? = nil,
+        preferredCurrencyCode: String,
+        converter: CurrencyConverting = CurrencyConverter.shared,
+        now: Date = .now,
+        calendar: Calendar = .current,
+        includeBridgedGroupTx: Bool = true,
+        adjustment: GroupBridgeStatsAdjustment = .none,
+        coverageAccounts: [Account]? = nil,
+        countsSavings: Bool = true,
+        indice: IndiceFechasMovimientos<TransactionItem>? = nil
+    ) -> Plan {
+        // `indice` (lote 4 de eficiencia, 26-nov-2026): los movimientos de un intervalo sin recorrer el historial entero.
+        // Devuelve los mismos elementos y en el mismo orden que el filtro por ese intervalo, así que cada parte de la nota
+        // da la misma cifra con él o sin él (`YalaTests/EficienciaRecalculoPanel/`). Con 16.004 movimientos y 24
+        // presupuestos, cada ciclo de cada presupuesto recorría los 16 mil.
+        let movimientosEn: ((DateInterval) -> [TransactionItem])? = indice.map { indice in { indice.elementos(en: $0) } }
         let interval = period.dateInterval(customRange: customRange, now: now)
-        let intervalTransactions = transactions.filter {
+        let intervalTransactions = (movimientosEn?(interval) ?? transactions).filter {
             interval.contains($0.date) && BridgedTransactionFilter.shouldInclude(
                 splitExpenseID: $0.splitExpenseID,
                 splitSettlementID: $0.splitSettlementID,
@@ -165,28 +218,36 @@ enum FinancialScoreCalculator {
             )
         }
 
-        let budget = calculateBudget(
+        let partes = Partes()
+        let pasoPresupuesto: () -> Void = {
+        partes.budget = calculateBudget(
             budgets: budgets,
             transactions: transactions,
             interval: interval,
             now: now,
             calendar: calendar,
-            adjustment: adjustment
+            adjustment: adjustment,
+            movimientosEn: movimientosEn
         )
-        let rhythm = calculateRhythm(
+        }
+        let pasoRitmo: () -> Void = {
+        partes.rhythm = calculateRhythm(
             transactions: intervalTransactions,
             lastRecordDate: lastRecordDate(
                 transactions: transactions,
                 interval: interval,
                 now: now,
-                includeBridgedGroupTx: includeBridgedGroupTx
+                includeBridgedGroupTx: includeBridgedGroupTx,
+                indice: indice
             ),
             interval: interval,
             period: period,
             now: now,
             calendar: calendar
         )
-        let commitments = calculateCommitments(
+        }
+        let pasoCompromisos: () -> Void = {
+        partes.commitments = calculateCommitments(
             scheduledPayments: scheduledPayments,
             paidAmounts: paidAmounts,
             transactions: transactions,
@@ -197,9 +258,12 @@ enum FinancialScoreCalculator {
             converter: converter,
             now: now,
             calendar: calendar,
-            adjustment: adjustment
+            adjustment: adjustment,
+            movimientosEn: movimientosEn
         )
-        let savingsFigures = countsSavings
+        }
+        let pasoLoQueTeQueda: () -> Void = {
+        partes.savingsFigures = countsSavings
             ? Self.savingsFigures(
                 transactions: transactions,
                 accounts: accounts,
@@ -209,12 +273,13 @@ enum FinancialScoreCalculator {
                 adjustment: adjustment,
                 converter: converter,
                 now: now,
-                calendar: calendar
+                calendar: calendar,
+                movimientosEn: movimientosEn
             )
             : nil
-        let savings = savingsFigures?.rate.map { savingsScore(rate: $0) }
-        let total = computeTotal(budget: budget, rhythm: rhythm, commitments: commitments, savings: savings)
-        let alerts = FinancialScoreAlertsLogic.alerts(
+        }
+        let pasoAlertas: () -> Void = {
+        partes.alerts = FinancialScoreAlertsLogic.alerts(
             transactions: transactions,
             budgets: budgets,
             accounts: accounts,
@@ -222,10 +287,22 @@ enum FinancialScoreCalculator {
             now: now,
             calendar: calendar,
             adjustment: adjustment,
-            converter: converter
+            converter: converter,
+            movimientosEn: movimientosEn
         )
-        return FinancialScore(total: total, budget: budget, activity: rhythm, bills: commitments,
-                              savings: savings, savingsFigures: savings == nil ? nil : savingsFigures, alerts: alerts)
+        }
+        return Plan(
+            pasos: [pasoPresupuesto, pasoRitmo, pasoCompromisos, pasoLoQueTeQueda, pasoAlertas],
+            resultado: {
+                let savings = partes.savingsFigures?.rate.map { savingsScore(rate: $0) }
+                let total = computeTotal(
+                    budget: partes.budget, rhythm: partes.rhythm, commitments: partes.commitments, savings: savings
+                )
+                return FinancialScore(total: total, budget: partes.budget, activity: partes.rhythm,
+                                      bills: partes.commitments, savings: savings,
+                                      savingsFigures: savings == nil ? nil : partes.savingsFigures, alerts: partes.alerts)
+            }
+        )
     }
 
     // MARK: - Weighted total con re-normalización
@@ -285,14 +362,17 @@ enum FinancialScoreCalculator {
         adjustment: GroupBridgeStatsAdjustment,
         converter: CurrencyConverting,
         now: Date = .now,
-        calendar: Calendar
+        calendar: Calendar,
+        movimientosEn: ((DateInterval) -> [TransactionItem])? = nil
     ) -> SavingsFigures? {
         let endOfToday = calendar.date(byAdding: DateComponents(day: 1, second: -1), to: calendar.startOfDay(for: now))
             ?? now
         guard interval.start <= endOfToday else { return nil }
         let upToToday = DateInterval(start: interval.start, end: min(interval.end, endOfToday))
         let eligible = Set(accounts.filter(\.keepsHistory).map(\.persistentModelID))
-        let rows = transactions.filter {
+        // Solo cuentan las filas de `upToToday` (el resto cae fuera de los dos intervalos del hero; el anterior es vacío):
+        // con `movimientosEn` (lote 4) no se recorre el historial entero, y la suma sale en el mismo orden.
+        let rows = (movimientosEn?(upToToday) ?? transactions).filter {
             BridgedTransactionFilter.shouldInclude(
                 splitExpenseID: $0.splitExpenseID,
                 splitSettlementID: $0.splitSettlementID,
@@ -324,7 +404,8 @@ enum FinancialScoreCalculator {
         interval: DateInterval,
         now: Date,
         calendar: Calendar,
-        adjustment: GroupBridgeStatsAdjustment
+        adjustment: GroupBridgeStatsAdjustment,
+        movimientosEn: ((DateInterval) -> [TransactionItem])? = nil
     ) -> Int? {
         guard !budgets.isEmpty else { return nil }
 
@@ -337,10 +418,11 @@ enum FinancialScoreCalculator {
                 guard bucketIsValid(bucket, for: budget, calendar: calendar) else { continue }
                 // El gasto se cuenta en el bucket CERRADO en su último segundo: `bucket` termina en la
                 // medianoche del siguiente y un gasto de ese instante contaba en los dos.
+                let closed = BudgetPeriodInterval.closing(bucket, calendar: calendar)
                 let spending = BudgetsViewModel.calculateSpending(
                     budget: budget,
-                    transactions: transactions,
-                    interval: BudgetPeriodInterval.closing(bucket, calendar: calendar),
+                    transactions: movimientosEn?(closed) ?? transactions,
+                    interval: closed,
                     adjustment: adjustment
                 )
                 let score = scoreForBucket(
@@ -451,9 +533,20 @@ enum FinancialScoreCalculator {
         transactions: [TransactionItem],
         interval: DateInterval,
         now: Date,
-        includeBridgedGroupTx: Bool
+        includeBridgedGroupTx: Bool,
+        indice: IndiceFechasMovimientos<TransactionItem>? = nil
     ) -> Date? {
         let limit = min(interval.end, now)
+        // Con el índice, del más nuevo hacia atrás hasta el primero que cuenta: la misma fecha que el máximo del filtro.
+        if let indice, indice.tieneIndice, indice.count == transactions.count {
+            return indice.ultimaFecha(hasta: limit) {
+                $0.balanceAdjustmentType == nil && BridgedTransactionFilter.shouldInclude(
+                    splitExpenseID: $0.splitExpenseID,
+                    splitSettlementID: $0.splitSettlementID,
+                    includeGroupsToggle: includeBridgedGroupTx
+                )
+            }
+        }
         return transactions
             .filter {
                 $0.balanceAdjustmentType == nil && $0.date <= limit && BridgedTransactionFilter.shouldInclude(
@@ -474,9 +567,10 @@ enum FinancialScoreCalculator {
         now: Date,
         calendar: Calendar
     ) -> Int? {
-        let nonAdjustment = transactions
-            .filter { $0.balanceAdjustmentType == nil }
-            .sorted { $0.date < $1.date }
+        // Sin ordenar los movimientos (lote 4 de eficiencia): el hueco sale de los DÍAS con registro, y cada día se calcula
+        // una vez. Ordenar los 16 mil por fecha (leída de SwiftData en cada comparación) era la mitad del ritmo.
+        let nonAdjustment = transactions.filter { $0.balanceAdjustmentType == nil }
+        let days = Set(nonAdjustment.map { calendar.startOfDay(for: $0.date) })
 
         // Período en curso: el hueco desde el último registro hasta hoy también cuenta (lote 1 de la nota de salud).
         // Hoy no cuenta como día sin registrar: aún no ha terminado.
@@ -495,9 +589,7 @@ enum FinancialScoreCalculator {
 
         let gap: Double
         if useMonthlyAvg {
-            var monthlyGaps = computeMonthlyMaxGaps(
-                transactions: nonAdjustment, calendar: calendar
-            )
+            var monthlyGaps = computeMonthlyMaxGaps(days: days, calendar: calendar)
             // El hueco hasta hoy entra en el mes en curso, entero.
             if let trailingGap {
                 let currentMonth = calendar.dateComponents([.year, .month], from: now)
@@ -506,7 +598,7 @@ enum FinancialScoreCalculator {
             guard !monthlyGaps.isEmpty else { return nil }
             gap = Double(monthlyGaps.values.reduce(0, +)) / Double(monthlyGaps.count)
         } else {
-            gap = Double(max(computeMaxGap(transactions: nonAdjustment, calendar: calendar), trailingGap ?? 0))
+            gap = Double(max(computeMaxGap(days: days, calendar: calendar), trailingGap ?? 0))
         }
 
         return rhythmScore(gap: gap)
@@ -534,11 +626,10 @@ enum FinancialScoreCalculator {
 
     /// maxGap en días entre transacciones consecutivas (excluye balance adjustments).
     /// Días consecutivos = 0 días sin registrar.
-    private static func computeMaxGap(
-        transactions: [TransactionItem], calendar: Calendar
+    static func computeMaxGap(
+        days: Set<Date>, calendar: Calendar
     ) -> Int {
-        let days = transactions.map { calendar.startOfDay(for: $0.date) }
-        let unique = Array(Set(days)).sorted()
+        let unique = days.sorted()
         guard unique.count > 1 else { return 0 }
         var maxGap = 0
         for i in 1..<unique.count {
@@ -548,15 +639,15 @@ enum FinancialScoreCalculator {
         return maxGap
     }
 
-    /// Agrupa tx por `(year, month)` y devuelve el maxGap de cada mes.
-    /// Meses sin transacciones no contribuyen.
-    private static func computeMonthlyMaxGaps(
-        transactions: [TransactionItem], calendar: Calendar
+    /// Agrupa los días con registro por `(year, month)` y devuelve el maxGap de cada mes. El mes de un día es el de sus
+    /// movimientos (el inicio del día cae en el mismo mes). Meses sin transacciones no contribuyen.
+    static func computeMonthlyMaxGaps(
+        days: Set<Date>, calendar: Calendar
     ) -> [DateComponents: Int] {
-        let grouped = Dictionary(grouping: transactions) { tx -> DateComponents in
-            calendar.dateComponents([.year, .month], from: tx.date)
+        let grouped = Dictionary(grouping: days) { day -> DateComponents in
+            calendar.dateComponents([.year, .month], from: day)
         }
-        return grouped.mapValues { computeMaxGap(transactions: $0, calendar: calendar) }
+        return grouped.mapValues { computeMaxGap(days: Set($0), calendar: calendar) }
     }
 
     // MARK: - Commitments sub-score (antes Bills)
@@ -572,7 +663,8 @@ enum FinancialScoreCalculator {
         converter: CurrencyConverting,
         now: Date,
         calendar: Calendar,
-        adjustment: GroupBridgeStatsAdjustment
+        adjustment: GroupBridgeStatsAdjustment,
+        movimientosEn: ((DateInterval) -> [TransactionItem])? = nil
     ) -> Int? {
         if isShortPeriod(period) { return nil }
 
@@ -616,7 +708,7 @@ enum FinancialScoreCalculator {
 
         // 2. Carga
         let income = sumIncomeTransactions(
-            transactions,
+            movimientosEn?(cmtInterval) ?? transactions,
             interval: cmtInterval,
             currencyCode: preferredCurrencyCode,
             adjustment: adjustment,

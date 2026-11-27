@@ -1,0 +1,3 @@
+despues2 · Otro: 2 bloqueos · 0.8 s · máx 419 ms
+despues2 · Panel: 10 bloqueos · 5.3 s · máx 945 ms
+despues2 · Widgets: 10 bloqueos · 6.0 s · máx 1421 ms
