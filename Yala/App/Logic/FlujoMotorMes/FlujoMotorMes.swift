@@ -484,9 +484,7 @@ enum FlujoMotorMes {
                 fijos: fijos,
                 faltaVariable: faltaVariable,
                 aislados: aisladosDelMes.sorted { $0.importe > $1.importe },
-                partidas: partidas.values
-                    .filter { abs($0.total) > 0.000_5 || !$0.fijos.isEmpty }
-                    .sorted { ($0.total, orden($0.base)) > ($1.total, orden($1.base)) },
+                partidas: ordenarPartidas(partidas.values.filter { abs($0.total) > 0.000_5 || !$0.fijos.isEmpty }),
                 soloFijos: soloFijos,
                 fijosApagados: fijosApagados
             ),
@@ -494,8 +492,27 @@ enum FlujoMotorMes {
         )
     }
 
+    /// Las partidas de mayor a menor total; con el mismo total, por `orden(base)`. La clave se calcula UNA vez por
+    /// partida: con ella dentro del comparador, cada comparación pasaba dos `PersistentIdentifier` por
+    /// `String(describing:)` (reflexión), y era el 34 % del motor del mes con 13 meses y 16 mil movimientos. Mismo
+    /// comparador sobre la misma clave: el resultado no cambia, desempates incluidos.
+    static func ordenarPartidas(_ partidas: [PartidaOtros]) -> [PartidaOtros] {
+        partidas
+            .map { (partida: $0, clave: orden($0.base)) }
+            .sorted { ($0.partida.total, $0.clave) > ($1.partida.total, $1.clave) }
+            .map(\.partida)
+    }
+
+    #if DEBUG
+    /// Testigo de `YalaTests/ArreglosPreBuild12/`: cuántas claves de orden se calcularon (una por partida).
+    nonisolated(unsafe) static var _testClavesDeOrden = 0
+    #endif
+
     /// Un orden estable entre partidas con el mismo total.
     private static func orden(_ base: FlujoProyeccionInteligente.Clave.Base) -> String {
+        #if DEBUG
+        _testClavesDeOrden += 1
+        #endif
         switch base {
         case .subcategoria(let id): return "s\(String(describing: id))"
         case .categoria(let id): return "c\(String(describing: id))"

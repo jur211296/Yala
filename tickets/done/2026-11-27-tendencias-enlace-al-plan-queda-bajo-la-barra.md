@@ -1,6 +1,6 @@
 ---
 id: 2026-11-27-tendencias-enlace-al-plan-queda-bajo-la-barra
-status: backlog
+status: done
 priority: medium
 area: "estadísticas, proyección, pruebas de interfaz"
 created: 2026-11-27
@@ -31,3 +31,14 @@ barra; o el `scrollTo` del test deja de desplazar cuando el elemento ya «existe
 1. Abrir Tendencias con «Ver proyectado» en el simulador y comprobar a mano si el enlace se alcanza desplazando.
 2. Si se alcanza: arreglar el `scrollTo` del test (arrastres cortos hasta la franja central, molde `openObservations`).
 3. Si no: dar al contenido el margen inferior de la barra.
+
+## Resuelto (27-nov-2026, lote «Arreglos pre-build 12»)
+
+- **Medido en el simulador** (Mini, iPhone 17 Pro, iOS 27.2, semilla `realista`, «Este año»): con «Ver proyectado»
+  encendido, el enlace queda en y=814, bajo la barra de pestañas (y=795). Desplazando a mano sube a y=635 y se toca.
+  **La app no tenía nada que arreglar: era la prueba.**
+- **Causa (inferida, no aislada con un mutante):** el arrastre de `scrollTo` empieza en el 70 % del alto, encima de la
+  gráfica de la tarjeta, que se queda el gesto; la página no se desplaza y a los 14 arrastres la prueba se rinde.
+- **Arreglo:** `ProjectedFlowUITests.bringToCenter`, arrastres cortos y lentos por el margen derecho (fuera de las
+  tarjetas) hasta dejar el enlace en la franja central, molde `openObservations`. La prueba toca el enlace y comprueba
+  que abre el armado del plan. Verde a la primera (26 s).

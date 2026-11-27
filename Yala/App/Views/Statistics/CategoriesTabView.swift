@@ -501,12 +501,16 @@ struct CategoriesTabView: View {
         VStack(spacing: DS.Spacing.sm) {
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .top, spacing: DS.Spacing.md) {
+                    // Cada página es un contenedor de accesibilidad con su id: puesto a pelo, el id de la página pisaba el de
+                    // todo lo de dentro y el «?» de la torta salía como `distribution_page_*`, no como `widget_info_*`.
                     categoryChartCard
+                        .accessibilityElement(children: .contain)
                         .accessibilityIdentifier("distribution_page_category")
                         .containerRelativeFrame(.horizontal, count: isWide ? 2 : 1, spacing: isWide ? DS.Spacing.md : 0)
                         .id("category")
 
                     subcategoryChartCard
+                        .accessibilityElement(children: .contain)
                         .accessibilityIdentifier("distribution_page_subcategory")
                         .containerRelativeFrame(.horizontal, count: isWide ? 2 : 1, spacing: isWide ? DS.Spacing.md : 0)
                         .id("subcategory")
@@ -514,6 +518,7 @@ struct CategoriesTabView: View {
                     // Tags Chart - on iPad, tags moves next to need (needsLargeSection HStack)
                     if !isWide {
                         tagChartCard
+                            .accessibilityElement(children: .contain)
                             .accessibilityIdentifier("distribution_page_tags")
                             .containerRelativeFrame(.horizontal)
                             .id("tags")

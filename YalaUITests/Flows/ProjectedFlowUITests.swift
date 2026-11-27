@@ -58,6 +58,27 @@ final class ProjectedFlowUITests: XCTestCase {
         return target.exists && target.isHittable
     }
 
+    /// Deja el elemento en la franja central de la pantalla con arrastres cortos por el margen derecho, fuera de las
+    /// tarjetas (molde `openObservations`). En Tendencias, con «Ver proyectado» encendido, el arrastre de `scrollTo`
+    /// empezaba encima de la gráfica, que se queda el gesto, y el enlace seguía bajo la barra de pestañas (medido el
+    /// 27-nov-2026: a mano se alcanza desplazando).
+    @discardableResult
+    private func bringToCenter(_ app: XCUIApplication, _ target: XCUIElement, drags: Int = 12) -> Bool {
+        let window = app.windows.firstMatch.frame
+        let band = (window.height * 0.3)...(window.height * 0.7)
+        let low = app.coordinate(withNormalizedOffset: CGVector(dx: 0.97, dy: 0.7))
+        let high = app.coordinate(withNormalizedOffset: CGVector(dx: 0.97, dy: 0.45))
+        for _ in 0..<drags {
+            if target.exists, band.contains(target.frame.midY) { return true }
+            if target.exists, target.frame.midY < band.lowerBound {
+                high.press(forDuration: 0.05, thenDragTo: low, withVelocity: .slow, thenHoldForDuration: 0.2)
+            } else {
+                low.press(forDuration: 0.05, thenDragTo: high, withVelocity: .slow, thenHoldForDuration: 0.2)
+            }
+        }
+        return target.exists && band.contains(target.frame.midY)
+    }
+
     /// En «Este mes», que es donde convive con «Ver el mes anterior» («Este año» no tiene comparación).
     func test_trends_projectionToggle_showsTheClosingFigure_andExcludesThePreviousPeriod() throws {
         let calendar = Calendar.current
@@ -139,7 +160,7 @@ final class ProjectedFlowUITests: XCTestCase {
 
         XCTAssertFalse(element(app, "trend_projected_link_plan").exists, "Sin plan, el enlace dice «Ver tu plan».")
         let link = element(app, "trend_projected_link_setup")
-        XCTAssertTrue(scrollTo(app, link), "Sin plan, falta «Afinar con un plan de flujo de caja» bajo la cifra.")
+        XCTAssertTrue(bringToCenter(app, link), "Sin plan, falta «Afinar con un plan de flujo de caja» bajo la cifra.")
         link.tap()
         XCTAssertTrue(element(app, "cashflow_setup_view").waitForExistence(timeout: 15),
                       "El enlace no lleva a armar el plan en Flujo de caja.")
