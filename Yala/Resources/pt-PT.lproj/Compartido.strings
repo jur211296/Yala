@@ -1,0 +1,18 @@
+/*
+  Compartido.strings
+  Yala
+
+  La sección «Compartido» (lote 1 de Compartido: Grupos y Personas, 26-nov-2026): los chips «Grupos | Personas», el
+  botón «Añadir persona» y la lista de Personas con sus liquidadas. Tabla propia, fuera de Localizable.strings.
+*/
+
+"compartido.chip.groups" = "Grupos";
+"compartido.chip.people" = "Pessoas";
+"compartido.addPerson" = "Adicionar pessoa";
+"compartido.people.inGroups" = "Em %@";
+"compartido.people.settledIn" = "Contas saldadas · %@";
+"compartido.people.showSettled" = "Ver saldadas (%d)";
+"compartido.people.hideSettled" = "Ocultar saldadas";
+"compartido.people.noGroup" = "Sem grupo";
+"compartido.people.emptyTitle" = "Ainda não partilhas despesas com ninguém";
+"compartido.people.emptyMessage" = "Quando registares uma despesa com alguém num grupo, vês aqui quanto essa pessoa te deve ou quanto lhe deves, somando todos os teus grupos.";

@@ -1,0 +1,18 @@
+/*
+  Compartido.strings
+  Yala
+
+  La sección «Compartido» (lote 1 de Compartido: Grupos y Personas, 26-nov-2026): los chips «Grupos | Personas», el
+  botón «Añadir persona» y la lista de Personas con sus liquidadas. Tabla propia, fuera de Localizable.strings.
+*/
+
+"compartido.chip.groups" = "Gruppen";
+"compartido.chip.people" = "Personen";
+"compartido.addPerson" = "Person hinzufügen";
+"compartido.people.inGroups" = "In %@";
+"compartido.people.settledIn" = "Ausgeglichen · %@";
+"compartido.people.showSettled" = "Ausgeglichene anzeigen (%d)";
+"compartido.people.hideSettled" = "Ausgeglichene ausblenden";
+"compartido.people.noGroup" = "Ohne Gruppe";
+"compartido.people.emptyTitle" = "Du teilst noch keine Ausgaben";
+"compartido.people.emptyMessage" = "Sobald du in einer Gruppe eine Ausgabe mit jemandem einträgst, siehst du hier, was diese Person dir schuldet oder du ihr – über alle deine Gruppen hinweg.";

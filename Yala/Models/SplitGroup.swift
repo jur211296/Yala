@@ -39,6 +39,12 @@ final class SplitGroup {
     /// escribirla (`is_group_admin` en la policy de update); un miembro normal recibe
     /// `not_authorized_or_gone` y el valor no cambia.
     var budgetLimitAmount: Double?
+    /// Compartido (lote 1, 2026-11-26; esquema aprobado por Jürgen): `true` = este grupo es una PERSONA, un grupo de dos
+    /// que no se ve como grupo. La lista de Grupos no lo enseña y su saldo sale en la tarjeta de esa persona, como «Sin
+    /// grupo» (`CompartidoPersonasLogic`). Server: `split_groups.is_person` (g37_01, `boolean NOT NULL DEFAULT false`, en
+    /// claro), manifiesto de Grupos v4 (`since: 4`): un teléfono v3 (la 2.2) no la ve y le llega como un grupo más.
+    /// Default `false` y no opcional, como en el server: así toda fila de antes hashea igual en los dos lados.
+    var isPerson: Bool = false
     var ckSystemFieldsData: Data?            // CKRecord system fields for conflict-free uploads
     /// Baseline del primer import de la zona (bug "Jür se unió al grupo"):
     /// seteado al INSERTAR el grupo vía fetch (applyGroupMeta rama NUEVO — invitado

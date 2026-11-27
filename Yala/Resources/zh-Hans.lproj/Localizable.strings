@@ -665,7 +665,7 @@
 "tab.search" = "搜索";
 "tab.records" = "记录";
 "tab.reports" = "报表";
-"tab.groups" = "群组";
+"tab.groups" = "共享";
 "report.title" = "财务报表";
 "report.tab.comparative" = "对比";
 "report.tab.cashFlow" = "现金流";
@@ -2995,7 +2995,7 @@
 "split.sharesPart" = "份";
 
 // MARK: - Groups
-"groups.title" = "群组";
+"groups.title" = "共享";
 "groups.new" = "新群组";
 "groups.edit" = "编辑群组";
 "groups.empty.title" = "无群组";
@@ -4672,7 +4672,7 @@
 "groups.invite.slow.title" = "比平时花的时间稍长";
 
 /* Invite onboarding: soft-timeout body, honest copy */
-"groups.invite.slow.body" = "我们正在后台继续连接你的群组。你可以先使用 Yala，群组准备好后会出现在“群组”标签页中。";
+"groups.invite.slow.body" = "我们正在后台继续连接你的群组。你可以先使用 Yala，群组准备好后会出现在“共享”标签页中。";
 
 /* Invite onboarding: exit CTA from soft-timeout state */
 "groups.invite.slow.continueButton" = "继续使用应用";
@@ -5002,7 +5002,7 @@
 "groups.empty.signedOut.reentryBanner" = "你已退出群组登录。想再次查看时，随时登录即可。";
 
 /* D5: aviso condicional de saldos pendientes en el diálogo de eliminar cuenta (informa, no bloquea) */
-"settings.deleteAccountDebtWarning" = "你在群组中还有未结清的余额。对其他成员来说，这些余额会显示为“已删除的用户”的欠款。如果愿意，可以先在“群组”标签页中结清。";
+"settings.deleteAccountDebtWarning" = "你在群组中还有未结清的余额。对其他成员来说，这些余额会显示为“已删除的用户”的欠款。如果愿意，可以先在“共享”标签页中结清。";
 
 /* D5: botón del diálogo de eliminar cuenta que lleva a la pestaña Grupos para saldar deudas */
 "settings.deleteAccountViewGroups" = "查看我的群组";
@@ -5117,7 +5117,7 @@
 "settings.wipeExportBeforeCloudCaption" = "数据在你的 Yala 账户中时，这可能是你唯一的副本";
 
 /* Vaciar v2: fila de grupos de la hoja de alcance cuando el usuario tiene saldos pendientes */
-"settings.wipeScopeGroupsDebt" = "你的群组会保留，但你有未结清的余额。你可以在「群组」标签页结清。";
+"settings.wipeScopeGroupsDebt" = "你的群组会保留，但你有未结清的余额。你可以在「共享」标签页结清。";
 
 /* D10 batch: secondary action label in the wipe scope sheet */
 /* D10 batch: dedicated flow title */
@@ -10206,7 +10206,7 @@
 "iaGuided.group.header" = "新群组";
 "iaGuided.debt.header" = "之前的欠款";
 "iaGuided.expense.header" = "群组支出";
-"iaGuided.group.needsAccount" = "要创建群组，请先在“群组”标签页中连接你的 Yala 账户。";
+"iaGuided.group.needsAccount" = "要创建群组，请先在“共享”标签页中连接你的 Yala 账户。";
 "iaGuided.debt.noGroup" = "要记下之前的欠款，你需要一个由你管理、至少有两人的群组。";
 "iaGuided.expense.noGroup" = "你还没有可以记录这笔支出的群组。创建一个，或通过邀请加入。";
 "iaGuided.group.purpose.question" = "这个群组是做什么的？";

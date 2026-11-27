@@ -606,6 +606,30 @@ entorno, va primero (su sección, arriba).
 alguna línea ya tiene cambios. Tras volver el Worker atrás, un teléfono que ya apuntó «backend = 3» manda la columna hasta
 su siguiente pull, y el Worker v2 rechaza esas filas enteras (`unknown_column`) en ese hueco.
 
+## `g37_01_group_is_person.sql` — una persona es un grupo de dos (STAGING, 2026-11-26; producción PENDIENTE)
+
+**Estado:** **APLICADA en staging el 2026-11-26** (`g37_01-remote.sh staging state`: `boolean/NO/false`, reader con la
+columna al final, 0 personas marcadas). **Producción NO**: Jürgen aprobó solo staging. El Worker v4 no está desplegado
+en ningún entorno (`/config` sigue en `groupsManifestVersion: 3`).
+
+Qué es: `split_groups.is_person boolean NOT NULL DEFAULT false`, en claro, con su grant de UPDATE por columna y el reader
+de `split_groups` recreado con la columna al final (lote 1 de Compartido). `apply_group_delta` y `create_group` no
+cambian. NOT NULL con default a propósito: así toda fila de antes hashea `false` en el servidor, igual que en el teléfono.
+
+### Orden (staging `fostjbbwstyuunmmefuk`; producción `kefvaiymtgytemwbltlz`, cuando Jürgen lo decida)
+
+1. **Medir.** `bash qa/cloud/g37_01-remote.sh <staging|production> state`. Con `columna: boolean/NO/false` y `reader: true`
+   ya está: salta al paso 3.
+2. **Aplicar.** `bash qa/cloud/g37_01-remote.sh <staging|production> apply`. Responde `[]` y luego el estado. Aborta entera
+   si el reader no está en la versión medida (md5 `dff883b4…`, §1 del fichero).
+3. **Worker, SOLO después del paso 2**, desde `2.3` con este cambio: `cd gateway && npm ci && npm run deploy:<entorno>`. El
+   `predeploy` corre además `check-groups-columns-applied.mjs`, que **para** si la base no tiene alguna columna del
+   manifest de Grupos (medido el 2026-11-26: producción para con `split_groups.is_person`).
+4. **Comprobar.** `curl -s -A yala <url del gateway>/config` trae `"groupsManifestVersion":4`.
+
+**Marcha atrás.** Worker: `npx wrangler rollback <id anterior>`. Columna y reader: `bash qa/cloud/g37_01-remote.sh <entorno>
+rollback` (se pierde la marca: las personas vuelven a verse como grupos).
+
 ## `g29_01_group_change_author.sql` — quién hizo cada cambio de un grupo (APLICADA, 2026-11-02)
 
 **Estado:** **APLICADA en staging y en producción el 2026-11-02**, con el Worker del manifest de Grupos **v3** en los dos

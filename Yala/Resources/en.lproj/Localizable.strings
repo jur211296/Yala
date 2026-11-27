@@ -665,7 +665,7 @@
 "tab.search" = "Search";
 "tab.records" = "Records";
 "tab.reports" = "Reports";
-"tab.groups" = "Groups";
+"tab.groups" = "Shared";
 "report.title" = "Financial Reports";
 "report.tab.comparative" = "Comparative";
 "report.tab.cashFlow" = "Cash Flow";
@@ -3042,7 +3042,7 @@
 "split.sharesPart" = "share";
 
 // MARK: - Groups
-"groups.title" = "Groups";
+"groups.title" = "Shared";
 "groups.new" = "New group";
 "groups.edit" = "Edit group";
 "groups.empty.title" = "No groups";
@@ -4666,7 +4666,7 @@
 "groups.invite.slow.title" = "This is taking a bit longer than usual";
 
 /* Invite onboarding: soft-timeout body, honest copy */
-"groups.invite.slow.body" = "We're still connecting to your group in the background. You can use Yala in the meantime — the group will show up in the Groups tab as soon as it's ready.";
+"groups.invite.slow.body" = "We're still connecting to your group in the background. You can use Yala in the meantime — the group will show up in the Shared tab as soon as it's ready.";
 
 /* Invite onboarding: exit CTA from soft-timeout state */
 "groups.invite.slow.continueButton" = "Continue to the app";
@@ -4996,7 +4996,7 @@
 "groups.empty.signedOut.reentryBanner" = "You signed out of groups. Sign in whenever you want to see them again.";
 
 /* D5: aviso condicional de saldos pendientes en el diálogo de eliminar cuenta (informa, no bloquea) */
-"settings.deleteAccountDebtWarning" = "You have unsettled balances in your groups. For the other members, they’ll remain as debt owed by “Deleted user”. If you’d prefer, settle up first from the Groups tab.";
+"settings.deleteAccountDebtWarning" = "You have unsettled balances in your groups. For the other members, they’ll remain as debt owed by “Deleted user”. If you’d prefer, settle up first from the Shared tab.";
 
 /* D5: botón del diálogo de eliminar cuenta que lleva a la pestaña Grupos para saldar deudas */
 "settings.deleteAccountViewGroups" = "View my groups";
@@ -5111,7 +5111,7 @@
 "settings.wipeExportBeforeCloudCaption" = "With your data in your Yala account, this may be your only copy";
 
 /* Vaciar v2: fila de grupos de la hoja de alcance cuando el usuario tiene saldos pendientes */
-"settings.wipeScopeGroupsDebt" = "Your groups are kept, but you have unsettled balances. You can settle them from the Groups tab.";
+"settings.wipeScopeGroupsDebt" = "Your groups are kept, but you have unsettled balances. You can settle them from the Shared tab.";
 
 /* D10 batch: secondary action label in the wipe scope sheet */
 /* D10 batch: dedicated flow title */
@@ -10200,7 +10200,7 @@
 "iaGuided.group.header" = "New group";
 "iaGuided.debt.header" = "Debt from before";
 "iaGuided.expense.header" = "Group expense";
-"iaGuided.group.needsAccount" = "To create a group, first connect your Yala account in the Groups tab.";
+"iaGuided.group.needsAccount" = "To create a group, first connect your Yala account in the Shared tab.";
 "iaGuided.debt.noGroup" = "To note a debt from before you need a group of two or more people where you're an admin.";
 "iaGuided.expense.noGroup" = "You don't have a group to add this expense to yet. Create one or join with an invite.";
 "iaGuided.group.purpose.question" = "What's the group for?";

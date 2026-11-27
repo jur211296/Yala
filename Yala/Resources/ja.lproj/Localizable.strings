@@ -665,7 +665,7 @@
 "tab.search" = "検索";
 "tab.records" = "記録";
 "tab.reports" = "レポート";
-"tab.groups" = "グループ";
+"tab.groups" = "共有";
 "report.title" = "金融レポート";
 "report.tab.comparative" = "比較";
 "report.tab.cashFlow" = "キャッシュフロー";
@@ -2995,7 +2995,7 @@
 "split.sharesPart" = "口";
 
 // MARK: - Groups
-"groups.title" = "グループ";
+"groups.title" = "共有";
 "groups.new" = "新規グループ";
 "groups.edit" = "グループを編集";
 "groups.empty.title" = "グループがありません";
@@ -4672,7 +4672,7 @@
 "groups.invite.slow.title" = "通常より少し時間がかかっています";
 
 /* Invite onboarding: soft-timeout body, honest copy */
-"groups.invite.slow.body" = "バックグラウンドでグループへの接続を続けています。その間もYalaを使えます。準備ができ次第、グループタブに表示されます。";
+"groups.invite.slow.body" = "バックグラウンドでグループへの接続を続けています。その間もYalaを使えます。準備ができ次第、共有タブに表示されます。";
 
 /* Invite onboarding: exit CTA from soft-timeout state */
 "groups.invite.slow.continueButton" = "アプリへ進む";
@@ -5002,7 +5002,7 @@
 "groups.empty.signedOut.reentryBanner" = "グループからサインアウトしました。もう一度見たくなったら、いつでもサインインしてください。";
 
 /* D5: aviso condicional de saldos pendientes en el diálogo de eliminar cuenta (informa, no bloquea) */
-"settings.deleteAccountDebtWarning" = "グループに未精算の残高があります。他のメンバーには、「削除されたユーザー」からの未払いとして残ります。よろしければ、先に「グループ」タブから精算してください。";
+"settings.deleteAccountDebtWarning" = "グループに未精算の残高があります。他のメンバーには、「削除されたユーザー」からの未払いとして残ります。よろしければ、先に「共有」タブから精算してください。";
 
 /* D5: botón del diálogo de eliminar cuenta que lleva a la pestaña Grupos para saldar deudas */
 "settings.deleteAccountViewGroups" = "グループを表示";
@@ -5117,7 +5117,7 @@
 "settings.wipeExportBeforeCloudCaption" = "データがあなたの Yala アカウントにある場合、これが唯一のコピーになることがあります";
 
 /* Vaciar v2: fila de grupos de la hoja de alcance cuando el usuario tiene saldos pendientes */
-"settings.wipeScopeGroupsDebt" = "グループは残りますが、未精算の残高があります。グループタブから精算できます。";
+"settings.wipeScopeGroupsDebt" = "グループは残りますが、未精算の残高があります。共有タブから精算できます。";
 
 /* D10 batch: secondary action label in the wipe scope sheet */
 /* D10 batch: dedicated flow title */
@@ -10206,7 +10206,7 @@
 "iaGuided.group.header" = "新しいグループ";
 "iaGuided.debt.header" = "以前の借り";
 "iaGuided.expense.header" = "グループの支出";
-"iaGuided.group.needsAccount" = "グループを作るには、まず「グループ」タブでYalaアカウントを連携してください。";
+"iaGuided.group.needsAccount" = "グループを作るには、まず「共有」タブでYalaアカウントを連携してください。";
 "iaGuided.debt.noGroup" = "以前の借りを記録するには、あなたが管理者で2人以上いるグループが必要です。";
 "iaGuided.expense.noGroup" = "この支出を記録するグループがまだありません。作成するか、招待で参加してください。";
 "iaGuided.group.purpose.question" = "何のグループですか？";

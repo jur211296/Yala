@@ -3868,6 +3868,9 @@ final class GroupsSyncClient {
             if let v = wireString(f["default_split_type"]) { model.defaultSplitType = v }
             if let v = wireBool(f["is_archived"]) { model.isArchived = v }
             if let v = wireBool(f["is_hidden_for_all"]) { model.isHiddenForAll = v }
+            // g37_01: la marca de persona. El server la guarda NOT NULL DEFAULT false, así que con la clave presente
+            // siempre trae un valor; sin la clave (Worker o nivel v3) el local se queda.
+            if let v = wireBool(f["is_person"]) { model.isPerson = v }
             // G14: se lee por PRESENCIA DE LA CLAVE, no por valor no-nil, y la diferencia es el feature:
             // `budget_limit_amount: null` significa "el admin quitó el presupuesto" y TIENE que aplicarse;
             // la clave AUSENTE significa "este delta no habla del presupuesto" (PATCH parcial) y no se

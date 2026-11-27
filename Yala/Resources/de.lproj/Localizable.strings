@@ -663,7 +663,7 @@
 "tab.search" = "Suchen";
 "tab.records" = "Einträge";
 "tab.reports" = "Berichte";
-"tab.groups" = "Gruppen";
+"tab.groups" = "Geteilt";
 "report.title" = "Finanzberichte";
 "report.tab.comparative" = "Vergleich";
 "report.tab.cashFlow" = "Cashflow";
@@ -2991,7 +2991,7 @@
 "split.sharesPart" = "Anteil";
 
 // MARK: - Groups
-"groups.title" = "Gruppen";
+"groups.title" = "Geteilt";
 "groups.new" = "Neue Gruppe";
 "groups.edit" = "Gruppe bearbeiten";
 "groups.empty.title" = "Keine Gruppen";
@@ -4660,7 +4660,7 @@
 "groups.invite.slow.title" = "Das dauert etwas länger als üblich";
 
 /* Invite onboarding: soft-timeout body, honest copy */
-"groups.invite.slow.body" = "Wir verbinden dich im Hintergrund weiter mit deiner Gruppe. Du kannst Yala währenddessen nutzen – die Gruppe erscheint im Tab „Gruppen“, sobald sie bereit ist.";
+"groups.invite.slow.body" = "Wir verbinden dich im Hintergrund weiter mit deiner Gruppe. Du kannst Yala währenddessen nutzen – die Gruppe erscheint im Tab „Geteilt“, sobald sie bereit ist.";
 
 /* Invite onboarding: exit CTA from soft-timeout state */
 "groups.invite.slow.continueButton" = "Weiter zur App";
@@ -4990,7 +4990,7 @@
 "groups.empty.signedOut.reentryBanner" = "Du hast dich von den Gruppen abgemeldet. Melde dich an, wann immer du sie wieder sehen möchtest.";
 
 /* D5: aviso condicional de saldos pendientes en el diálogo de eliminar cuenta (informa, no bloquea) */
-"settings.deleteAccountDebtWarning" = "Du hast offene Salden in deinen Gruppen. Für die anderen Mitglieder bleiben sie als Schulden von „Gelöschter Nutzer“ bestehen. Wenn du möchtest, gleiche sie zuerst im Tab Gruppen aus.";
+"settings.deleteAccountDebtWarning" = "Du hast offene Salden in deinen Gruppen. Für die anderen Mitglieder bleiben sie als Schulden von „Gelöschter Nutzer“ bestehen. Wenn du möchtest, gleiche sie zuerst im Tab „Geteilt“ aus.";
 
 /* D5: botón del diálogo de eliminar cuenta que lleva a la pestaña Grupos para saldar deudas */
 "settings.deleteAccountViewGroups" = "Meine Gruppen anzeigen";
@@ -5105,7 +5105,7 @@
 "settings.wipeExportBeforeCloudCaption" = "Wenn deine Daten in deinem Yala-Konto liegen, ist das vielleicht deine einzige Kopie";
 
 /* Vaciar v2: fila de grupos de la hoja de alcance cuando el usuario tiene saldos pendientes */
-"settings.wipeScopeGroupsDebt" = "Deine Gruppen bleiben erhalten, aber du hast offene Salden. Du kannst sie im Tab Gruppen ausgleichen.";
+"settings.wipeScopeGroupsDebt" = "Deine Gruppen bleiben erhalten, aber du hast offene Salden. Du kannst sie im Tab „Geteilt“ ausgleichen.";
 
 /* D10 batch: secondary action label in the wipe scope sheet */
 /* D10 batch: dedicated flow title */
@@ -10194,7 +10194,7 @@
 "iaGuided.group.header" = "Neue Gruppe";
 "iaGuided.debt.header" = "Alte Schuld";
 "iaGuided.expense.header" = "Gruppenausgabe";
-"iaGuided.group.needsAccount" = "Um eine Gruppe zu erstellen, verbinde zuerst dein Yala-Konto im Tab Gruppen.";
+"iaGuided.group.needsAccount" = "Um eine Gruppe zu erstellen, verbinde zuerst dein Yala-Konto im Tab „Geteilt“.";
 "iaGuided.debt.noGroup" = "Um eine alte Schuld einzutragen, brauchst du eine Gruppe mit mindestens zwei Personen, in der du Admin bist.";
 "iaGuided.expense.noGroup" = "Du hast noch keine Gruppe für diese Ausgabe. Erstelle eine oder tritt mit einer Einladung bei.";
 "iaGuided.group.purpose.question" = "Wofür ist die Gruppe?";

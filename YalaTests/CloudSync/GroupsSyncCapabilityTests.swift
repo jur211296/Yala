@@ -118,8 +118,8 @@ struct GroupsSyncCapabilityTests {
     func unannounced_isLevelTwo_andAnnouncementsAreRecorded() throws {
         let previous = try isolateDefaults(); defer { GroupsSyncCapability.defaults = previous }
 
-        // Desde g29_01 (card xi74) el cliente entiende la v3; sin anuncio sigue declarando 2.
-        #expect(GroupsSyncCapability.clientManifestVersion == 3)
+        // Desde g37_01 (Compartido lote 1) el cliente entiende la v4; sin anuncio sigue declarando 2.
+        #expect(GroupsSyncCapability.clientManifestVersion == 4)
         #expect(GroupsSyncCapability.levelWhenUnannounced == 2)
         #expect(GroupsSyncCapability.backendManifestVersion == 2)
         #expect(GroupsSyncCapability.declaredHeader == "v2")
@@ -133,7 +133,7 @@ struct GroupsSyncCapabilityTests {
 
         GroupsSyncCapability.recordBackendManifestVersion(7)
         #expect(GroupsSyncCapability.backendManifestVersion == 7)
-        #expect(GroupsSyncCapability.declaredLevel == 3)  // el cliente no entiende más que 3
+        #expect(GroupsSyncCapability.declaredLevel == 4)  // el cliente no entiende más que 4
 
         GroupsSyncCapability.recordBackendManifestVersion(0)
         #expect(GroupsSyncCapability.declaredLevel == 1)

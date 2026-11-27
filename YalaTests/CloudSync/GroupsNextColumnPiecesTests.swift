@@ -98,12 +98,16 @@ struct GroupsNextColumnPiecesTests {
                 == ["name", "amount", "currency_code", "rate"])
     }
 
-    @Test("(4) con el manifest de hoy, v2 conserva todo split_groups y v1 solo le quita el presupuesto")
+    @Test("(4) con el manifest de hoy, v4 conserva todo split_groups, v2 y v3 le quitan la marca de persona y v1 además el presupuesto")
     func keptColumns_todaysManifest() {
         let emission = GroupEntityEmissionMap.splitGroup
-        #expect(GroupsSyncCapability.keptColumns(of: emission, level: 2) == emission.columns)
+        #expect(GroupsSyncCapability.keptColumns(of: emission, level: 4) == emission.columns)
+        for level in [2, 3] {
+            #expect(GroupsSyncCapability.keptColumns(of: emission, level: level)
+                    == emission.columns.subtracting(["is_person"]))
+        }
         #expect(GroupsSyncCapability.keptColumns(of: emission, level: 1)
-                == emission.columns.subtracting(["budget_limit_amount"]))
+                == emission.columns.subtracting(["budget_limit_amount", "is_person"]))
         for table in [GroupEntityEmissionMap.splitExpense.columns, GroupEntityEmissionMap.splitShare.columns,
                       GroupEntityEmissionMap.splitSettlement.columns] {
             #expect(!table.isEmpty)

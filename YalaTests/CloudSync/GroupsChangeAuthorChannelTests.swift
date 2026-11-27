@@ -105,9 +105,9 @@ struct GroupsChangeAuthorChannelTests {
 
     // MARK: - Manifest y emisión
 
-    @Test("las dos columnas son de la v3, y este build habla la v3")
+    @Test("las dos columnas son de la v3, y este build habla al menos la v3")
     func columnsAreVersionThree() {
-        #expect(GroupsSyncCapability.clientManifestVersion == 3)
+        #expect(GroupsSyncCapability.clientManifestVersion >= 3)
         #expect(GroupsSyncCapability.since(table: "split_expenses", column: "last_edited_by_member_key") == 3)
         #expect(GroupsSyncCapability.since(table: "split_settlements", column: "recorded_by_member_key") == 3)
         #expect(GroupEntityEmissionMap.splitExpense.columns.contains("last_edited_by_member_key"))

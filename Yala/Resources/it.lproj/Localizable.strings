@@ -663,7 +663,7 @@
 "tab.search" = "Cerca";
 "tab.records" = "Registri";
 "tab.reports" = "Rapporti";
-"tab.groups" = "Gruppi";
+"tab.groups" = "Condivisi";
 "report.title" = "Rapporti finanziari";
 "report.tab.comparative" = "Comparativo";
 "report.tab.cashFlow" = "Flusso di cassa";
@@ -2993,7 +2993,7 @@
 "split.sharesPart" = "parte";
 
 // MARK: - Groups
-"groups.title" = "Gruppi";
+"groups.title" = "Condivisi";
 "groups.new" = "Nuovo gruppo";
 "groups.edit" = "Modifica gruppo";
 "groups.empty.title" = "Nessun gruppo";
@@ -4670,7 +4670,7 @@
 "groups.invite.slow.title" = "Ci sta mettendo un po' più del solito";
 
 /* Invite onboarding: soft-timeout body, honest copy */
-"groups.invite.slow.body" = "Stiamo ancora connettendo il tuo gruppo in background. Nel frattempo puoi usare Yala: il gruppo apparirà nella scheda Gruppi appena sarà pronto.";
+"groups.invite.slow.body" = "Stiamo ancora connettendo il tuo gruppo in background. Nel frattempo puoi usare Yala: il gruppo apparirà nella scheda Condivisi appena sarà pronto.";
 
 /* Invite onboarding: exit CTA from soft-timeout state */
 "groups.invite.slow.continueButton" = "Continua nell'app";
@@ -5000,7 +5000,7 @@
 "groups.empty.signedOut.reentryBanner" = "Hai chiuso la sessione dei gruppi. Accedi quando vuoi rivederli.";
 
 /* D5: aviso condicional de saldos pendientes en el diálogo de eliminar cuenta (informa, no bloquea) */
-"settings.deleteAccountDebtWarning" = "Hai saldi in sospeso nei tuoi gruppi. Per gli altri membri resteranno come debito di «Utente eliminato». Se preferisci, saldali prima dalla scheda Gruppi.";
+"settings.deleteAccountDebtWarning" = "Hai saldi in sospeso nei tuoi gruppi. Per gli altri membri resteranno come debito di «Utente eliminato». Se preferisci, saldali prima dalla scheda Condivisi.";
 
 /* D5: botón del diálogo de eliminar cuenta que lleva a la pestaña Grupos para saldar deudas */
 "settings.deleteAccountViewGroups" = "Vedi i miei gruppi";
@@ -5115,7 +5115,7 @@
 "settings.wipeExportBeforeCloudCaption" = "Con i tuoi dati nel tuo account Yala, questa potrebbe essere la tua unica copia";
 
 /* Vaciar v2: fila de grupos de la hoja de alcance cuando el usuario tiene saldos pendientes */
-"settings.wipeScopeGroupsDebt" = "I tuoi gruppi vengono conservati, ma hai saldi in sospeso. Puoi saldarli dalla scheda Gruppi.";
+"settings.wipeScopeGroupsDebt" = "I tuoi gruppi vengono conservati, ma hai saldi in sospeso. Puoi saldarli dalla scheda Condivisi.";
 
 /* D10 batch: secondary action label in the wipe scope sheet */
 /* D10 batch: dedicated flow title */
@@ -10204,7 +10204,7 @@
 "iaGuided.group.header" = "Nuovo gruppo";
 "iaGuided.debt.header" = "Debito di prima";
 "iaGuided.expense.header" = "Spesa di gruppo";
-"iaGuided.group.needsAccount" = "Per creare un gruppo, collega prima il tuo account Yala nella scheda Gruppi.";
+"iaGuided.group.needsAccount" = "Per creare un gruppo, collega prima il tuo account Yala nella scheda Condivisi.";
 "iaGuided.debt.noGroup" = "Per annotare un debito di prima ti serve un gruppo di almeno due persone in cui sei amministratore.";
 "iaGuided.expense.noGroup" = "Non hai ancora un gruppo in cui annotare questa spesa. Creane uno o entra con un invito.";
 "iaGuided.group.purpose.question" = "A cosa serve il gruppo?";

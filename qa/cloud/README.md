@@ -2,9 +2,9 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (47 entradas)
+## Índice (49 entradas)
 
-> **No hace falta leer este fichero entero** — son 175 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 177 KB. Localiza la entrada
 > aquí y salta a ella.
 
 - `—` [Running the RLS gate](#running-the-rls-gate)
@@ -28,7 +28,8 @@
 - `—` [I14 — UI real de migración + consent + claimAction + relaunch asistido + encendido de flags](#i14--ui-real-de-migracin--consent--claimaction--relaunch-asistido--encendido-de-flags)
 - `—` [transfer_group_ownership (G10 / D10) — batch "salir de todos mis grupos" — APLICADA EN AMBOS ENVS ✅](#transfergroupownership-g10--d10--batch-salir-de-todos-mis-grupos--aplicada-en-ambos-envs)
 - `—` [G7 — cifrado pgcrypto de columnas † de grupos (data-at-rest)](#g7--cifrado-pgcrypto-de-columnas--de-grupos-data-at-rest)
-- `2026-11-21` [g33_01 — las cuatro columnas de los límites del flujo de caja con pagos y en otra moneda (2026-11-21)](#g3301--las-cuatro-columnas-de-los-límites-del-flujo-de-caja-con-pagos-y-en-otra-moneda-2026-11-21)
+- `2026-11-26` [g37_01 — `split_groups.is_person`: una persona es un grupo de dos (2026-11-26)](#g3701--splitgroupsisperson-una-persona-es-un-grupo-de-dos-2026-11-26)
+- `2026-11-21` [g33_01 — las cuatro columnas de los límites del flujo de caja con pagos y en otra moneda (2026-11-21](#g3301--las-cuatro-columnas-de-los-lmites-del-flujo-de-caja-con-pagos-y-en-otra-moneda-2026-11-21)
 - `2026-11-20` [g32_01 — `scheduled_payments.custom_logo_ref` y el bucket de logos propios (2026-11-20)](#g3201--scheduledpaymentscustomlogoref-y-el-bucket-de-logos-propios-2026-11-20)
 - `2026-11-16` [g31_01 — volver a pasar a la nube con la cuenta que volvió a iCloud (2026-11-16)](#g3101--volver-a-pasar-a-la-nube-con-la-cuenta-que-volvi-a-icloud-2026-11-16)
 - `2026-11-03` [g30_01 — el autor de un gasto editado desde un teléfono que no lo conoce (2026-11-03)](#g3001--el-autor-de-un-gasto-editado-desde-un-telfono-que-no-lo-conoce-2026-11-03)
@@ -2324,6 +2325,17 @@ mutua con dos dispositivos. El de g3_02 comprueba por el wire que A tiene fila e
 staging el 2026-09-24, tras aplicar g16_01:** 34/35 en verde, con el 1, el de g3_02 y el 28 dentro. El único
 rojo es el 20, el timeout de 5010 ms que ya lleva `account-goldens-freeze-read-test-times-out`. Antes de correrlos
 hubo que borrar las filas de `profiles` de A, B y C, con el `delete` de la sección de I7a ampliado a C.
+
+## g37_01 — `split_groups.is_person`: una persona es un grupo de dos (2026-11-26)
+
+**Estado:** **APLICADA en staging el 2026-11-26. Producción, NO** (Jürgen aprobó solo staging). Lote 1 de Compartido.
+Detalle de despliegue y marcha atrás: `docs/RUNBOOK-staging-ddl.md`, entrada g37_01.
+
+Fichero: `qa/cloud/g37_01_group_is_person.sql`; marcha atrás `qa/cloud/g37_01_rollback.sql`. Se aplica y se mide con
+`bash qa/cloud/g37_01-remote.sh <staging|production> <state|apply|rollback>`. `boolean NOT NULL DEFAULT false`, en claro,
+grant de UPDATE por columna y el reader de `split_groups` con la columna al final; `apply_group_delta` no cambia. Manifest
+de Grupos v4 (`since: 4`). El `predeploy` del gateway corre `check-groups-columns-applied.mjs`, que no deja desplegar un
+Worker v4 en un entorno sin la columna.
 
 ## g33_01 — las cuatro columnas de los límites del flujo de caja con pagos y en otra moneda (2026-11-21)
 

@@ -463,7 +463,7 @@
 "groups.summary.owedToMe" = "Devem-te";
 "groups.summary.pendingSettlements" = "%d liquidações pendentes";
 "groups.sync.errorMemberSetup" = "Entraste, mas houve um problema com a tua identidade no grupo. Reabre a app.";
-"groups.title" = "Grupos";
+"groups.title" = "Partilhado";
 /* MARK: SplitChipDetail-keys (split-chip-detail refactor) */
 /* (inherits from base locale via iOS fallback) */
 /* MARK: SplitChipDetail-keys-v2 (split-chip-detail refactor) */
@@ -3126,7 +3126,7 @@
 "support.typeError" = "Erro";
 "support.typeIdea" = "Ideia";
 "support.typeImprovement" = "Melhoria";
-"tab.groups" = "Grupos";
+"tab.groups" = "Partilhado";
 "tab.more" = "Mais";
 "tab.panel" = "Painel";
 "tab.planning" = "Planeamento";
@@ -3907,7 +3907,7 @@
 "groups.invite.slow.title" = "Está a demorar um pouco mais do que o normal";
 
 /* Invite onboarding: soft-timeout body, honest copy */
-"groups.invite.slow.body" = "Continuamos a ligar ao teu grupo em segundo plano. Podes usar o Yala entretanto: o grupo aparecerá no separador Grupos assim que estiver pronto.";
+"groups.invite.slow.body" = "Continuamos a ligar ao teu grupo em segundo plano. Podes usar o Yala entretanto: o grupo aparecerá no separador Partilhado assim que estiver pronto.";
 
 /* Invite onboarding: exit CTA from soft-timeout state */
 "groups.invite.slow.continueButton" = "Continuar para a app";
@@ -4237,7 +4237,7 @@
 "groups.empty.signedOut.reentryBanner" = "Terminaste a sessão dos grupos. Inicia sessão quando quiseres vê-los de novo.";
 
 /* D5: aviso condicional de saldos pendientes en el diálogo de eliminar cuenta (informa, no bloquea) */
-"settings.deleteAccountDebtWarning" = "Tens saldos pendentes nos teus grupos. Para os outros membros, ficarão como dívida de «Utilizador eliminado». Se preferires, salda-os primeiro no separador Grupos.";
+"settings.deleteAccountDebtWarning" = "Tens saldos pendentes nos teus grupos. Para os outros membros, ficarão como dívida de «Utilizador eliminado». Se preferires, salda-os primeiro no separador Partilhado.";
 
 /* D5: botón del diálogo de eliminar cuenta que lleva a la pestaña Grupos para saldar deudas */
 "settings.deleteAccountViewGroups" = "Ver os meus grupos";
@@ -4352,7 +4352,7 @@
 "settings.wipeExportBeforeCloudCaption" = "Com os teus dados na tua conta Yala, esta pode ser a tua única cópia";
 
 /* Vaciar v2: fila de grupos de la hoja de alcance cuando el usuario tiene saldos pendientes */
-"settings.wipeScopeGroupsDebt" = "Os teus grupos mantêm-se, mas tens saldos pendentes. Podes saldá-los no separador Grupos.";
+"settings.wipeScopeGroupsDebt" = "Os teus grupos mantêm-se, mas tens saldos pendentes. Podes saldá-los no separador Partilhado.";
 
 /* D10 batch: secondary action label in the wipe scope sheet */
 /* D10 batch: dedicated flow title */
@@ -9443,7 +9443,7 @@
 "iaGuided.group.header" = "Novo grupo";
 "iaGuided.debt.header" = "Dívida de antes";
 "iaGuided.expense.header" = "Despesa de grupo";
-"iaGuided.group.needsAccount" = "Para criar um grupo, primeiro liga a tua conta Yala no separador Grupos.";
+"iaGuided.group.needsAccount" = "Para criar um grupo, primeiro liga a tua conta Yala no separador Partilhado.";
 "iaGuided.debt.noGroup" = "Para registar uma dívida de antes, precisas de um grupo com duas ou mais pessoas onde sejas administrador.";
 "iaGuided.expense.noGroup" = "Ainda não tens um grupo onde registar esta despesa. Cria um ou entra com um convite.";
 "iaGuided.group.purpose.question" = "Para que é o grupo?";
