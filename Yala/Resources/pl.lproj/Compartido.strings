@@ -47,3 +47,32 @@
 "compartido.detail.stats.theyOwe" = "jest ci winien %@";
 "compartido.detail.stats.youOwe" = "jesteś winien %@";
 "compartido.detail.openHint" = "Otwiera to, co dzielisz z tą osobą";
+
+/* Lote 3: invitar a una persona y entrar sin grupo («¿Con quién?», persona añadida, la invitación a Yala). */
+"compartido.who.title" = "Z kim?";
+"compartido.who.personSubtitle" = "Osoba";
+"compartido.who.writeName" = "Wpisz imię";
+"compartido.who.namePlaceholder" = "Imię";
+"compartido.who.add" = "Dodaj";
+"compartido.who.hint" = "Ta osoba nie musi mieć Yala: zaproszenie możesz wysłać później.";
+"compartido.addPerson.message" = "Wpisz imię. Będziesz mógł zapisywać wydatki z tą osobą i wysłać jej zaproszenie, kiedy zechcesz.";
+"compartido.empty.groups.title" = "Nie masz jeszcze grup";
+"compartido.empty.groups.message" = "Na wyjazdy, do domu albo do biura: wszyscy widzą aktualne wydatki.";
+"compartido.empty.groups.action" = "Utwórz grupę";
+"compartido.empty.people.title" = "Zapisz wydatek z kimś";
+"compartido.empty.people.message" = "Wspólny obiad albo taksówka. Wpisz imię, a Yala prowadzi rachunek: nie musisz tworzyć grupy.";
+"compartido.empty.people.action" = "Nowy wydatek";
+"compartido.added.title" = "%@ jest już w sekcji Wspólne";
+"compartido.added.message" = "Zaproś osobę %@, żeby widziała, ile ci jest winna, i zapisywała z tobą wydatki. Dostanie link i dołączy jednym dotknięciem.";
+"compartido.share.message" = "%@ zaprasza cię do Yala, żebyście razem śledzili wspólne wydatki. Dotknij linku, żeby dołączyć; jeśli nie masz Yala, pobierz aplikację i dotknij go ponownie.";
+"compartido.share.messageNoInviter" = "Masz zaproszenie do Yala, żebyście razem śledzili wspólne wydatki. Dotknij linku, żeby dołączyć; jeśli nie masz Yala, pobierz aplikację i dotknij go ponownie.";
+"compartido.invite.cardTitle" = "%@ zaprasza cię do Yala";
+"compartido.invite.cardTitleNoName" = "Masz zaproszenie do Yala";
+"compartido.invite.cardSubtitle" = "Żebyście razem śledzili wspólne wydatki";
+"compartido.invite.message" = "Zapraszają cię do Yala, żebyś śledził tutaj swoje wspólne wydatki.";
+"compartido.invite.join" = "Dołącz do Yala";
+"compartido.invite.readyTitle" = "Masz już połączenie z: %@";
+"compartido.invite.readyTitleNoName" = "Jesteś w Yala";
+"compartido.invite.readyMessage" = "To, co zapiszecie razem, oboje widzicie na bieżąco.";
+"compartido.needed.withPerson" = "Zapisz z jedną osobą";
+"compartido.needed.message" = "Wpisz, z kim, a Yala prowadzi rachunek. Na wyjazd albo do domu utwórz grupę.";

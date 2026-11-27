@@ -43,14 +43,16 @@ final class GroupsCrearDecididoUITests: XCTestCase {
                       "La pestaña elegida no enseña su nombre.")
     }
 
-    /// **L12-3 · «Un último paso · Continuar» pasa a decir qué se acepta: «Ver y aceptar».**
+    /// **L12-3 · el botón dice adónde lleva.** Desde Compartido lote 3 (maqueta v2, 26-nov-2026) la pestaña sin grupos ya
+    /// no anuncia los pasos: el vacío del chip Grupos dice «Crear grupo», y el consentimiento se pide al tocarlo (antes del
+    /// formulario), no al entrar. El id del botón sigue siendo el del estado: lleva al mismo sitio.
     func test_needsConsentEmptyState_buttonSaysReviewAndAccept() {
         let app = XCUIApplication()
         app.launchForUITest(seed: nil, groupInvite: true, cloudSession: true)
 
         let cta = app.buttons["groups_empty_state_consent"].firstMatch
         XCTAssertTrue(cta.waitForExistence(timeout: 30), "Falta el estado vacío del consentimiento.")
-        XCTAssertEqual(cta.label, "Ver y aceptar", "El botón no dice adónde lleva (L12-3).")
+        XCTAssertEqual(cta.label, "Crear grupo", "El vacío de Grupos dice qué se consigue al tocarlo.")
     }
 
     /// **L12-9 · crear es escribir un nombre y guardar**: el nombre trae ejemplo y las tres opciones van plegadas en

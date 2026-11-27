@@ -61,7 +61,9 @@ struct AttestWiringTests {
         // 9 desde los guiados de Grupos (17-nov): `ChatGuidedGroupCreator` crea el grupo desde Yala IA con la suya.
         // 10 desde el asistente de «Nuevo grupo» (encargo del 17-nov): `AsistenteGrupoView.crear` crea por el mismo canal
         // que el formulario, con `AttestSessionProvider.live`.
-        ("GroupsMembershipClient", 10),
+        // 11 desde Compartido lote 3 (26-nov): `CompartidoPersonaAlta.crear` da de alta a una persona
+        // (`create_person_group`, la misma guard estricta).
+        ("GroupsMembershipClient", 11),
         ("GroupsSyncClient", 1),
         ("GroupsMerkleClient", 1),
         ("PushTokenRegistrationClient", 2),
@@ -261,7 +263,7 @@ struct AttestWiringTests {
         }
         // 9 desde los guiados de Grupos (17-nov): `ChatGuidedGroupCreator` hereda el testigo vivo, como las demás.
         // 10 desde el asistente de «Nuevo grupo» (encargo del 17-nov): `AsistenteGrupoView.crear`, igual.
-        #expect(total == 10, "Se esperaban 10 construcciones de `GroupsMembershipClient` y se encontraron \(total).")
+        #expect(total == 11, "Se esperaban 11 construcciones de `GroupsMembershipClient` y se encontraron \(total).")
 
         // Y el default de la firma, ENTERA y en orden: un `contains` de la línea suelta pasaría con el parámetro fuera
         // del init.

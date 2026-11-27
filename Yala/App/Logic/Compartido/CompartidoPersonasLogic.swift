@@ -105,6 +105,7 @@ enum CompartidoPersonasLogic {
         var memberships: [String: [Membership]] = [:]
         var net: [String: [String: Double]] = [:]
         var interacted = Set<String>()
+        var justAdded = Set<String>()
 
         for group in groups {
             let byID = Dictionary(group.members.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
@@ -139,10 +140,23 @@ enum CompartidoPersonasLogic {
             for memberID in group.interactedMemberIDs {
                 if let other = key(for: memberID) { interacted.insert(other) }
             }
+            // Lote 3: una persona recién añadida (su grupo de dos, sin gastos todavía) también sale, al final de las que
+            // tienen algo pendiente: acabas de darla de alta y la buscas ahí, no plegada entre las liquidadas.
+            if group.isPerson {
+                for member in group.members where !group.myMemberIDs.contains(member.id) {
+                    if let other = key(for: member.id), !interacted.contains(other) { justAdded.insert(other) }
+                }
+            }
         }
 
         var active: [Person] = []
         var settled: [Person] = []
+        var fresh: [Person] = []
+        for key in order where !interacted.contains(key) && justAdded.contains(key) {
+            fresh.append(Person(
+                id: key, name: names[key] ?? "", groupNames: groupNames[key] ?? [], netByCurrency: [:],
+                memberships: memberships[key] ?? []))
+        }
         for key in order where interacted.contains(key) {
             let cleaned = (net[key] ?? [:]).compactMapValues { value -> Double? in
                 let rounded = (value * 100).rounded() / 100
@@ -160,7 +174,8 @@ enum CompartidoPersonasLogic {
             return lhs.name.localizedStandardCompare(rhs.name) == .orderedAscending
         }
         settled.sort { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
-        return Result(active: active, settled: settled)
+        fresh.sort { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+        return Result(active: active + fresh, settled: settled)
     }
 
     /// La clave de una persona: su cuenta si la tiene; si no, ella misma dentro de su grupo.

@@ -9,6 +9,9 @@
 //
 //  El enlace se acuña al tocar, no al abrir la hoja: «Más tarde» no deja invitaciones que nadie mandó.
 //
+//  Compartido (lote 3, 26-nov-2026): la misma hoja sale al añadir una PERSONA (`SplitGroup.isPerson`), con su inicial y
+//  su texto («Marta ya está en Compartido»). El enlace es el mismo; lleva `k=p` y quien lo abre ve «Te invitan a Yala».
+//
 
 import SwiftUI
 
@@ -39,22 +42,31 @@ struct GroupCreatedInviteSheet: View {
             ScrollView {
                 VStack(spacing: DS.Spacing.lg) {
                     ZStack {
-                        Circle()
-                            .fill(Color(hex: group.colorHex).opacity(0.22))
-                            .frame(width: iconCircleSize, height: iconCircleSize)
-                        Image(systemName: group.iconName)
-                            .font(.system(size: iconSize, weight: .semibold))
-                            .foregroundStyle(Color(hex: group.colorHex))
+                        if group.isPerson {
+                            Circle()
+                                .fill(Color(hex: group.colorHex))
+                                .frame(width: iconCircleSize, height: iconCircleSize)
+                            Text(DividirBoletaImageBuilder.initials(group.name))
+                                .font(.system(size: iconSize, weight: .semibold))
+                                .foregroundStyle(.white)
+                        } else {
+                            Circle()
+                                .fill(Color(hex: group.colorHex).opacity(0.22))
+                                .frame(width: iconCircleSize, height: iconCircleSize)
+                            Image(systemName: group.iconName)
+                                .font(.system(size: iconSize, weight: .semibold))
+                                .foregroundStyle(Color(hex: group.colorHex))
+                        }
                     }
                     .accessibilityHidden(true)
 
                     VStack(spacing: DS.Spacing.sm) {
-                        Text(L10n.UXL12.createdTitle(group.name))
+                        Text(group.isPerson ? L10n.Compartido.addedTitle(group.name) : L10n.UXL12.createdTitle(group.name))
                             .font(DS.Typography.title2)
                             .multilineTextAlignment(.center)
                             .accessibilityAddTraits(.isHeader)
                             .accessibilityIdentifier("group_created_title")
-                        Text(L10n.UXL12.createdMessage)
+                        Text(group.isPerson ? L10n.Compartido.addedMessage(group.name) : L10n.UXL12.createdMessage)
                             .font(DS.Typography.subheadline)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
@@ -95,12 +107,18 @@ struct GroupCreatedInviteSheet: View {
             if didShare { dismiss() }
         }) { item in
             // L12-14 · el enlace viaja con un texto que dice qué es y qué hacer si aún no tiene Yala.
-            ActivityView(activityItems: [GroupInviteShareMessage.text(
-                inviterName: UserDefaults.standard.string(forKey: AppPreferences.Keys.userName),
-                defaultName: L10n.Profile.defaultName,
-                groupName: group.name,
-                url: item.url)]) { completed in
-                if completed { didShare = true }
+            if group.isPerson {
+                ActivityView(activityItems: [personShareText(for: item.url)]) { completed in
+                    if completed { didShare = true }
+                }
+            } else {
+                ActivityView(activityItems: [GroupInviteShareMessage.text(
+                    inviterName: UserDefaults.standard.string(forKey: AppPreferences.Keys.userName),
+                    defaultName: L10n.Profile.defaultName,
+                    groupName: group.name,
+                    url: item.url)]) { completed in
+                    if completed { didShare = true }
+                }
             }
         }
         .alert(L10n.Common.error, isPresented: $showError) {
@@ -108,6 +126,17 @@ struct GroupCreatedInviteSheet: View {
         } message: {
             Text(errorMessage)
         }
+    }
+
+    /// El texto que viaja con el enlace de una persona («Jürgen te invita a Yala…»), con el criterio de nombre de
+    /// `GroupInviteShareMessage` (sin un nombre propio en el perfil no se firma con uno que no es de nadie).
+    private func personShareText(for url: URL) -> String {
+        let inviter = UserDefaults.standard.string(forKey: AppPreferences.Keys.userName)
+        let name = (inviter ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let line = (name.isEmpty || name == L10n.Profile.defaultName)
+            ? L10n.Compartido.shareMessageNoInviter
+            : L10n.Compartido.shareMessage(inviter: name)
+        return line + "\n" + url.absoluteString
     }
 
     private func invite() async {

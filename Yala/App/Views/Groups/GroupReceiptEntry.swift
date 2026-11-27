@@ -14,6 +14,7 @@
 //    esperar a que la primera se cierre se pierden (`swiftui-ds.md`).
 //
 
+import SwiftData
 import SwiftUI
 
 // MARK: - Botones
@@ -176,12 +177,24 @@ private struct GroupReceiptSplitFlow: ViewModifier {
     @State private var chosen: GroupReceiptSheet?
     @State private var sheet: GroupReceiptSheet?
     @State private var outcome: GroupCaptureOutcome?
+    /// Compartido lote 3: «Escribir un nombre» en «¿Con quién?». La persona se crea al cerrarse el selector y la captura
+    /// sigue con ella (aquí ya hay cuenta: sin ella no habría a quién apuntar).
+    @State private var pendingPerson: (name: String, source: GroupReceiptEntryKind)?
+    @State private var personError: String?
+    @State private var showsPersonError = false
+    @Environment(\.modelContext) private var modelContext
+    @Environment(AppPreferences.self) private var appPreferences
 
     func body(content: Content) -> some View {
         content
             .onChange(of: request?.id) { _, _ in start() }
             .sheet(item: $picking, onDismiss: openChosen) { request in picker(for: request) }
             .sheet(item: $sheet, onDismiss: finish) { sheet in captureSheet(sheet) }
+            .alert(L10n.Common.error, isPresented: $showsPersonError) {
+                Button(L10n.Common.ok) { personError = nil }
+            } message: {
+                Text(personError ?? "")
+            }
     }
 
     private func start() {
@@ -199,6 +212,10 @@ private struct GroupReceiptSplitFlow: ViewModifier {
             groups: request.groups,
             selectedGroupID: request.preselected.id,
             memberCount: memberCount,
+            onNewPerson: { name in
+                pendingPerson = (name, request.source)
+                picking = nil
+            },
             opensAtMediumHeight: true
         ) { group in
             chosen = GroupReceiptSheet(group: group, source: request.source)
@@ -207,9 +224,32 @@ private struct GroupReceiptSplitFlow: ViewModifier {
     }
 
     private func openChosen() {
+        if let pendingPerson {
+            self.pendingPerson = nil
+            createPersonThenCapture(pendingPerson.name, source: pendingPerson.source)
+            return
+        }
         guard let chosen else { return }
         self.chosen = nil
         sheet = chosen
+    }
+
+    private func createPersonThenCapture(_ name: String, source: GroupReceiptEntryKind) {
+        Task {
+            do {
+                let person = try await CompartidoPersonaAlta.crear(
+                    nombre: name, moneda: appPreferences.defaultCurrencyCode.rawValue, contexto: modelContext)
+                DS.Haptic.success()
+                sheet = GroupReceiptSheet(group: person, source: source)
+            } catch {
+                #if DEBUG
+                print("GroupReceiptSplitFlow: Error creating person: \(error)")
+                #endif
+                DS.Haptic.error()
+                personError = GroupActionErrorLogic.message(for: error)
+                showsPersonError = true
+            }
+        }
     }
 
     /// La hoja de personal que toca, hecha con sus piezas (`Groups/Captura/`): Voz escucha al abrirse, Foto ofrece Cámara,

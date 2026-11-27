@@ -47,3 +47,32 @@
 "compartido.detail.stats.theyOwe" = "あなたに%@";
 "compartido.detail.stats.youOwe" = "あなたから%@";
 "compartido.detail.openHint" = "この相手と共有している内容を開きます";
+
+/* Lote 3: invitar a una persona y entrar sin grupo («¿Con quién?», persona añadida, la invitación a Yala). */
+"compartido.who.title" = "誰と？";
+"compartido.who.personSubtitle" = "人";
+"compartido.who.writeName" = "名前を入力";
+"compartido.who.namePlaceholder" = "名前";
+"compartido.who.add" = "追加";
+"compartido.who.hint" = "相手がYalaを持っていなくても大丈夫。招待はあとから送れます。";
+"compartido.addPerson.message" = "名前を入力してください。この人との支出を記録でき、いつでも招待を送れます。";
+"compartido.empty.groups.title" = "まだグループがありません";
+"compartido.empty.groups.message" = "旅行、家、職場に。みんなが最新の支出を確認できます。";
+"compartido.empty.groups.action" = "グループを作成";
+"compartido.empty.people.title" = "誰かとの支出を記録しよう";
+"compartido.empty.people.message" = "割り勘のランチやタクシーなど。名前を入力すればYalaが計算します。グループを作る必要はありません。";
+"compartido.empty.people.action" = "新しい支出";
+"compartido.added.title" = "%@さんを共有に追加しました";
+"compartido.added.message" = "%@さんを招待すると、あなたへの貸し借りを確認したり、一緒に支出を記録したりできます。リンクが届き、ワンタップで参加できます。";
+"compartido.share.message" = "%@さんから、共有している支出を一緒に管理するためにYalaへの招待が届いています。リンクをタップして参加してください。Yalaがない場合はダウンロードしてから、もう一度タップしてください。";
+"compartido.share.messageNoInviter" = "共有している支出を一緒に管理するためにYalaへ招待されています。リンクをタップして参加してください。Yalaがない場合はダウンロードしてから、もう一度タップしてください。";
+"compartido.invite.cardTitle" = "%@さんからYalaへの招待";
+"compartido.invite.cardTitleNoName" = "Yalaへの招待";
+"compartido.invite.cardSubtitle" = "共有している支出を一緒に管理するために";
+"compartido.invite.message" = "共有している支出をここで管理するために、Yalaへ招待されています。";
+"compartido.invite.join" = "Yalaに参加";
+"compartido.invite.readyTitle" = "%@さんとつながりました";
+"compartido.invite.readyTitleNoName" = "Yalaに参加しました";
+"compartido.invite.readyMessage" = "一緒に記録したものは、二人とも最新の状態で見られます。";
+"compartido.needed.withPerson" = "人と記録する";
+"compartido.needed.message" = "相手の名前を入力すればYalaが計算します。旅行や家ならグループを作りましょう。";

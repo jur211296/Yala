@@ -47,3 +47,32 @@
 "compartido.detail.stats.theyOwe" = "is je %@ schuldig";
 "compartido.detail.stats.youOwe" = "je bent %@ schuldig";
 "compartido.detail.openHint" = "Opent wat je met deze persoon deelt";
+
+/* Lote 3: invitar a una persona y entrar sin grupo («¿Con quién?», persona añadida, la invitación a Yala). */
+"compartido.who.title" = "Met wie?";
+"compartido.who.personSubtitle" = "Persoon";
+"compartido.who.writeName" = "Naam typen";
+"compartido.who.namePlaceholder" = "Naam";
+"compartido.who.add" = "Toevoegen";
+"compartido.who.hint" = "Die persoon hoeft nog geen Yala te hebben: je kunt de uitnodiging later sturen.";
+"compartido.addPerson.message" = "Typ de naam. Je kunt uitgaven met deze persoon noteren en een uitnodiging sturen wanneer je wilt.";
+"compartido.empty.groups.title" = "Nog geen groepen";
+"compartido.empty.groups.message" = "Voor reizen, thuis of op kantoor: iedereen ziet de uitgaven bijgewerkt.";
+"compartido.empty.groups.action" = "Groep maken";
+"compartido.empty.people.title" = "Noteer een uitgave met iemand";
+"compartido.empty.people.message" = "Een gedeelde lunch of een taxi. Typ de naam en Yala houdt de rekening bij: je hoeft geen groep te maken.";
+"compartido.empty.people.action" = "Nieuwe uitgave";
+"compartido.added.title" = "%@ staat nu in Gedeeld";
+"compartido.added.message" = "Nodig %@ uit om te zien wat die je schuldig is en samen uitgaven te noteren. Die krijgt een link en doet met één tik mee.";
+"compartido.share.message" = "%@ nodigt je uit voor Yala om samen de gedeelde uitgaven bij te houden. Tik op de link; heb je Yala niet, download de app en tik nog een keer.";
+"compartido.share.messageNoInviter" = "Je bent uitgenodigd voor Yala om samen de gedeelde uitgaven bij te houden. Tik op de link; heb je Yala niet, download de app en tik nog een keer.";
+"compartido.invite.cardTitle" = "%@ nodigt je uit voor Yala";
+"compartido.invite.cardTitleNoName" = "Je bent uitgenodigd voor Yala";
+"compartido.invite.cardSubtitle" = "Om samen de gedeelde uitgaven bij te houden";
+"compartido.invite.message" = "Je wordt uitgenodigd om lid te worden van Yala en hier je gedeelde uitgaven bij te houden.";
+"compartido.invite.join" = "Lid worden van Yala";
+"compartido.invite.readyTitle" = "Je bent nu verbonden met %@";
+"compartido.invite.readyTitleNoName" = "Je zit in Yala";
+"compartido.invite.readyMessage" = "Wat jullie samen noteren, zien jullie allebei bijgewerkt.";
+"compartido.needed.withPerson" = "Met een persoon noteren";
+"compartido.needed.message" = "Typ met wie en Yala houdt de rekening bij. Voor een reis of thuis maak je een groep.";

@@ -6,6 +6,10 @@
 //  elegir a qué grupo va. Espeja la estructura de `AccountSelectorSheet`.
 //  Recibe los grupos ya cargados (no necesita ModelContext).
 //
+//  Compartido (lote 3, 26-nov-2026): con `onNewPerson` es «¿Con quién?». Las personas (`SplitGroup.isPerson`, un grupo de
+//  dos por dentro) salen con su inicial y «Persona», y arriba «Escribir un nombre» da de alta a alguien nuevo. Es la
+//  MISMA hoja para Nuevo gasto, Voz, Foto e Yala IA: Jürgen pidió que Personas use las pantallas de Grupos, sin otras.
+//
 
 import SwiftUI
 
@@ -21,10 +25,16 @@ struct GroupPickerSheet: View {
     let memberCount: (SplitGroup) -> Int
     /// `true` = abre a media altura (`[.medium, .large]`) con el fondo de «Configurar panel»: glass del sistema a media
     /// altura, `.subtle` al estirarla. `false` = sin detents propios y `.subtle`, como la presenta Pagos planificados.
+    /// Compartido: «Escribir un nombre». Con él la hoja se titula «¿Con quién?» y ofrece dar de alta a una persona; quien
+    /// presenta la hoja la cierra y la crea (pide la cuenta si hace falta). `nil` = el selector de grupo de siempre.
+    var onNewPerson: ((String) -> Void)? = nil
     var opensAtMediumHeight = false
     let onSelect: (SplitGroup) -> Void
 
     @State private var selectedDetent: PresentationDetent = .medium
+    @State private var isWritingName = false
+    @State private var newName = ""
+    @FocusState private var nameFocused: Bool
 
     private var background: YalaBackgroundVariant {
         guard opensAtMediumHeight else { return .subtle }
@@ -35,18 +45,26 @@ struct GroupPickerSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: DS.Spacing.xxl) {
-                    SectionBox(title: "") {
-                        VStack(spacing: DS.Spacing.none) {
-                            ForEach(Array(groups.enumerated()), id: \.element.id) { index, group in
-                                if index > 0 {
-                                    SubsectionDivider()
-                                }
-                                GroupPickerRow(
-                                    group: group,
-                                    subtitle: L10n.Groups.Member.activeCount(memberCount(group)),
-                                    isSelected: group.id == selectedGroupID
-                                ) {
-                                    onSelect(group)
+                    if onNewPerson != nil {
+                        CompartidoNewPersonBox(
+                            isWriting: $isWritingName, name: $newName, focused: $nameFocused, onAdd: addPerson)
+                    }
+                    if !groups.isEmpty {
+                        SectionBox(title: "") {
+                            VStack(spacing: DS.Spacing.none) {
+                                ForEach(Array(groups.enumerated()), id: \.element.id) { index, group in
+                                    if index > 0 {
+                                        SubsectionDivider()
+                                    }
+                                    GroupPickerRow(
+                                        group: group,
+                                        subtitle: group.isPerson
+                                            ? L10n.Compartido.personSubtitle
+                                            : L10n.Groups.Member.activeCount(memberCount(group)),
+                                        isSelected: group.id == selectedGroupID
+                                    ) {
+                                        onSelect(group)
+                                    }
                                 }
                             }
                         }
@@ -56,7 +74,7 @@ struct GroupPickerSheet: View {
                 .padding(.vertical, DS.Spacing.xxl)
             }
             .yalaScreenBackground(background)
-            .navigationTitle(L10n.Groups.selectGroup)
+            .navigationTitle(onNewPerson == nil ? L10n.Groups.selectGroup : L10n.Compartido.whoTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -67,6 +85,20 @@ struct GroupPickerSheet: View {
             }
         }
         .modifier(GroupPickerDetents(isPartial: opensAtMediumHeight, selection: $selectedDetent))
+        .dismissKeyboardOnTap()
+    }
+
+    /// «Añadir»: el nombre limpio a quien presenta la hoja. Si ya tienes a alguien con ese nombre, se elige esa persona.
+    private func addPerson() {
+        guard let name = CompartidoPersonaAltaLogic.cleanName(newName), let onNewPerson else { return }
+        let known = groups.map { (id: $0.id, name: $0.name, isPerson: $0.isPerson) }
+        if let existing = CompartidoPersonaAltaLogic.existingPerson(named: name, among: known),
+           let person = groups.first(where: { $0.id == existing }) {
+            onSelect(person)
+            return
+        }
+        DS.Haptic.selection()
+        onNewPerson(name)
     }
 }
 
@@ -96,7 +128,11 @@ private struct GroupPickerRow: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: DS.Spacing.md) {
-                GroupIconBadge(colorHex: group.colorHex, iconName: group.iconName)
+                if group.isPerson {
+                    CompartidoPersonAvatar(name: group.name, seed: group.cloudKitZoneID)
+                } else {
+                    GroupIconBadge(colorHex: group.colorHex, iconName: group.iconName)
+                }
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(group.name)

@@ -47,3 +47,32 @@
 "compartido.detail.stats.theyOwe" = "schuldet dir %@";
 "compartido.detail.stats.youOwe" = "du schuldest %@";
 "compartido.detail.openHint" = "Öffnet, was du mit dieser Person teilst";
+
+/* Lote 3: invitar a una persona y entrar sin grupo («¿Con quién?», persona añadida, la invitación a Yala). */
+"compartido.who.title" = "Mit wem?";
+"compartido.who.personSubtitle" = "Person";
+"compartido.who.writeName" = "Namen eingeben";
+"compartido.who.namePlaceholder" = "Name";
+"compartido.who.add" = "Hinzufügen";
+"compartido.who.hint" = "Yala braucht die Person noch nicht: Du kannst die Einladung später schicken.";
+"compartido.addPerson.message" = "Gib den Namen ein. Du kannst mit dieser Person Ausgaben erfassen und ihr jederzeit eine Einladung schicken.";
+"compartido.empty.groups.title" = "Noch keine Gruppen";
+"compartido.empty.groups.message" = "Für Reisen, die WG oder das Büro: Alle sehen die Ausgaben auf dem neuesten Stand.";
+"compartido.empty.groups.action" = "Gruppe erstellen";
+"compartido.empty.people.title" = "Erfasse eine Ausgabe mit jemandem";
+"compartido.empty.people.message" = "Ein geteiltes Mittagessen oder ein Taxi. Gib den Namen ein und Yala rechnet mit: Eine Gruppe brauchst du nicht.";
+"compartido.empty.people.action" = "Neue Ausgabe";
+"compartido.added.title" = "%@ ist jetzt in Geteilt";
+"compartido.added.message" = "Lade %@ ein, damit die Person sieht, was sie dir schuldet, und mit dir Ausgaben erfasst. Sie bekommt einen Link und ist mit einem Tipp dabei.";
+"compartido.share.message" = "%@ lädt dich zu Yala ein, um eure gemeinsamen Ausgaben im Blick zu behalten. Tippe auf den Link; falls du Yala nicht hast, lade die App und tippe noch einmal.";
+"compartido.share.messageNoInviter" = "Du bist zu Yala eingeladen, um eure gemeinsamen Ausgaben im Blick zu behalten. Tippe auf den Link; falls du Yala nicht hast, lade die App und tippe noch einmal.";
+"compartido.invite.cardTitle" = "%@ lädt dich zu Yala ein";
+"compartido.invite.cardTitleNoName" = "Du bist zu Yala eingeladen";
+"compartido.invite.cardSubtitle" = "Um eure gemeinsamen Ausgaben im Blick zu behalten";
+"compartido.invite.message" = "Du wirst eingeladen, Yala beizutreten und hier deine geteilten Ausgaben im Blick zu behalten.";
+"compartido.invite.join" = "Yala beitreten";
+"compartido.invite.readyTitle" = "Du bist jetzt mit %@ verbunden";
+"compartido.invite.readyTitleNoName" = "Du bist bei Yala";
+"compartido.invite.readyMessage" = "Was ihr gemeinsam erfasst, seht ihr beide aktuell.";
+"compartido.needed.withPerson" = "Mit einer Person erfassen";
+"compartido.needed.message" = "Gib ein, mit wem, und Yala rechnet mit. Für eine Reise oder die WG erstelle eine Gruppe.";

@@ -30,10 +30,63 @@ const safeDecode = (value: string) => {
 };
 const members = membersParam ? membersParam.split(',').map((m: string) => safeDecode(m.trim())).filter(Boolean) : [];
 
-const pageTitle = inviterName
-  ? t.invitePageTitleWithInviter.replace('{inviter}', inviterName).replace('{group}', groupName)
-  : t.invitePageTitle.replace('{group}', groupName);
-const pageDescription = t.invitePageDescription.replace('{group}', groupName);
+// Compartido (lote 3): `k=p` es la invitación a una PERSONA, no a un grupo. Cambia solo la tarjeta: «Jürgen te invita a
+// Yala» y el porqué; el enlace, los pasos y los botones son los de siempre. El texto vive aquí (seis idiomas de la web)
+// para no tocar el catálogo general; si se repite en otra página, sube a `i18n/translations.ts`.
+const isPersonInvite = url.searchParams.get('k') === 'p';
+const personTexts: Record<string, { title: string; titleNoName: string; subtitle: string; message: string }> = {
+  es: {
+    title: '{inviter} te invita a Yala',
+    titleNoName: 'Te invitan a Yala',
+    subtitle: 'Para seguir juntos los gastos que comparten',
+    message: 'Te están invitando a unirte a Yala para seguir tus gastos compartidos aquí.',
+  },
+  en: {
+    title: '{inviter} is inviting you to Yala',
+    titleNoName: "You're invited to Yala",
+    subtitle: 'To keep track of the expenses you share',
+    message: "You're being invited to join Yala to keep track of your shared expenses here.",
+  },
+  de: {
+    title: '{inviter} lädt dich zu Yala ein',
+    titleNoName: 'Du bist zu Yala eingeladen',
+    subtitle: 'Um eure gemeinsamen Ausgaben im Blick zu behalten',
+    message: 'Du wirst eingeladen, Yala beizutreten und hier deine geteilten Ausgaben im Blick zu behalten.',
+  },
+  fr: {
+    title: "{inviter} t'invite sur Yala",
+    titleNoName: 'Tu es invité sur Yala',
+    subtitle: 'Pour suivre ensemble les dépenses que vous partagez',
+    message: "On t'invite à rejoindre Yala pour suivre ici tes dépenses partagées.",
+  },
+  it: {
+    title: '{inviter} ti invita su Yala',
+    titleNoName: 'Sei invitato su Yala',
+    subtitle: 'Per tenere insieme i conti delle spese che condividete',
+    message: 'Ti stanno invitando a unirti a Yala per seguire qui le tue spese condivise.',
+  },
+  pt: {
+    title: '{inviter} está te convidando para o Yala',
+    titleNoName: 'Você foi convidado para o Yala',
+    subtitle: 'Para acompanhar juntos os gastos que vocês dividem',
+    message: 'Estão te convidando para entrar no Yala e acompanhar aqui seus gastos compartilhados.',
+  },
+};
+const personText = personTexts[lang] || personTexts.es;
+const personTitle = inviterName ? personText.title.replace('{inviter}', inviterName) : personText.titleNoName;
+const inviterInitials = (inviterName || 'Yala')
+  .split(/\s+/)
+  .filter(Boolean)
+  .slice(0, 2)
+  .map((word: string) => word.charAt(0).toUpperCase())
+  .join('');
+
+const pageTitle = isPersonInvite
+  ? personTitle
+  : inviterName
+    ? t.invitePageTitleWithInviter.replace('{inviter}', inviterName).replace('{group}', groupName)
+    : t.invitePageTitle.replace('{group}', groupName);
+const pageDescription = isPersonInvite ? personText.message : t.invitePageDescription.replace('{group}', groupName);
 
 const appStoreURL = 'https://apps.apple.com/pe/app/yala-finanzas-sin-esfuerzo/id6758253109';
 const groupColor = `#${colorHex}`;
@@ -45,7 +98,7 @@ const scheme = import.meta.env.PUBLIC_DEEP_LINK_SCHEME || 'yala';
 // lo único que la app necesita para unirse; lo demás es lo mismo que ya pinta esta página.
 // Codificado con `encodeURIComponent` y no con `URLSearchParams`: éste escribe los espacios como `+`, y la app lee la
 // query con `URLComponents`, que deja el `+` tal cual («Depa+Miraflores»).
-const deepLinkQuery = [['s', shareParam], ...['n', 'i', 'c', 'm', 'u'].map((key) => [key, url.searchParams.get(key) || ''])]
+const deepLinkQuery = [['s', shareParam], ...['n', 'i', 'c', 'm', 'u', 'k'].map((key) => [key, url.searchParams.get(key) || ''])]
   .filter(([, value]) => value)
   .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
   .join('&');
@@ -167,6 +220,18 @@ const iconSVG = sfSymbolSVGs[iconParam] || sfSymbolSVGs['person.2.fill'];
     <div class="w-full max-w-sm rounded-2xl border p-6 text-center"
          style={`background: rgba(28, 41, 71, 0.6); border-color: rgba(51, 65, 85, 0.6);`}>
 
+      {isPersonInvite ? (
+        <>
+          <!-- Compartido · invitación a una persona: la inicial de quien invita, «te invita a Yala» y el porqué -->
+          <div class="mx-auto mb-4 w-16 h-16 rounded-full flex items-center justify-center bg-yala-indigo text-white text-2xl font-bold" aria-hidden="true">
+            {inviterInitials}
+          </div>
+          <h1 class="text-xl font-bold text-white mb-1">{personTitle}</h1>
+          <p class="text-sm text-neutral-300 mb-3">{personText.subtitle}</p>
+          <p class="text-sm text-neutral-400 mb-5">{personText.message}</p>
+        </>
+      ) : (
+        <>
       <!-- Group Icon -->
       <div class="mx-auto mb-4 w-16 h-16 rounded-full flex items-center justify-center"
            style={`background: ${groupColor}20; border: 2px solid ${groupColor};`}>
@@ -200,6 +265,8 @@ const iconSVG = sfSymbolSVGs[iconParam] || sfSymbolSVGs['person.2.fill'];
 
       {members.length === 0 && (
         <p class="text-sm text-neutral-400 mb-5">{t.inviteInvitedFallback}</p>
+      )}
+        </>
       )}
 
       <!-- L12-15 · qué hacer: dos pasos. Sin la app, «Abrir en Yala» no lleva a ningún sitio, así que primero se descarga -->

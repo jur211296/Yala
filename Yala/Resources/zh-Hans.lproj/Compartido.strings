@@ -47,3 +47,32 @@
 "compartido.detail.stats.theyOwe" = "欠你 %@";
 "compartido.detail.stats.youOwe" = "你欠 %@";
 "compartido.detail.openHint" = "打开你与此人共享的内容";
+
+/* Lote 3: invitar a una persona y entrar sin grupo («¿Con quién?», persona añadida, la invitación a Yala). */
+"compartido.who.title" = "和谁？";
+"compartido.who.personSubtitle" = "个人";
+"compartido.who.writeName" = "输入名字";
+"compartido.who.namePlaceholder" = "名字";
+"compartido.who.add" = "添加";
+"compartido.who.hint" = "对方不需要已经有 Yala：你可以之后再发送邀请。";
+"compartido.addPerson.message" = "输入对方的名字。你可以和这个人记账，并随时发送邀请。";
+"compartido.empty.groups.title" = "还没有群组";
+"compartido.empty.groups.message" = "适合旅行、家里或办公室：大家都能看到最新的支出。";
+"compartido.empty.groups.action" = "创建群组";
+"compartido.empty.people.title" = "和某人记一笔支出";
+"compartido.empty.people.message" = "一起吃的午餐或打车。输入名字，Yala 帮你记账：不用创建群组。";
+"compartido.empty.people.action" = "新支出";
+"compartido.added.title" = "%@ 已加入共享";
+"compartido.added.message" = "邀请 %@，对方就能看到欠你多少，并和你一起记账。对方会收到链接，轻点一下即可加入。";
+"compartido.share.message" = "%@ 邀请你加入 Yala，一起记录你们共同的支出。轻点链接加入；如果还没有 Yala，请先下载，再点一次链接。";
+"compartido.share.messageNoInviter" = "你收到了 Yala 的邀请，一起记录你们共同的支出。轻点链接加入；如果还没有 Yala，请先下载，再点一次链接。";
+"compartido.invite.cardTitle" = "%@ 邀请你加入 Yala";
+"compartido.invite.cardTitleNoName" = "你收到了 Yala 的邀请";
+"compartido.invite.cardSubtitle" = "一起记录你们共同的支出";
+"compartido.invite.message" = "有人邀请你加入 Yala，在这里记录你们共同的支出。";
+"compartido.invite.join" = "加入 Yala";
+"compartido.invite.readyTitle" = "你已和 %@ 建立连接";
+"compartido.invite.readyTitleNoName" = "你已加入 Yala";
+"compartido.invite.readyMessage" = "你们一起记的账，两个人都能看到最新情况。";
+"compartido.needed.withPerson" = "和某人记账";
+"compartido.needed.message" = "输入和谁一起，Yala 帮你记账。旅行或家里的开支，请创建群组。";
