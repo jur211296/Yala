@@ -147,3 +147,5 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de correr tests, el gate o
 - [Atribuir bloqueos del iPhone por dueño](reference_atribuir_bloqueos_del_iphone_por_dueno.md) — potential-hangs + muestras por dueño; perfilado DEBUG, zsh `(f)` para args, AX tras la suite larga.
 - [Atribuir el render con interruptores](feedback_atribuir_render_con_interruptores.md) — una build, quitar de uno en uno desde el todo; el coste no se suma (cristal × sombras).
 - [Un lote final mide antes de buscar la causa](feedback_un_lote_de_un_plan_mide_antes_de_buscar_la_causa.md) — la fuga del lote 6 ya no existía; forzar el camino viejo en la copia; huella en test con tope 4 MiB.
+- [Card de bug anterior a su arreglo](feedback_una_card_de_bug_puede_ser_anterior_a_su_arreglo.md) — compara la hora de la card con el fix: «no se reproduce» el 27-nov.
+- [Time Profiler de un test en el simulador](reference_time_profiler_de_un_test_en_el_simulador.md) — attach con --device; bucle antes/después por variable de entorno.
