@@ -43,9 +43,10 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (176)
+## Index (177)
 
 | id | status | path |
+| 2026-11-26-prueba-de-voz-no-monta-el-panel-de-escucha | backlog | tickets/backlog/2026-11-26-prueba-de-voz-no-monta-el-panel-de-escucha.md |
 | 2026-11-26-compartido-2-detalle-de-persona | done | tickets/done/2026-11-26-compartido-2-detalle-de-persona.md |
 | 2026-11-26-compartido-1-seccion-chips-y-personas | done | tickets/done/2026-11-26-compartido-1-seccion-chips-y-personas.md |
 | 2026-11-26-dividir-boleta-sin-grupo-1a | done | tickets/done/2026-11-26-dividir-boleta-sin-grupo-1a.md |
@@ -1582,3 +1583,4 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | 2026-11-26-eficiencia-1-volver-sin-recalcular | done | tickets/done/2026-11-26-eficiencia-1-volver-sin-recalcular.md |
 | 2026-11-26-eficiencia-3-no-morir-en-segundo-plano | done | tickets/done/2026-11-26-eficiencia-3-no-morir-en-segundo-plano.md |
 | 2026-11-26-eficiencia-4-recalculo-del-panel-sin-bloquear | done | tickets/done/2026-11-26-eficiencia-4-recalculo-del-panel-sin-bloquear.md |
+| 2026-11-26-eficiencia-5-render-del-scroll | done | tickets/done/2026-11-26-eficiencia-5-render-del-scroll.md |

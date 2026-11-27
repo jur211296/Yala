@@ -1,0 +1,36 @@
+ronda pantalla                   fotog mediana  p90  máx tirones tir/s
+    1 Panel                         85      51   85   97       2  1.35
+    1 Registros                     82      69   79  115       4  2.66
+    1 Estadisticas-Resumen          85      19   21   22       0  0.00
+    1 Estadisticas-Tendencias       30       1    1    1       0  0.00
+    1 Estadisticas-Distribucion     91      46   83   88       4  2.59
+    1 Pagos-planificados            88      34   48   49       1  0.66
+    1 Grupos                        31       1    1    1       0  0.00
+    1 Bandeja                       87      39   59   81       7  4.54
+    2 Panel                         50      33   33   53       2  1.33
+    2 Registros                     76      71   78  115       3  2.00
+    2 Estadisticas-Resumen          79      68   75   88       4  2.64
+    2 Estadisticas-Tendencias       75      69   74   97       3  1.99
+    2 Estadisticas-Distribucion     83      69   75  115       4  2.61
+    2 Pagos-planificados            90      33   48   51       2  1.32
+    2 Grupos                        30       1    1    1       0  0.00
+    2 Bandeja                       89      24   24   24       1  0.67
+    3 Panel                         67      11   11   72       1  0.67
+    3 Registros                     79      50   60   91       3  1.99
+    3 Estadisticas-Resumen          93      18   21   22       3  1.90
+    3 Estadisticas-Tendencias       90      46   92   97       4  2.56
+    3 Estadisticas-Distribucion     89      47   85   87       3  1.99
+    3 Pagos-planificados            94      34   47   49       2  1.23
+    3 Grupos                        31       1    1    1       0  0.00
+    3 Bandeja                       91      24   24   24       1  0.66
+
+Total por pantalla (3 rondas)
+  Panel                      mediana   33  máx   97  tirones/s  1.11  (de render 0.22)
+  Registros                  mediana   68  máx  115  tirones/s  2.22  (de render 0.22)
+  Estadisticas-Resumen       mediana   20  máx   88  tirones/s  1.54  (de render 0.44)
+  Estadisticas-Tendencias    mediana   58  máx   97  tirones/s  1.53  (de render 0.00)
+  Estadisticas-Distribucion  mediana   55  máx  115  tirones/s  2.40  (de render 0.44)
+  Pagos-planificados         mediana   34  máx   51  tirones/s  1.07  (de render 0.21)
+  Grupos                     mediana    1  máx    1  tirones/s  0.00  (de render 0.00)
+  Bandeja                    mediana   24  máx   81  tirones/s  1.98  (de render 0.22)
+  TODAS                      mediana   37  máx  115  tirones/s  1.48  (de render 0.22)
