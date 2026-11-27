@@ -1,0 +1,9 @@
+inicio s  dura ms  dueño (muestras)
+     5.9      334  proyección {'proyección': 163, 'foto de widgets': 143, 'Spotlight': 27, 'otro': 1}
+     8.5      422  Panel {'foto de widgets': 78, 'Panel': 317, 'otro': 24}
+     9.3      274  Panel {'Panel': 275}
+    10.6      322  proyección {'proyección': 278, 'otro': 3, 'foto de widgets': 24}
+
+4 cuelgues > 250 ms en los primeros 60 s · total 1.4 s · el más largo 422 ms
+  Panel              0.7 s
+  proyección         0.7 s

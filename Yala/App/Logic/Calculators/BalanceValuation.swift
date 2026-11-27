@@ -37,17 +37,76 @@ struct BalanceValuation {
         now: Date = .now,
         calendar: Calendar = .current
     ) {
-        self.preferredCurrencyCode = preferredCurrencyCode
-        self.converter = converter
-        self.calendar = calendar
-        let startOfToday = calendar.startOfDay(for: now)
-        self.startOfToday = startOfToday
-        let foreign = currencies.subtracting([preferredCurrencyCode])
-        let pastDays = Set(closingDates.filter { $0 < startOfToday }.map { Self.rateDay(of: $0, calendar: calendar) })
-        if foreign.isEmpty || pastDays.isEmpty {
-            factorsByDay = [:]
-        } else {
-            factorsByDay = converter.rateFactors(for: foreign, to: preferredCurrencyCode, on: Array(pastDays))
+        var lectura = LecturaDeTasas(
+            currencies: currencies, to: preferredCurrencyCode, closingDates: closingDates, converter: converter,
+            now: now, calendar: calendar)
+        lectura.leerTodo()
+        self.init(lectura: lectura)
+    }
+
+    /// La valoración con las tasas ya leídas por tandas (`LecturaDeTasas`).
+    init(lectura: LecturaDeTasas) {
+        preferredCurrencyCode = lectura.preferredCurrencyCode
+        converter = lectura.converter
+        calendar = lectura.calendar
+        startOfToday = lectura.startOfToday
+        factorsByDay = lectura.factorsByDay
+    }
+
+    /// Las tasas de los días de cierre anteriores a hoy, leídas de una vez o por tandas de días.
+    ///
+    /// **Lote 8 de eficiencia (27-nov-2026).** La curva de los widgets valora ~300 cierres, del día a diez años atrás, y
+    /// leerlos de una vez eran ~146 ms de hilo principal en el iPhone 14 (la lectura de las filas de tasas del rango y su
+    /// escalera). Quien no puede bloquear tanto lee por tandas (`leerTanda`) y cede entre una y otra: la foto de los
+    /// widgets (`WidgetDataCache.TendenciaFoto`). La tasa de cada día es la misma se pida sola o con otras:
+    /// `rateFactors` resuelve cada fecha con su fila y las anteriores a ella (lo fija `BalanceValuationPorTandasTests`).
+    @MainActor
+    struct LecturaDeTasas {
+        let preferredCurrencyCode: String
+        let converter: CurrencyConverting
+        let calendar: Calendar
+        let startOfToday: Date
+        private let foreign: Set<String>
+        /// Los días por leer, del más reciente al más antiguo.
+        private var pendientes: [Date]
+        private(set) var factorsByDay: [Date: [String: RateFactor]] = [:]
+
+        init(
+            currencies: Set<String>,
+            to preferredCurrencyCode: String,
+            closingDates: [Date],
+            converter: CurrencyConverting,
+            now: Date = .now,
+            calendar: Calendar = .current
+        ) {
+            self.preferredCurrencyCode = preferredCurrencyCode
+            self.converter = converter
+            self.calendar = calendar
+            let startOfToday = calendar.startOfDay(for: now)
+            self.startOfToday = startOfToday
+            foreign = currencies.subtracting([preferredCurrencyCode])
+            let pastDays = Set(closingDates.filter { $0 < startOfToday }.map {
+                BalanceValuation.rateDay(of: $0, calendar: calendar)
+            })
+            pendientes = foreign.isEmpty ? [] : pastDays.sorted(by: >)
+        }
+
+        var terminada: Bool { pendientes.isEmpty }
+        var diasPendientes: Int { pendientes.count }
+
+        /// Lee las tasas de los `dias` días pendientes más recientes, en UNA consulta.
+        mutating func leerTanda(dias: Int) {
+            guard !pendientes.isEmpty, dias > 0 else { return }
+            let tanda = Array(pendientes.prefix(dias))
+            pendientes.removeFirst(tanda.count)
+            factorsByDay.merge(converter.rateFactors(for: foreign, to: preferredCurrencyCode, on: tanda)) { _, nuevo in
+                nuevo
+            }
+        }
+
+        /// Todos de una vez, en una sola consulta: lo de siempre.
+        mutating func leerTodo() {
+            leerTanda(dias: pendientes.count)
         }
     }
 

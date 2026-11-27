@@ -142,7 +142,7 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de correr tests, el gate o
 - [Calor: con cable y por incrementos](feedback_medir_calor_con_cable_y_por_incrementos.md) — Jürgen prefiere comparar ventanas y antes-después, no desconectar.
 - [El «antes» del informe vale si el código no cambió](feedback_el_antes_de_un_informe_vale_si_el_codigo_no_cambio.md) — git log del commit medido a la base sobre Yala/App; 0 ⇒ reusar E/J y medir solo el después.
 - [El guion de ciclos dispara tirar para actualizar](feedback_el_guion_de_ciclos_dispara_tirar_para_actualizar.md) — 6 arriba llega al tope: `SUBE=3`; la pila del que pide, en la copia.
-- [El iPhone 14 se mide desde la Max](reference_el_iphone_14_se_mide_desde_la_max.md) — instalar desde la Mini; xctrace y ciclos por ssh max.
+- [El iPhone 14 se mide desde la Max](reference_el_iphone_14_se_mide_desde_la_max.md) — 27-nov: xctrace y devicectl ya graban desde la Mini aunque Device MCP esté bloqueado; ssh max, plan B.
 - [El cierre en segundo plano se reproduce en frío](feedback_el_cierre_en_segundo_plano_se_reproduce_en_frio.md) — abrir y salir a 3 s: 4/5 cierres; en caliente, 0. Lee la pila del .ips.
 - [Atribuir bloqueos del iPhone por dueño](reference_atribuir_bloqueos_del_iphone_por_dueno.md) — potential-hangs + muestras por dueño; perfilado DEBUG, zsh `(f)` para args, AX tras la suite larga.
 - [Atribuir el render con interruptores](feedback_atribuir_render_con_interruptores.md) — una build, quitar de uno en uno desde el todo; el coste no se suma (cristal × sombras).
@@ -150,3 +150,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de correr tests, el gate o
 - [Card de bug anterior a su arreglo](feedback_una_card_de_bug_puede_ser_anterior_a_su_arreglo.md) — compara la hora de la card con el fix: «no se reproduce» el 27-nov.
 - [Time Profiler de un test en el simulador](reference_time_profiler_de_un_test_en_el_simulador.md) — attach con --device; bucle antes/después por variable de entorno.
 - [Mutantes: revertir por texto, no con checkout](feedback_mutantes_se_revierten_por_texto.md) — git checkout se lleva el trabajo sin commitear; casi pasa el 27-nov.
+- [Tramo sin ceder: corta a 3 ms](feedback_tramo_sin_ceder_se_corta_a_3_ms.md) — a 1,5 ms el muestreo parte tramos de una vez; a 3 ms el «después» sale por lo alto.

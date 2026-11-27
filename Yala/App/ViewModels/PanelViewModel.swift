@@ -554,6 +554,68 @@ final class PanelViewModel {
     /// durante la lectura cuenta como cambio en la vuelta.
     private func loadData(stamp: PanelDataStamp, preloadedTransactions: [TransactionItem]?) {
         guard let context = modelContext else { return }
+        cargarListas(stamp: stamp, preloadedTransactions: preloadedTransactions, context: context)
+        aplicarGruposYHuerfanos(transactions.filter(CargaPanelPorTramos.importaAGruposOHuerfanos), context: context)
+        cargarPlanificacion(context: context)
+        // Pre-compute account balances (not period-dependent — only changes when transactions change)
+        calculateAccountBalances()
+        terminarCarga()
+    }
+
+    /// La misma carga que `loadData(stamp:preloadedTransactions:)`, con los movimientos ya leídos por tramos, cediendo el
+    /// hilo principal entre paso y paso y dentro de los recorridos largos (lote 8 de eficiencia, 27-nov-2026). Con 16.004
+    /// movimientos en el iPhone 14 la carga de una vez dejaba un bloque de ~0,55 s en el arranque: el ajuste de grupos y el
+    /// recuento de huérfanos recorrían los 16 k, y los saldos de las cuentas y las líneas de Grupos otra vez. Ahora una
+    /// pasada por tramos aparta las filas que miran los dos primeros (`CargaPanelPorTramos.importaAGruposOHuerfanos`) y
+    /// otra suma saldos y líneas a la vez. Son los mismos pasos y el mismo orden que la carga de una vez, y las mismas
+    /// funciones: `CargaPanelParidadTests` lo compara con el código previo.
+    ///
+    /// `false` si se cortó (se canceló, la app se fue, un guardado borró movimientos de la mano): quien llama no calcula.
+    /// Cortada sin cancelar, se apunta el trabajo a medias o se pide la recarga, como hace `finishRecalculation`.
+    private func cargarPorTramos(stamp: PanelDataStamp, cargados: [TransactionItem]) async -> Bool {
+        guard let context = modelContext else { return true }
+        let marcas = MarcasCargaPanel()
+        savesAtCalculationCheck = StoreSaveCounter.shared.count
+        calculationLostRowsToADeletion = false
+        let cesion = CesionDelHilo { [weak self] in
+            self?.calculationContinues(context: context) ?? false
+        }
+        var completada = false
+        defer {
+            cesion.cerrar()
+            marcas.terminar(completada: completada, cesion: cesion)
+        }
+        do {
+            cargarListas(stamp: stamp, preloadedTransactions: cargados, context: context)
+            try await cesion.cederSiToca()
+            var filasGrupo: [TransactionItem] = []
+            try await CalculadorasPorTramos.recorrer(transactions, cesion: cesion) { tx in
+                if CargaPanelPorTramos.importaAGruposOHuerfanos(tx) { filasGrupo.append(tx) }
+            }
+            aplicarGruposYHuerfanos(filasGrupo, context: context)
+            try await cesion.cederSiToca()
+            cargarPlanificacion(context: context)
+            try await cesion.cederSiToca()
+            try await calculateAccountBalances(cesion: cesion)
+            terminarCarga()
+            completada = true
+            return true
+        } catch {
+            // Cancelado: quien canceló ya soltó la tarea y apuntó el trabajo a medias.
+            guard !Task.isCancelled else { return false }
+            recalculateTask = nil
+            if calculationLostRowsToADeletion {
+                calculationLostRowsToADeletion = false
+                scheduleRecalculation(reload: true)
+            } else {
+                hasInterruptedWork = true
+            }
+            return false
+        }
+    }
+
+    /// Paso 1 de la carga: la firma, las listas pequeñas y los movimientos.
+    private func cargarListas(stamp: PanelDataStamp, preloadedTransactions: [TransactionItem]?, context: ModelContext) {
         lastLoadStamp = stamp
         firmaUltimaCarga = firmaCargaEnCurso ?? firma(de: stamp)
         firmaCargaEnCurso = nil
@@ -619,19 +681,28 @@ final class PanelViewModel {
             print("PanelViewModel: Error loading transactions: \(error)")
             #endif
         }
+    }
 
+    /// Paso 2 de la carga: el ajuste de los gastos de grupo y el recuento de movimientos sin cuenta, sobre `filas`: las
+    /// de `transactions` que esas dos funciones miran (`CargaPanelPorTramos.importaAGruposOHuerfanos`), en su orden.
+    private func aplicarGruposYHuerfanos(_ filas: [TransactionItem], context: ModelContext) {
         // Reconstruir la proyección de netos de grupo desde el set MÁS AMPLIO (`transactions`,
         // con AMBAS hermanas del bridge). `transactions` solo cambia aquí → `statsAdjustment`
         // queda siempre fresco ANTES de cualquier cálculo de widget (contexto y Hero).
-        statsAdjustment = GroupBridgeStatsAdjustment.build(from: transactions, context: context)
+        // Desde el lote 8 de eficiencia recibe solo las filas que mira: las dos hermanas llevan puntero de grupo, así que
+        // siguen dentro, y una fila con cuenta y sin puntero no cambia ni el ajuste ni el recuento.
+        statsAdjustment = GroupBridgeStatsAdjustment.build(from: filas, context: context)
 
         // Movimientos sin cuenta (card `tablero-los-movimientos-que-quedaron-sin-cuenta-sovw`): se recuentan en CADA
         // recarga, no una vez, para que el aviso enseñe también los que llegan tarde por sync tras eliminar su cuenta
         // (card `tablero-eliminar-una-cuenta-todavia-puede-dejar-mjzx`). Se recuenta aunque `transactions` no cambie:
         // mover uno le cambia la cuenta en sitio, y el array sigue siendo el mismo.
-        let orphans = OrphanedRecordsService.orphanCount(in: transactions, context: context)
+        let orphans = OrphanedRecordsService.orphanCount(in: filas, context: context)
         if orphans != orphanedRecordCount { orphanedRecordCount = orphans }
+    }
 
+    /// Paso 3 de la carga: presupuestos, pagos planificados, borradores y el rango de fechas.
+    private func cargarPlanificacion(context: ModelContext) {
         var budgetsDesc = FetchDescriptor<Budget>(
             predicate: #Predicate<Budget> { $0.isActive },
             sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
@@ -680,10 +751,10 @@ final class PanelViewModel {
         if newStart != transactionDateRange.start || newEnd != transactionDateRange.end {
             transactionDateRange = (start: newStart, end: newEnd)
         }
+    }
 
-        // Pre-compute account balances (not period-dependent — only changes when transactions change)
-        calculateAccountBalances()
-
+    /// Último paso de la carga: la espera de la cuenta y `isReady`.
+    private func terminarCarga() {
         // Card c8i9: mientras la cuenta llega de la nube, el esqueleto y no un Panel en S/ 0.
         updateAccountDataWait()
         let ready = !accountDataWait.isWaiting
@@ -1401,18 +1472,39 @@ final class PanelViewModel {
         transactions: [TransactionItem],
         defaultCurrencyCode: String
     ) -> LiveBalanceCalculator.Breakdown {
-        let includeGroups = appPreferences?.includeGroupsInPanelTotal ?? true
-        let effectiveAccounts = PanelTotalAccountsLogic.accountsForTotal(
-            accounts,
-            includeGroups: includeGroups,
-            hasSelectedAccount: PanelTotalAccountsLogic.hasAccountFilter(selectedAccountIDs: self.selectedAccountIDs)
-        )
-        return LiveBalanceCalculator.liveBalanceBreakdown(
-            accounts: effectiveAccounts,
+        LiveBalanceCalculator.liveBalanceBreakdown(
+            accounts: accountsForDisplayedBalance(accounts),
             transactions: transactions,
             preferredCurrencyCode: defaultCurrencyCode,
             selectedAccountIDs: self.selectedAccountIDs,
             excludedAccountIDs: self.excludedAccountIDs
+        )
+    }
+
+    /// Lo mismo, por tramos que ceden el hilo (el cálculo del Panel, lote 8 de eficiencia): misma suma
+    /// (`SumaSaldoVivo`), mismas cuentas y mismos filtros.
+    private func displayedBalanceInDefaultCurrency(
+        accounts: [Account],
+        transactions: [TransactionItem],
+        defaultCurrencyCode: String,
+        cesion: CesionDelHilo
+    ) async throws -> LiveBalanceCalculator.Breakdown {
+        try await CalculadorasPorTramos.saldoVivo(
+            accounts: accountsForDisplayedBalance(accounts),
+            transactions: transactions,
+            preferredCurrencyCode: defaultCurrencyCode,
+            selectedAccountIDs: self.selectedAccountIDs,
+            excludedAccountIDs: self.excludedAccountIDs,
+            cesion: cesion
+        )
+    }
+
+    /// Las cuentas del saldo mostrado: con el interruptor de Grupos apagado y sin filtro de cuentas, sin las de Grupos.
+    private func accountsForDisplayedBalance(_ accounts: [Account]) -> [Account] {
+        PanelTotalAccountsLogic.accountsForTotal(
+            accounts,
+            includeGroups: appPreferences?.includeGroupsInPanelTotal ?? true,
+            hasSelectedAccount: PanelTotalAccountsLogic.hasAccountFilter(selectedAccountIDs: self.selectedAccountIDs)
         )
     }
 
@@ -1601,6 +1693,10 @@ final class PanelViewModel {
 
         // 2. Calculate widget data per visible widget
 
+        // El saldo vivo del último punto de la curva (sin filtros de cuentas), por tramos y una sola vez: lo piden la
+        // tendencia y la comparación con el período anterior, con las mismas cuentas y movimientos (lote 8 de eficiencia).
+        var saldoVivoDeLaCurva: LiveBalanceCalculator.Breakdown?
+
         // Trend chart
         var newTrendPoints: (points: [BarPoint], rawPoints: [BarPoint], yDomain: ClosedRange<Double>)?
         var newTrendTotalIncome = trendTotalIncome
@@ -1619,16 +1715,8 @@ final class PanelViewModel {
                 ? calcContext.balanceTransactions
                 : calcContext.filteredTransactions
             try await cesion.cederSiToca()
-            let liveBalanceOverride = LiveBalanceCalculator.liveBalanceOverride(
-                for: trendType,
-                interval: calcContext.effectiveInterval,
-                accounts: calcContext.balanceAccounts,
-                transactions: calcContext.balanceTransactions,
-                preferredCurrencyCode: calcContext.defaultCurrencyCode,
-                // El mismo converter que la curva: la cifra y su último punto salen de la misma regla
-                // (`panel-balance-chart-contradicts-its-own-figure`).
-                converter: calcContext.converter
-            )
+            let liveBalanceOverride = try await liveBalanceOverride(
+                for: trendType, context: calcContext, cesion: cesion, memoria: &saldoVivoDeLaCurva)
             try await cesion.cederSiToca()
             marcasEnCurso?.etapa("tendencia.grafica.curva")
             let result = TrendDataProcessor.processTrendData(
@@ -1736,7 +1824,10 @@ final class PanelViewModel {
         try await cesion.cederSiToca()
         // Second page of the Trends carousel — same visibility guard as the trend chart
         if trendVisible {
-            calculatePeriodComparisonWidget(context: calcContext)
+            let metricaComparada = periodComparisonTrendType()
+            let override = try await liveBalanceOverride(
+                for: metricaComparada, context: calcContext, cesion: cesion, memoria: &saldoVivoDeLaCurva)
+            calculatePeriodComparisonWidget(context: calcContext, liveBalanceOverride: override)
         }
 
         try await cesion.cederSiToca()
@@ -1749,10 +1840,11 @@ final class PanelViewModel {
         // @Observable notifications into ~6 struct-level comparisons.
         enforceTrendLock(sessionState: sessionState)
 
-        let newBreakdown = displayedBalanceInDefaultCurrency(
+        let newBreakdown = try await displayedBalanceInDefaultCurrency(
             accounts: accounts,
             transactions: transactions,
-            defaultCurrencyCode: defaultCurrencyCode
+            defaultCurrencyCode: defaultCurrencyCode,
+            cesion: cesion
         )
         let newBalance = (newBreakdown.convertedTotal as NSDecimalNumber).doubleValue
         // El saldo total del panorama debe reflejar cambios (toggle de grupos,
@@ -3252,7 +3344,9 @@ final class PanelViewModel {
                     await finishRecalculation()
                     return
                 }
-                loadData(stamp: stampCargado, preloadedTransactions: loaded)
+                // La carga, por tramos que ceden el hilo (lote 8 de eficiencia). Cortada, no se calcula: ya apuntó el
+                // trabajo a medias o pidió la recarga.
+                guard await cargarPorTramos(stamp: stampCargado, cargados: loaded) else { return }
             }
             await finishRecalculation()
         }
@@ -3626,7 +3720,39 @@ final class PanelViewModel {
     /// the comparison (no bounded previous interval). Metric mirrors the trend
     /// chart via `SessionState.selectedTrendMetric`, forced to `.expense` when
     /// `isExpensesOnlyMode` is active.
-    private func calculatePeriodComparisonWidget(context: PanelCalculationContext) {
+    /// La métrica de la comparación con el período anterior: la de la curva, o gasto en «Solo gastos».
+    private func periodComparisonTrendType() -> TrendType {
+        let session = SessionState.shared
+        let metric: TrendMetric = session.isExpensesOnlyMode ? .expense : session.selectedTrendMetric
+        return convertMetricToTrendType(metric)
+    }
+
+    /// `LiveBalanceCalculator.liveBalanceOverride` con las cuentas y movimientos del saldo de la curva, con el saldo vivo
+    /// sumado por tramos y una sola vez por cálculo (`memoria`): la misma decisión (`overrideApplies`) y el mismo ancla
+    /// (`anchor(from:)`). El mismo converter que la curva: la cifra y su último punto salen de la misma regla
+    /// (`panel-balance-chart-contradicts-its-own-figure`).
+    private func liveBalanceOverride(
+        for metric: TrendType,
+        context: PanelCalculationContext,
+        cesion: CesionDelHilo,
+        memoria: inout LiveBalanceCalculator.Breakdown?
+    ) async throws -> LiveBalanceCalculator.LiveAnchorInfo? {
+        guard LiveBalanceCalculator.overrideApplies(to: metric, interval: context.effectiveInterval) else { return nil }
+        if let ya = memoria { return LiveBalanceCalculator.anchor(from: ya) }
+        let breakdown = try await CalculadorasPorTramos.saldoVivo(
+            accounts: context.balanceAccounts,
+            transactions: context.balanceTransactions,
+            preferredCurrencyCode: context.defaultCurrencyCode,
+            converter: context.converter,
+            cesion: cesion
+        )
+        memoria = breakdown
+        return LiveBalanceCalculator.anchor(from: breakdown)
+    }
+
+    private func calculatePeriodComparisonWidget(
+        context: PanelCalculationContext, liveBalanceOverride: LiveBalanceCalculator.LiveAnchorInfo?
+    ) {
         guard context.period != .allTime else {
             let newData = PanelPeriodComparisonData(supportsComparison: false)
             if newData != periodComparisonWidget { periodComparisonWidget = newData }
@@ -3634,8 +3760,7 @@ final class PanelViewModel {
         }
 
         let session = SessionState.shared
-        let metric: TrendMetric = session.isExpensesOnlyMode ? .expense : session.selectedTrendMetric
-        let trendType = convertMetricToTrendType(metric)
+        let trendType = periodComparisonTrendType()
         let isBalance = (trendType == .balance)
         let mode: ComparisonMode = context.period == .thisYear ? .year : .month
 
@@ -3658,15 +3783,7 @@ final class PanelViewModel {
             }
         }
 
-        // Override solo en current; previous siempre histórico.
-        let liveBalanceOverride = LiveBalanceCalculator.liveBalanceOverride(
-            for: trendType,
-            interval: context.effectiveInterval,
-            accounts: context.balanceAccounts,
-            transactions: context.balanceTransactions,
-            preferredCurrencyCode: context.defaultCurrencyCode,
-            converter: context.converter
-        )
+        // Override solo en current; previous siempre histórico. Llega calculado (`liveBalanceOverride(for:context:…)`).
 
         let currentResult = TrendDataProcessor.processTrendData(
             transactions: currentTxs,
@@ -3960,25 +4077,36 @@ final class PanelViewModel {
 
     /// Pre-computes total account balances (not period-dependent).
     /// Called from loadData() — only when transactions actually change.
+    ///
+    /// Los saldos (`AccountBalanceCalculator.SumaSaldosPorCuenta`, la suma de `batchCalculateBalances`) y las líneas de
+    /// la tarjeta «Grupos» (`LineasDeLaTarjetaDeGrupos`) se suman en la MISMA pasada: antes eran dos recorridos de los
+    /// 16 k movimientos (lote 8 de eficiencia).
     private func calculateAccountBalances() {
-        let batchBalances = AccountBalanceCalculator.batchCalculateBalances(
-            accounts: accounts,
-            transactions: transactions
-        )
+        var saldos = AccountBalanceCalculator.SumaSaldosPorCuenta(accounts: accounts)
+        var lineas = LineasDeLaTarjetaDeGrupos(accounts: accounts)
+        for tx in transactions {
+            saldos.sumar(tx)
+            lineas.sumar(tx)
+        }
+        publicarSaldosDeCuentas(saldos.saldos, lineas: lineas.lineas)
+    }
+
+    /// Lo mismo, por tramos que ceden el hilo (la carga del arranque, `cargarPorTramos`).
+    private func calculateAccountBalances(cesion: CesionDelHilo) async throws {
+        var saldos = AccountBalanceCalculator.SumaSaldosPorCuenta(accounts: accounts)
+        var lineas = LineasDeLaTarjetaDeGrupos(accounts: accounts)
+        try await CalculadorasPorTramos.recorrer(transactions, cesion: cesion) { tx in
+            saldos.sumar(tx)
+            lineas.sumar(tx)
+        }
+        publicarSaldosDeCuentas(saldos.saldos, lineas: lineas.lineas)
+    }
+
+    private func publicarSaldosDeCuentas(
+        _ batchBalances: [PersistentIdentifier: Decimal], lineas newGroupLines: [GroupsAccountCardLogic.GroupLine]
+    ) {
         let newBalances = batchBalances.mapValues { ($0 as NSDecimalNumber).doubleValue }
         if newBalances != accountBalances { accountBalances = newBalances }
-
-        // Las líneas de la tarjeta «Grupos»: los mismos movimientos que suman esos saldos, por el grupo al que apuntan.
-        let cutoff = LiveBalanceCalculator.TodayCutoff(asOf: .now)
-        let systemIDs = Set(accounts.filter { $0.isSystemAccount && !$0.isArchived }.map(\.persistentModelID))
-        let movements: [GroupsAccountCardLogic.Movement] = systemIDs.isEmpty ? [] : transactions.compactMap { tx in
-            guard cutoff.counts(tx.date), let account = tx.account,
-                  systemIDs.contains(account.persistentModelID) else { return nil }
-            let pointsToGroup = tx.splitExpenseID != nil || tx.splitSettlementID != nil
-            return .init(zoneID: pointsToGroup ? tx.splitGroupZoneID : nil,
-                         currencyCode: account.currencyCode, amount: tx.amount)
-        }
-        let newGroupLines = GroupsAccountCardLogic.groupLines(movements)
         if newGroupLines != groupAccountLines { groupAccountLines = newGroupLines }
     }
 

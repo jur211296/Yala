@@ -1,0 +1,10 @@
+inicio s  dura ms  panel%  funciones del Panel (ms)
+    0.78      160     93%  fetchTransactionsInSlices 149
+    1.00      235     85%  fetchTransactionsInSlices 201
+    1.64      130     67%  calculateAccountBalances 77, aplicarGruposYHuerfanos 7, cargarPlanificacion 4
+    1.98      269     83%  buildCalculationContext 225
+    2.25      101     95%  buildCalculationContext 96
+    2.36      103     71%  buildCalculationContext 74
+    8.21      629     57%  calculateBudgetSummary 347, performCalculationInStages 5, calculateScheduledPaymentsWidget 5, getBudgetDaysRemaining 1, scheduledPaymentColor 1
+
+7 bloques > 100 ms del Panel en los primeros 60 s

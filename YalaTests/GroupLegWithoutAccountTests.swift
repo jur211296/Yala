@@ -370,8 +370,12 @@ struct GroupLegWithoutAccountStoreTests {
         let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
         let panel = try String(contentsOf: root.appendingPathComponent("Yala/App/ViewModels/PanelViewModel.swift"),
                                encoding: .utf8)
-        #expect(panel.contains("let orphans = OrphanedRecordsService.orphanCount(in: transactions, context: context)"),
+        // Desde el lote 8 de eficiencia (27-nov-2026) el recuento recibe las filas que mira (con gasto de grupo o sin
+        // cuenta), apartadas con `CargaPanelPorTramos.importaAGruposOHuerfanos` en las dos cargas.
+        #expect(panel.contains("let orphans = OrphanedRecordsService.orphanCount(in: filas, context: context)"),
                 "el Panel ya no cuenta con la regla común: el aviso no vería la pata real de grupo")
+        #expect(panel.contains("aplicarGruposYHuerfanos(transactions.filter(CargaPanelPorTramos.importaAGruposOHuerfanos)"))
+        #expect(panel.contains("if CargaPanelPorTramos.importaAGruposOHuerfanos(tx) { filasGrupo.append(tx) }"))
     }
 
     // MARK: El barredor y el desasociar sobre filas reales

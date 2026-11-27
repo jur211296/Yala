@@ -154,48 +154,87 @@ struct LiveBalanceCalculator {
         asOf now: Date = .now,
         converter: CurrencyConverting = CurrencyConverter.shared
     ) -> Breakdown {
-        // Las cuentas excluidas de estadísticas y las archivadas nunca entran en un saldo, se filtre por cuenta o no
-        // (`AccountScopeLogic`: archivar saca del saldo y conserva el historial, decisión 6 de 2.3).
-        let countableIDs = Set(
-            accounts.filter(\.sumsInBalance)
-                .map { $0.persistentModelID }
-        )
+        var suma = SumaSaldoVivo(
+            accounts: accounts, selectedAccountIDs: selectedAccountIDs, excludedAccountIDs: excludedAccountIDs,
+            asOf: now)
+        for tx in transactions { suma.sumar(tx) }
+        return suma.desglose(preferredCurrencyCode: preferredCurrencyCode, converter: converter)
+    }
 
-        // "Solo estas" y "todas menos estas", a la vez. Si se ocultan todas, el saldo es 0 y no el total: aquí NO hay
-        // fallback, igual que en Estadísticas. Y una selección que no resuelve a ninguna cuenta contable (la única
-        // elegida está excluida de estadísticas) da 0, no el total: decisión A de Jürgen del 2026-10-08 (ticket
-        // `saldo-con-seleccion-no-contable-diverge-entre-panel-y-estadisticas`). Hasta entonces este saldo caía al
-        // total agregado —herencia de `BalanceHelper.displayedBalance`— mientras los widgets del Panel y
-        // Estadísticas daban 0, y la misma pantalla se contradecía.
-        let accountFilter = EntityFilter(included: selectedAccountIDs, excluded: excludedAccountIDs)
-        let eligibleAccountIDs = countableIDs.filter { accountFilter.matches($0) }
+    /// La suma del saldo vivo, fila a fila: la regla entera de `liveBalanceBreakdown`, que la recorre de una vez.
+    ///
+    /// **Lote 8 de eficiencia (27-nov-2026).** Con 16.004 movimientos en el iPhone 14 el saldo vivo eran ~200 ms de hilo
+    /// principal sin ceder, dentro de la foto de los widgets y del cálculo del Panel. Quien no puede bloquear tanto suma
+    /// por tramos y cede entre uno y otro (`SaldoVivoPorTramos`); la foto suma sobre las filas que ya leyó
+    /// (`sumar(cuentaID:entraEnSaldo:fecha:moneda:monto:)`). Las dos vías y la de una vez pasan por el mismo `sumar`, así
+    /// que la cifra sale de un solo sitio: no hay copia de la regla que pueda divergir.
+    struct SumaSaldoVivo {
+        /// Las cuentas que suma, ya resueltas (contables y filtro de cuentas aplicado). Viaja en el `Breakdown`.
+        let eligibleAccountIDs: Set<PersistentIdentifier>
+        let cutoff: TodayCutoff
+        private(set) var nativeBalances: [String: Decimal] = [:]
 
-        let cutoff = TodayCutoff(asOf: now)
-        var nativeBalances: [String: Decimal] = [:]
-        for tx in transactions {
-            guard entersBalance(tx), let acc = tx.account,
-                eligibleAccountIDs.contains(acc.persistentModelID),
-                cutoff.counts(tx.date)
-            else { continue }
-            addNative(tx, to: &nativeBalances)
+        init(
+            accounts: [Account],
+            selectedAccountIDs: Set<PersistentIdentifier> = [],
+            excludedAccountIDs: Set<PersistentIdentifier> = [],
+            asOf now: Date = .now
+        ) {
+            // Las cuentas excluidas de estadísticas y las archivadas nunca entran en un saldo, se filtre por cuenta o
+            // no (`AccountScopeLogic`: archivar saca del saldo y conserva el historial, decisión 6 de 2.3).
+            let countableIDs = Set(
+                accounts.filter(\.sumsInBalance)
+                    .map { $0.persistentModelID }
+            )
+
+            // "Solo estas" y "todas menos estas", a la vez. Si se ocultan todas, el saldo es 0 y no el total: aquí NO
+            // hay fallback, igual que en Estadísticas. Y una selección que no resuelve a ninguna cuenta contable (la
+            // única elegida está excluida de estadísticas) da 0, no el total: decisión A de Jürgen del 2026-10-08
+            // (ticket `saldo-con-seleccion-no-contable-diverge-entre-panel-y-estadisticas`). Hasta entonces este saldo
+            // caía al total agregado —herencia de `BalanceHelper.displayedBalance`— mientras los widgets del Panel y
+            // Estadísticas daban 0, y la misma pantalla se contradecía.
+            let accountFilter = EntityFilter(included: selectedAccountIDs, excluded: excludedAccountIDs)
+            eligibleAccountIDs = countableIDs.filter { accountFilter.matches($0) }
+            cutoff = TodayCutoff(asOf: now)
         }
 
-        let (convertedTotal, approximateMagnitude) = convertAtLatestRate(
-            nativeBalances, to: preferredCurrencyCode, converter: converter
-        )
-        let amountsAreApproximate = ApproximateMarkThreshold.marks(
-            approximate: (approximateMagnitude as NSDecimalNumber).doubleValue,
-            total: (convertedTotal as NSDecimalNumber).doubleValue
-        )
+        /// Suma un movimiento, leyendo de él lo que la regla pide.
+        mutating func sumar(_ tx: TransactionItem) {
+            guard entersBalance(tx), let acc = tx.account else { return }
+            sumar(cuentaID: acc.persistentModelID, entraEnSaldo: true, fecha: tx.date,
+                  moneda: tx.currencyCode, monto: Decimal(tx.amount))
+        }
 
-        return Breakdown(
-            nativeBalances: nativeBalances,
-            convertedTotal: convertedTotal,
-            preferredCurrencyCode: preferredCurrencyCode,
-            amountsAreApproximate: amountsAreApproximate,
-            eligibleAccountIDs: eligibleAccountIDs,
-            cutoff: cutoff
-        )
+        /// La regla, sobre lo ya leído: `entraEnSaldo` es `entersBalance(tx)` y `moneda`/`monto` lo que suma
+        /// `addNative(tx, to:)`. Una fila sin cuenta (`cuentaID == nil`) no entra.
+        mutating func sumar(
+            cuentaID: PersistentIdentifier?, entraEnSaldo: Bool, fecha: Date, moneda: String, monto: Decimal
+        ) {
+            guard entraEnSaldo, let cuentaID, eligibleAccountIDs.contains(cuentaID), cutoff.counts(fecha) else {
+                return
+            }
+            addNative(moneda: moneda, monto: monto, to: &nativeBalances)
+        }
+
+        /// El desglose de lo sumado, con la divisa principal al tipo de cambio de hoy.
+        func desglose(preferredCurrencyCode: String, converter: CurrencyConverting) -> Breakdown {
+            let (convertedTotal, approximateMagnitude) = convertAtLatestRate(
+                nativeBalances, to: preferredCurrencyCode, converter: converter
+            )
+            let amountsAreApproximate = ApproximateMarkThreshold.marks(
+                approximate: (approximateMagnitude as NSDecimalNumber).doubleValue,
+                total: (convertedTotal as NSDecimalNumber).doubleValue
+            )
+
+            return Breakdown(
+                nativeBalances: nativeBalances,
+                convertedTotal: convertedTotal,
+                preferredCurrencyCode: preferredCurrencyCode,
+                amountsAreApproximate: amountsAreApproximate,
+                eligibleAccountIDs: eligibleAccountIDs,
+                cutoff: cutoff
+            )
+        }
     }
 
     // MARK: - La regla del saldo vivo, compartida con las curvas de saldo
@@ -218,7 +257,12 @@ struct LiveBalanceCalculator {
     /// `convertAtLatestRate` (`BalanceValuation`): así su último punto ES la cifra del saldo, por construcción
     /// (ticket `panel-balance-chart-contradicts-its-own-figure`).
     static func addNative(_ transaction: TransactionItem, to nativeBalances: inout [String: Decimal]) {
-        nativeBalances[transaction.currencyCode, default: 0] += Decimal(transaction.amount)
+        addNative(moneda: transaction.currencyCode, monto: Decimal(transaction.amount), to: &nativeBalances)
+    }
+
+    /// `addNative` sobre lo ya leído de la fila (`SumaSaldoVivo`, las filas de la foto de los widgets).
+    static func addNative(moneda: String, monto: Decimal, to nativeBalances: inout [String: Decimal]) {
+        nativeBalances[moneda, default: 0] += monto
     }
 
     /// Un saldo por divisa nativa, pasado a `preferredCurrencyCode` con el tipo de cambio ACTUAL.
@@ -265,9 +309,7 @@ struct LiveBalanceCalculator {
         asOf now: Date = .now,
         converter: CurrencyConverting = CurrencyConverter.shared
     ) -> LiveAnchorInfo? {
-        // «Llega a hoy»: acaba hoy o después. Los períodos en curso cierran a las 23:59:59; comparar con `now` los daba
-        // por terminados en el último segundo del día.
-        guard metric == .balance, interval.end >= Calendar.current.startOfDay(for: now) else { return nil }
+        guard overrideApplies(to: metric, interval: interval, asOf: now) else { return nil }
         let breakdown = liveBalanceBreakdown(
             accounts: accounts,
             transactions: transactions,
@@ -275,7 +317,20 @@ struct LiveBalanceCalculator {
             asOf: now,
             converter: converter
         )
-        return LiveAnchorInfo(
+        return anchor(from: breakdown)
+    }
+
+    /// Cuándo hay override: métrica saldo y un intervalo que llega a hoy. Quien ya calculó el desglose (por tramos, lote
+    /// 8 de eficiencia) lo pregunta aquí y arma el ancla con `anchor(from:)`: la misma decisión y el mismo valor.
+    static func overrideApplies(to metric: TrendType, interval: DateInterval, asOf now: Date = .now) -> Bool {
+        // «Llega a hoy»: acaba hoy o después. Los períodos en curso cierran a las 23:59:59; comparar con `now` los daba
+        // por terminados en el último segundo del día.
+        metric == .balance && interval.end >= Calendar.current.startOfDay(for: now)
+    }
+
+    /// El ancla del último punto a partir del desglose del saldo vivo SIN filtros de cuentas (el de `liveBalanceOverride`).
+    static func anchor(from breakdown: Breakdown) -> LiveAnchorInfo {
+        LiveAnchorInfo(
             value: (breakdown.convertedTotal as NSDecimalNumber).doubleValue,
             nativeBalances: breakdown.nativeBalances,
             amountsAreApproximate: breakdown.amountsAreApproximate

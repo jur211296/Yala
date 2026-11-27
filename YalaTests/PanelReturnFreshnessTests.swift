@@ -232,7 +232,12 @@ struct PanelReturnFreshnessWiringTests {
         // Las dos formas de leer toman la firma antes de leer nada: de una vez (`loadData()`) y por tramos (YALA-IOS-K).
         #expect(vm.contains("    func loadData() {\n        loadData(stamp: currentDataStamp(), preloadedTransactions: nil)"))
         let load = try #require(vm.range(of: "preloadedTransactions: [TransactionItem]?) {\n        guard let context = modelContext else { return }"))
-        #expect(vm[load.upperBound...].prefix(80).contains("lastLoadStamp = stamp"))
+        // Desde el lote 8 de eficiencia (27-nov-2026) la carga empieza por `cargarListas`, que toma la firma lo primero; la
+        // carga por tramos (`cargarPorTramos`) empieza por el mismo paso.
+        #expect(vm[load.upperBound...].prefix(120).contains("cargarListas(stamp: stamp, preloadedTransactions: preloadedTransactions"))
+        let listas = try #require(vm.range(of: "private func cargarListas(stamp: PanelDataStamp, preloadedTransactions: [TransactionItem]?, context: ModelContext) {"))
+        #expect(vm[listas.upperBound...].prefix(60).contains("lastLoadStamp = stamp"))
+        #expect(vm.contains("cargarListas(stamp: stamp, preloadedTransactions: cargados, context: context)"))
         #expect(vm.contains("let stamp = currentDataStamp()\n                let loaded = await fetchTransactionsInSlices()"))
         #expect(vm.contains("{ UIApplication.shared.applicationState != .background }"))
         #expect(vm.contains("guard isApplicationInForeground() else {"))

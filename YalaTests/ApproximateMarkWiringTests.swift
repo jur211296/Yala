@@ -568,7 +568,10 @@ struct ApproximateMarkSecondarySurfacesWiringTests {
             """)
         let fila = try Self.code("Yala/App/Logic/FotoWidgetsArranque/FilaFotoWidget.swift")
         let vivo = try Self.code("Yala/App/Logic/Calculators/LiveBalanceCalculator.swift")
-        #expect(vivo.contains("nativeBalances[transaction.currencyCode, default: 0] += Decimal(transaction.amount)"), """
+        // Desde el lote 8 de eficiencia (27-nov-2026) `addNative(_:to:)` delega en `addNative(moneda:monto:to:)`, que es la
+        // que suma también el saldo vivo sobre lo ya leído (`SumaSaldoVivo`).
+        #expect(vivo.contains("addNative(moneda: transaction.currencyCode, monto: Decimal(transaction.amount), to: &nativeBalances)"))
+        #expect(vivo.contains("nativeBalances[moneda, default: 0] += monto"), """
             `addNative` cambió: `FilaFotoWidget.sumarNativo` es su espejo y tiene que cambiar con él.
             """)
         #expect(fila.contains("saldos[monedaNativa, default: 0] += montoNativo"))

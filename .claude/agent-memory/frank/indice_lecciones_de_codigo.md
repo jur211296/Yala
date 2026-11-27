@@ -139,3 +139,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de diseñar un arreglo con
 - [Un onChange en una vista que aparece no dispara](feedback_un_onchange_en_una_vista_que_aparece_no_dispara.md) — el hilo nace con el primer mensaje; va en la raíz.
 - [Banco: cada «cae» exige su motivo](feedback_banco_cae_exige_su_motivo.md) — sin el texto del error, 22 casos cayeron por una avería del banco y salieron verdes.
 - [Lo que sale de Yala Dev hereda lo solo-Dev](feedback_una_funcion_que_sale_de_yala_dev_hereda_lo_solo_dev.md) — Face ID solo en Debug-Dev: vincular un navegador cerraba la app de producción.
+- [Un respaldo que recalcula esconde al mutante](feedback_un_respaldo_que_recalcula_esconde_al_mutante.md) — compara también lo precargado: las tasas pisadas salían verdes.

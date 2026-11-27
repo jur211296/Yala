@@ -1,0 +1,8 @@
+inicio s  dura ms  panel%  funciones del Panel (ms)
+    1.01      453     88%  fetchTransactionsInSlices 399
+    1.47      110     95%  fetchTransactionsInSlices 80, loadData 25
+    1.61      513     64%  calculateAccountBalances 151, loadData 142, performCalculationInStages 26, buildCalculationContext 9, quickActionsState.getter 1
+    2.14      522     71%  buildCalculationContext 370, quickActionsState.getter 1
+    2.68      113     99%  buildCalculationContext 112
+
+5 bloques > 100 ms del Panel en los primeros 60 s

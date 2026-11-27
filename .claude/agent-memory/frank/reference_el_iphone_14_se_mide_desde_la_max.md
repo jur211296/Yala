@@ -1,6 +1,6 @@
 ---
 name: el-iphone-14-se-mide-desde-la-max
-description: Con el iPhone 14 por cable a la Max y su Device MCP reflejándolo, la Mini no puede conducirlo con device-mcp-cli; se mide por ssh desde la Max e instalar sí va desde la Mini
+description: Con el Device MCP de otra máquina reflejando el iPhone 14, device-mcp-cli queda bloqueado, pero devicectl y xctrace (traza y consola) funcionan desde la Mini; el 26-nov hizo falta ssh a la Max
 metadata:
   type: reference
 ---
@@ -14,5 +14,10 @@ Device MCP de la Max. Lo que funcionó:
   `S=` de `pasada.sh` (apunta al scratchpad de la sesión que los escribió) y correr ahí `xctrace` + `ciclos.sh`; también
   los `xctrace export` y los `.py` de análisis. Las trazas (100-200 MB) se quedan en la Max; al repo, solo los extractos.
 - Antes, mira el transcript de la sesión de Yala de la Max por si usa el iPhone (`grep 00008110` en su jsonl).
+
+**27-nov-2026 (lote 8, Mini): xctrace sí graba desde la Mini.** Con Device MCP bloqueado igual («Another app … is
+mirroring»), `xcrun xctrace record --device <UDID> … --launch` y `devicectl device process launch --console` funcionaron
+desde la Mini sin pasar por la Max (`devicectl list devices` lo daba `connected`). Prueba primero lo directo; el ssh es el
+plan B. El candado de flota solo se toma por herramientas de Device MCP: si falla por el espejo, sigue con devicectl.
 
 Ver [[el-iphone-14-lo-ve-tambien-la-otra-maquina]], [[medir-release-en-el-iphone-con-semilla]].

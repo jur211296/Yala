@@ -1,0 +1,7 @@
+1795801189810 PanelViewModel: empujón del final del arranque sin datos nuevos → no recarga
+1795801190694 PanelViewModel: performCalculation #1
+1795801199476 PERF panel-calculo completo total 8782 ms · tramo máx 649 ms · cesiones 71 · indice 26 ms · tendencia 0 ms · tendencia.contexto 2873 ms · tendencia.grafica 335 ms · tendencia.grafica.curva 351 ms · tendencia.grafica.inicio 376 ms · tendencia.grafica.proyeccion 2114 ms · tendencia.widgets 654 ms · tendencia.saldo 469 ms · presupuestos 695 ms · salud 864 ms · gastosPorCuenta 25 ms · hero 0 ms
+1795801199499 2026-11-27 12:39:59.498565-0500 Yala[4002:2208468] [carga] PERF arranque 10453.2 ms
+1795801199499 2026-11-27 12:39:59.498581-0500 Yala[4002:2208468] [carga] PERF panel 10028.4 ms
+1795801200401 PERF widgets-foto total 9463 ms · tramos 93 · tramo máx 210 ms
+1795801200401 2026-11-27 12:40:00.399458-0500 Yala[4002:2208468] [carga] PERF widgets 0.0 ms
