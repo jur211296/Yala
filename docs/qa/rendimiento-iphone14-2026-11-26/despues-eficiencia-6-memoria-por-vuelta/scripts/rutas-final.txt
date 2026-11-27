@@ -1,0 +1,3 @@
+Panel|64,800|
+Registros|204,800|
+Compartido|133,800|

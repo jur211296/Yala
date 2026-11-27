@@ -1,0 +1,8 @@
+pantalla           ventana   % de un núcleo (hilo principal)
+panel_arriba        27.2 s     0.3 %
+panel_tendencia     27.1 s     0.0 %
+registros           27.2 s     0.0 %
+mas                 27.2 s     0.0 %
+panel_vuelta        27.1 s     0.0 %
+
+Control: cada toque de navegación dejó trabajo en los 4 s previos a su ventana (Panel con la tendencia 646 ms, Registros 1.735 ms, Más 551 ms, Panel 660 ms): la traza capta a Yala y las pantallas cambiaron.
