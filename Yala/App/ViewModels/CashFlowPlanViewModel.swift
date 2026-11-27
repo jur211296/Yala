@@ -403,8 +403,12 @@ final class CashFlowPlanViewModel {
 
     // MARK: - CRUD
 
-    func addLine(_ line: CashFlowLine) {
-        guard let ctx = modelContext, let plan else { return }
+    /// Agrega la línea al plan, salvo que otra ya cubra lo mismo (`FlujoLineasSinDuplicar`, el criterio del motor):
+    /// entonces no inserta nada y devuelve `false`. Cubre todos los caminos de «Agregar línea» y un doble toque.
+    @discardableResult
+    func addLine(_ line: CashFlowLine) -> Bool {
+        guard let ctx = modelContext, let plan else { return false }
+        if FlujoLineasSinDuplicar.existente(para: line, en: plan.lines ?? []) != nil { return false }
         ctx.insert(line)
         line.plan = plan
         do {
@@ -415,6 +419,7 @@ final class CashFlowPlanViewModel {
             print("CashFlowPlanViewModel: Error adding line: \(error)")
             #endif
         }
+        return true
     }
 
     func removeLine(_ line: CashFlowLine) {
@@ -453,13 +458,16 @@ final class CashFlowPlanViewModel {
         let visibleSubs = (category.subcategories ?? [])
             .filter(\.isVisible)
             .sorted { $0.sortOrder < $1.sortOrder }
-        let existingSubIDs = Set(
-            (plan.lines ?? []).filter(\.isEnabled)
-                .compactMap { $0.subcategory?.persistentModelID }
-        )
+        // Una línea por cosa, con el criterio del motor (`FlujoLineasSinDuplicar`): lo que ya tiene línea no se repite.
+        func yaEnElPlan(_ sub: Subcategory?) -> Bool {
+            FlujoLineasSinDuplicar.yaEnElPlan(
+                categoria: category, subcategoria: sub, esIngreso: category.isIncome, lineas: plan.lines ?? []
+            )
+        }
         var maxOrder = (plan.lines ?? []).map(\.sortOrder).max() ?? 0
 
         if visibleSubs.isEmpty {
+            guard !yaEnElPlan(nil) else { return }
             let line = CashFlowLine(
                 name: category.name, isIncome: category.isIncome,
                 sortOrder: maxOrder + 1, estimationMethod: .average6m,
@@ -468,7 +476,9 @@ final class CashFlowPlanViewModel {
             ctx.insert(line)
             line.plan = plan
         } else {
-            for sub in visibleSubs where !existingSubIDs.contains(sub.persistentModelID) {
+            let faltan = visibleSubs.filter { !yaEnElPlan($0) }
+            guard !faltan.isEmpty else { return }
+            for sub in faltan {
                 maxOrder += 1
                 let line = CashFlowLine(
                     name: sub.name, isIncome: category.isIncome,

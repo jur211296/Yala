@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1548)
+## Index (188)
 
 | id | status | path |
 | 2026-11-26-deuda-gate-y-docs-2-3 | done | tickets/done/2026-11-26-deuda-gate-y-docs-2-3.md |
@@ -1597,3 +1597,4 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | 2026-11-26-eficiencia-5-render-del-scroll | done | tickets/done/2026-11-26-eficiencia-5-render-del-scroll.md |
 | 2026-11-26-eficiencia-6-memoria-por-vuelta | done | tickets/done/2026-11-26-eficiencia-6-memoria-por-vuelta.md |
 | 2026-11-27-foto-widget-por-etapas-rojo-en-la-suite-completa | backlog | tickets/backlog/2026-11-27-foto-widget-por-etapas-rojo-en-la-suite-completa.md |
+| 2026-11-26-flujo-de-caja-duplicado-y-promedios | done | tickets/done/2026-11-26-flujo-de-caja-duplicado-y-promedios.md |

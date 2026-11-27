@@ -229,7 +229,23 @@ struct CashFlowAddFromExpensesView: View {
 
     private var isSaveDisabled: Bool {
         if name.isEmpty { return true }
+        if let cat = selectedCategory, yaEnElPlan(cat, selectedSubcategory) { return true }
         return awaitsSubcategory
+    }
+
+    /// ¿Ya tiene línea en este lado del plan? Con el criterio del motor (`FlujoLineasSinDuplicar`): una línea por cosa.
+    private func yaEnElPlan(_ categoria: Category, _ subcategoria: Subcategory?) -> Bool {
+        FlujoLineasSinDuplicar.yaEnElPlan(
+            categoria: categoria, subcategoria: subcategoria, esIngreso: isIncome, lineas: viewModel.plan?.lines ?? []
+        )
+    }
+
+    /// Lo que va a la derecha de una fila que ya tiene línea: «En tu plan», en lugar del círculo para elegirla.
+    private var enTuPlanTag: some View {
+        Text(L10n.FlujoLineasSinDuplicar.enTuPlan)
+            .font(DS.Typography.caption)
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
     }
 
     /// Una categoría con subcategorías no lleva línea propia: falta elegir la subcategoría.
@@ -298,6 +314,7 @@ struct CashFlowAddFromExpensesView: View {
         VStack(spacing: DS.Spacing.none) {
             ForEach(categories, id: \.persistentModelID) { cat in
                 let hasVisibleSubs = !(cat.subcategories ?? []).filter(\.isVisible).isEmpty
+                let categoryInPlan = !hasVisibleSubs && yaEnElPlan(cat, nil)
                 VStack(spacing: DS.Spacing.none) {
                     // Category row
                     Button {
@@ -344,6 +361,8 @@ struct CashFlowAddFromExpensesView: View {
                                 Image(systemName: isSelected ? "chevron.down" : "chevron.right")
                                     .foregroundStyle(.secondary)
                                     .font(DS.Typography.caption)
+                            } else if categoryInPlan {
+                                enTuPlanTag
                             } else {
                                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                                     .foregroundStyle(isSelected ? theme.accentText : .secondary)
@@ -354,6 +373,8 @@ struct CashFlowAddFromExpensesView: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    .disabled(categoryInPlan)
+                    .accessibilityValue(categoryInPlan ? L10n.FlujoLineasSinDuplicar.enTuPlan : "")
                     .accessibilityIdentifier("cashflow_add_category")
 
                     // Subcategories (expanded when parent selected)
@@ -361,6 +382,7 @@ struct CashFlowAddFromExpensesView: View {
                        let subs = cat.subcategories?.filter({ $0.isVisible }).sorted(by: { $0.sortOrder < $1.sortOrder }),
                        !subs.isEmpty {
                         ForEach(subs, id: \.persistentModelID) { sub in
+                            let subInPlan = yaEnElPlan(cat, sub)
                             Button {
                                 if selectedSubcategory?.persistentModelID == sub.persistentModelID {
                                     selectedSubcategory = nil
@@ -388,9 +410,13 @@ struct CashFlowAddFromExpensesView: View {
 
                                     Spacer()
 
-                                    Image(systemName: selectedSubcategory?.persistentModelID == sub.persistentModelID ? "checkmark.circle.fill" : "circle")
-                                        .foregroundStyle(selectedSubcategory?.persistentModelID == sub.persistentModelID ? theme.accentText : .secondary)
-                                        .font(DS.Typography.caption)
+                                    if subInPlan {
+                                        enTuPlanTag
+                                    } else {
+                                        Image(systemName: selectedSubcategory?.persistentModelID == sub.persistentModelID ? "checkmark.circle.fill" : "circle")
+                                            .foregroundStyle(selectedSubcategory?.persistentModelID == sub.persistentModelID ? theme.accentText : .secondary)
+                                            .font(DS.Typography.caption)
+                                    }
                                 }
                                 .padding(.leading, DS.Spacing.xxl)
                                 .padding(.trailing, DS.Spacing.lg)
@@ -398,6 +424,8 @@ struct CashFlowAddFromExpensesView: View {
                                 .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
+                            .disabled(subInPlan)
+                            .accessibilityValue(subInPlan ? L10n.FlujoLineasSinDuplicar.enTuPlan : "")
                             .accessibilityIdentifier("cashflow_add_subcategory")
                         }
                     }

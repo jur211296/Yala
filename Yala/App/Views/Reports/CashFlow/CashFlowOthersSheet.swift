@@ -513,14 +513,16 @@ struct CashFlowOthersSheet: View {
 extension CashFlowPlanViewModel {
 
     /// Agrega una subcategoría al plan desde «no considerados», con su promedio de 6 meses (que se mueve solo). Si ya
-    /// tiene línea, no hace nada.
+    /// tiene línea (criterio del motor, `FlujoLineasSinDuplicar`), no hace nada.
     func promoteSubcategory(_ sub: Subcategory, isIncome: Bool) {
         guard let plan, let ctx = plan.modelContext, !sub.isDeleted else { return }
         let lines = plan.lines ?? []
-        guard !lines.contains(where: { $0.isEnabled && $0.subcategory?.persistentModelID == sub.persistentModelID })
-        else { return }
+        let esIngreso = sub.category?.isIncome ?? isIncome
+        guard !FlujoLineasSinDuplicar.yaEnElPlan(
+            categoria: sub.category, subcategoria: sub, esIngreso: esIngreso, lineas: lines
+        ) else { return }
         let line = CashFlowLine(
-            name: sub.name, isIncome: sub.category?.isIncome ?? isIncome,
+            name: sub.name, isIncome: esIngreso,
             sortOrder: (lines.map(\.sortOrder).max() ?? 0) + 1, estimationMethod: .average6m,
             category: sub.category, subcategory: sub
         )
