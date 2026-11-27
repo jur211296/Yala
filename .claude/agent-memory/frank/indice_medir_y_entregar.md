@@ -144,3 +144,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de correr tests, el gate o
 - [El iPhone 14 se mide desde la Max](reference_el_iphone_14_se_mide_desde_la_max.md) — instalar desde la Mini; xctrace y ciclos por ssh max.
 - [El cierre en segundo plano se reproduce en frío](feedback_el_cierre_en_segundo_plano_se_reproduce_en_frio.md) — abrir y salir a 3 s: 4/5 cierres; en caliente, 0. Lee la pila del .ips.
 - [Atribuir bloqueos del iPhone por dueño](reference_atribuir_bloqueos_del_iphone_por_dueno.md) — potential-hangs + muestras por dueño; perfilado DEBUG, zsh `(f)` para args, AX tras la suite larga.
+- [Atribuir el render con interruptores](feedback_atribuir_render_con_interruptores.md) — una build, quitar de uno en uno desde el todo; el coste no se suma (cristal × sombras).
