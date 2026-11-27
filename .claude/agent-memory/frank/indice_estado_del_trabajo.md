@@ -9,6 +9,8 @@ metadata:
 
 Subíndice de `MEMORY.md` (2026-11-05). **Memorias de proyecto: congeladas a su fecha.** Antes de actuar sobre una, mide el estado actual (tablero, `git log`, el ticket). Las que no tenían entrada en el índice se añadieron aquí con su descripción.
 
+- [Textos de tutoriales esperan a Jürgen](project_textos_de_tutoriales_esperan_a_jurgen.md) — 27-nov: vídeos 2.3 regrabados; 4 textos desfasados en card ria8.
+
 - [Propuesta de verificación: espera voto](project_propuesta_verificacion_espera_voto.md) — 17-nov: P1-P6 en su artifact; leer `votos` antes de tocar gate o CI.
 - [CI propio: aparcado](project_ci_propio_fases_4_a_7.md) — Yala sigue público (30-sep); runner con candados, sin uso; volver solo si pasa a privado.
 - [La salida del adopt cierra su sesión](project_adopt_exit_cierra_la_sesion.md) — #230 y #231, 24-sep; dos low de la review.
