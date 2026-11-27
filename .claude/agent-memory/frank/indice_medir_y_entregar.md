@@ -143,3 +143,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de correr tests, el gate o
 - [El guion de ciclos dispara tirar para actualizar](feedback_el_guion_de_ciclos_dispara_tirar_para_actualizar.md) — 6 arriba llega al tope: `SUBE=3`; la pila del que pide, en la copia.
 - [El iPhone 14 se mide desde la Max](reference_el_iphone_14_se_mide_desde_la_max.md) — instalar desde la Mini; xctrace y ciclos por ssh max.
 - [El cierre en segundo plano se reproduce en frío](feedback_el_cierre_en_segundo_plano_se_reproduce_en_frio.md) — abrir y salir a 3 s: 4/5 cierres; en caliente, 0. Lee la pila del .ips.
+- [Atribuir bloqueos del iPhone por dueño](reference_atribuir_bloqueos_del_iphone_por_dueno.md) — potential-hangs + muestras por dueño; perfilado DEBUG, zsh `(f)` para args, AX tras la suite larga.
