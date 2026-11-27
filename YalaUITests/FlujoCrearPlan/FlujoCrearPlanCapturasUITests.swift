@@ -73,7 +73,9 @@ final class FlujoCrearPlanCapturasUITests: XCTestCase {
         if firstCategory.waitForExistence(timeout: 5) {
             firstCategory.tap()
             pause(0.6)
-            let firstSub = app.buttons.matching(identifier: "cashflow_add_subcategory").firstMatch
+            // La primera que aún no está en el plan (las que ya tienen línea salen apagadas desde el 27-nov-2026).
+            let firstSub = app.buttons.matching(identifier: "cashflow_add_subcategory")
+                .matching(NSPredicate(format: "enabled == true")).firstMatch
             if firstSub.waitForExistence(timeout: 3) { firstSub.tap() }
             pause(0.8)
         }

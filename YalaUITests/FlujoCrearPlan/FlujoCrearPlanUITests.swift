@@ -98,8 +98,10 @@ final class FlujoCrearPlanUITests: XCTestCase {
         let save = app.buttons["toolbar_save_button"]
         if save.exists { XCTAssertFalse(save.isEnabled, "Deja guardar una línea por categoría.") }
 
-        let sub = app.buttons.matching(identifier: "cashflow_add_subcategory").firstMatch
-        XCTAssertTrue(sub.waitForExistence(timeout: 3))
+        // La primera que aún no está en el plan: las que ya tienen línea salen apagadas, con «En tu plan» (27-nov-2026).
+        let sub = app.buttons.matching(identifier: "cashflow_add_subcategory")
+            .matching(NSPredicate(format: "enabled == true")).firstMatch
+        XCTAssertTrue(sub.waitForExistence(timeout: 3), "Todas las subcategorías ya están en el plan.")
         sub.tap()
         XCTAssertTrue(hint.waitForNonExistence(timeout: 3))
         XCTAssertTrue(app.descendants(matching: .any)["cashflow_add_limit_amount"].firstMatch.waitForExistence(timeout: 3),
