@@ -49,7 +49,7 @@ la build 12. Por eso estas corridas en local son la única red de interfaz de ho
 
 ## Lo que va al iPhone de Jürgen con la build 12
 
-Ver el artifact del barrido. Resumen: Compartido con su cuenta (persona sin grupo, invitar, foto de recibo y voz), el
+Ver el artifact del barrido (https://claude.ai/artifact/7BMQRciPgaB3ZvpNByKq9p). Resumen: Compartido con su cuenta (persona sin grupo, invitar, foto de recibo y voz), el
 rebote de Flujo de caja con el dedo, la nube real (Vaciar datos, «Eliminar cuenta», ida y vuelta a iCloud) y cuatro
 vistos buenos (gastos hormiga, sugerencias, logos de suscripción, Yape en Yala IA).
 
