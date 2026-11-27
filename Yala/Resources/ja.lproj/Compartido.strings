@@ -1,0 +1,18 @@
+/*
+  Compartido.strings
+  Yala
+
+  La sección «Compartido» (lote 1 de Compartido: Grupos y Personas, 26-nov-2026): los chips «Grupos | Personas», el
+  botón «Añadir persona» y la lista de Personas con sus liquidadas. Tabla propia, fuera de Localizable.strings.
+*/
+
+"compartido.chip.groups" = "グループ";
+"compartido.chip.people" = "相手";
+"compartido.addPerson" = "相手を追加";
+"compartido.people.inGroups" = "%@";
+"compartido.people.settledIn" = "精算済み · %@";
+"compartido.people.showSettled" = "精算済みを表示(%d)";
+"compartido.people.hideSettled" = "精算済みを非表示";
+"compartido.people.noGroup" = "グループなし";
+"compartido.people.emptyTitle" = "まだ誰とも支出を共有していません";
+"compartido.people.emptyMessage" = "グループで誰かと支出を記録すると、すべてのグループを合計して、相手があなたに借りている金額やあなたが借りている金額がここに表示されます。";

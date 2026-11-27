@@ -19,6 +19,12 @@ OK de producción de Jürgen, 21-nov 08:39). No es un pendiente: es la marcha at
   y `chat.explore` en `yala_ai_usage` (tokens y estado). Medido en staging: ~3.750 tokens de entrada (2.200 de caché) y
   ~60 de salida por pregunta, ≈ 0,0002 USD, ~4 s.
 
+**Pendiente (2026-11-26, rama 2.3): Grupos v4, la marca de persona** (lote 1 de Compartido). El manifest de Grupos
+pasa a v4 con `split_groups.is_person`. **Antes de desplegar este Worker en un entorno, su base tiene que tener la columna**
+(`bash qa/cloud/g37_01-remote.sh <entorno> apply`; staging ya la tiene, producción no). Si no, el Merkle de Grupos de los
+teléfonos v4 diverge en todos los grupos. Lo para `check-groups-columns-applied.mjs` en el `predeploy` (desde el
+2026-11-26). Orden: SQL → Worker → app. Detalle en `docs/RUNBOOK-staging-ddl.md`, entrada g37_01.
+
 **Pendiente (2026-11-05, rama 2.3): repartir un recibo en un grupo** (card «Grupos: repartir un recibo con IA»). Dos
 tareas nuevas, `receipt.photo` (cubo `vision`, exige imagen) y `receipt.voice` (cubo `voice`, va con la nota), con el
 esquema `RECEIPT_SPLIT_SCHEMA` y JSON estricto. Sin ellas desplegadas, «Desde un recibo» de Nuevo gasto de grupo contesta

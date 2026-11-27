@@ -665,7 +665,7 @@
 "tab.search" = "Szukaj";
 "tab.records" = "Wpisy";
 "tab.reports" = "Raporty";
-"tab.groups" = "Grupy";
+"tab.groups" = "Wspólne";
 "report.title" = "Raporty finansowe";
 "report.tab.comparative" = "Porównawczy";
 "report.tab.cashFlow" = "Przepływ środków";
@@ -2995,7 +2995,7 @@
 "split.sharesPart" = "udział";
 
 // MARK: - Groups
-"groups.title" = "Grupy";
+"groups.title" = "Wspólne";
 "groups.new" = "Nowa grupa";
 "groups.edit" = "Edytuj grupę";
 "groups.empty.title" = "Brak grup";
@@ -4672,7 +4672,7 @@
 "groups.invite.slow.title" = "To trwa nieco dłużej niż zwykle";
 
 /* Invite onboarding: soft-timeout body, honest copy */
-"groups.invite.slow.body" = "Nadal łączymy się z Twoją grupą w tle. W międzyczasie możesz korzystać z Yala — grupa pojawi się w zakładce Grupy, gdy tylko będzie gotowa.";
+"groups.invite.slow.body" = "Nadal łączymy się z Twoją grupą w tle. W międzyczasie możesz korzystać z Yala — grupa pojawi się w zakładce Wspólne, gdy tylko będzie gotowa.";
 
 /* Invite onboarding: exit CTA from soft-timeout state */
 "groups.invite.slow.continueButton" = "Przejdź do aplikacji";
@@ -5002,7 +5002,7 @@
 "groups.empty.signedOut.reentryBanner" = "Wylogowano Cię z grup. Zaloguj się, kiedy zechcesz je znów zobaczyć.";
 
 /* D5: aviso condicional de saldos pendientes en el diálogo de eliminar cuenta (informa, no bloquea) */
-"settings.deleteAccountDebtWarning" = "Masz nierozliczone salda w swoich grupach. Dla pozostałych członków pozostaną one jako dług osoby „Usunięty użytkownik”. Jeśli wolisz, najpierw rozlicz je w zakładce Grupy.";
+"settings.deleteAccountDebtWarning" = "Masz nierozliczone salda w swoich grupach. Dla pozostałych członków pozostaną one jako dług osoby „Usunięty użytkownik”. Jeśli wolisz, najpierw rozlicz je w zakładce Wspólne.";
 
 /* D5: botón del diálogo de eliminar cuenta que lleva a la pestaña Grupos para saldar deudas */
 "settings.deleteAccountViewGroups" = "Zobacz moje grupy";
@@ -5117,7 +5117,7 @@
 "settings.wipeExportBeforeCloudCaption" = "Gdy Twoje dane są na Twoim koncie Yala, to może być Twoja jedyna kopia";
 
 /* Vaciar v2: fila de grupos de la hoja de alcance cuando el usuario tiene saldos pendientes */
-"settings.wipeScopeGroupsDebt" = "Twoje grupy zostają zachowane, ale masz nierozliczone salda. Możesz je rozliczyć w zakładce Grupy.";
+"settings.wipeScopeGroupsDebt" = "Twoje grupy zostają zachowane, ale masz nierozliczone salda. Możesz je rozliczyć w zakładce Wspólne.";
 
 /* D10 batch: secondary action label in the wipe scope sheet */
 /* D10 batch: dedicated flow title */
@@ -10206,7 +10206,7 @@
 "iaGuided.group.header" = "Nowa grupa";
 "iaGuided.debt.header" = "Wcześniejszy dług";
 "iaGuided.expense.header" = "Wydatek grupowy";
-"iaGuided.group.needsAccount" = "Aby utworzyć grupę, najpierw połącz swoje konto Yala w karcie Grupy.";
+"iaGuided.group.needsAccount" = "Aby utworzyć grupę, najpierw połącz swoje konto Yala w karcie Wspólne.";
 "iaGuided.debt.noGroup" = "Aby zapisać wcześniejszy dług, potrzebujesz grupy z co najmniej dwiema osobami, w której jesteś administratorem.";
 "iaGuided.expense.noGroup" = "Nie masz jeszcze grupy, w której zapiszesz ten wydatek. Utwórz ją lub dołącz przez zaproszenie.";
 "iaGuided.group.purpose.question" = "Do czego jest ta grupa?";

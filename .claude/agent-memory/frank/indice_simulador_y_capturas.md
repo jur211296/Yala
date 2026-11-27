@@ -129,3 +129,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de conducir el simulador o
 - [«Sign out» de depuración borra el proveedor](reference_sign_out_de_depuracion_borra_el_proveedor.md) — monta «nube sin sesión»; la puerta abría Apple; consola Debug en el iPhone; Release-Dev no compila.
 - [Observar el iPhone en vivo](reference_observar_el_iphone_en_vivo.md) — vigía por árbol AX + capturas al cambiar; sin log del sistema; telemetría por la Mini; horas del reloj.
 - [El tema de las capturas de Jürgen](reference_el_tema_de_las_capturas_de_jurgen.md) — su oscuro es `-userTheme 2`; el de fábrica no reproduce lo «plano».
+- [XCUITest con chips y semilla saldada](reference_xcuitest_con_chips_y_semilla_saldada.md) — firstMatch es la fila de chips; grupos-saldado deja pares cruzados.

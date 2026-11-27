@@ -63,7 +63,7 @@ describe("GET /config — shape y semántica fail-closed", () => {
       },
       sync: {
         manifestVersion: 11,
-        groupsManifestVersion: 3,
+        groupsManifestVersion: 4,
       },
     });
   });

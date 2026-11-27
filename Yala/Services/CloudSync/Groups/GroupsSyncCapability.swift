@@ -52,7 +52,7 @@ import os
 nonisolated enum GroupsSyncCapability {
 
     /// La versión del manifest de Grupos que este build entiende. Súbela SOLO junto con la columna que la estrena.
-    static let clientManifestVersion = 3
+    static let clientManifestVersion = 4
 
     /// Versión del manifest de Grupos que estrena `split_groups.budget_limit_amount` (g14_01).
     static let budgetLimitSince = 2
@@ -61,11 +61,15 @@ nonisolated enum GroupsSyncCapability {
     /// y `split_settlements.recorded_by_member_key`. Con ellas el aviso local no le sale al autor en su otro dispositivo.
     static let changeAuthorSince = 3
 
+    /// Versión que estrena la marca de persona (g37_01, Compartido lote 1, 2026-11-26): `split_groups.is_person`. Un
+    /// grupo marcado es una persona, un grupo de dos que no se ve como grupo.
+    static let personSince = 4
+
     /// `since` de cada columna de Grupos posterior a la v1, por tabla (las que no están, 1). Espejo del `since` de
     /// `group_capability_manifest.json`, y `GroupsCapabilityManifestParityTests` exige que casen columna a columna.
     /// Vive aquí y no en el `ColumnEmitter`: ver la trampa de la cabecera.
     static let columnSince: [String: [String: Int]] = [
-        "split_groups": ["budget_limit_amount": budgetLimitSince],
+        "split_groups": ["budget_limit_amount": budgetLimitSince, "is_person": personSince],
         "split_expenses": ["last_edited_by_member_key": changeAuthorSince],
         "split_settlements": ["recorded_by_member_key": changeAuthorSince],
     ]

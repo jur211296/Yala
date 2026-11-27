@@ -47,6 +47,10 @@
 --   Then — 2026-11-03, staging AND production — g30_01_expense_author_from_v2_clients (§12): BEFORE UPDATE trigger
 --   `expense_author_from_v2_clients` on split_expenses (an edit from a client that does not send the author sets
 --   `last_edited_by_member_key` to NULL). New section; no policy and no RPC body changes.
+--   Then — 2026-11-26, STAGING ONLY — g37_01_group_is_person: `split_groups.is_person` (boolean NOT NULL DEFAULT false,
+--   plain, manifest v4 `since: 4`): the group is a person (Compartido, lote 1). Woven IN-PLACE into §1 (table + column
+--   grant) and into the split_groups pull reader (returned LAST). apply_group_delta and create_group unchanged.
+--   PRODUCTION does NOT have it yet (Jürgen approved staging only).
 --   ⚠️ STAGING IS THREE MIGRATIONS BEHIND: g13_04, g13_05 and g14_01 are applied in PRODUCTION only —
 --   there is no staging DDL credential (re-measured 2026-09-07). This mold therefore describes PRODUCTION;
 --   staging matches it only after those three are applied, in order.
@@ -129,6 +133,7 @@ create table public.split_groups (
   is_archived boolean,
   is_hidden_for_all boolean,
   budget_limit_amount bytea,  -- † G14: limite de presupuesto del grupo, en su currency_code
+  is_person boolean not null default false,  -- g37_01 (2026-11-26, solo staging): el grupo es una persona
   owner_user_id uuid references auth.users(id) on delete set null,
   created_at timestamptz,
   field_hlcs jsonb,
@@ -931,7 +936,7 @@ revoke update on public.group_members from authenticated;
 revoke update on public.split_groups from authenticated;
 grant update (name, icon_name, color_hex, currency_code, simplify_debts, show_debts_in_single_currency,
               members_can_invite, default_split_type, is_archived, is_hidden_for_all, budget_limit_amount,
-              hlc, field_hlcs, deleted, deleted_hlc, schema_version, updated_at)
+              is_person, hlc, field_hlcs, deleted, deleted_hlc, schema_version, updated_at)
   on public.split_groups to authenticated;
 
 -- Higiene en las 3 tablas de contenido: re-grant de TODO menos (group_id, sync_id, server_seq) —
@@ -1511,7 +1516,8 @@ create function public.groups_pull_rows_split_groups(
   default_split_type text, is_archived boolean, is_hidden_for_all boolean, owner_user_id uuid,
   created_at timestamptz, field_hlcs jsonb, hlc text, deleted boolean, deleted_hlc text,
   server_seq bigint, schema_version integer, updated_at timestamptz,
-  budget_limit_amount text  -- † G14, descifrada; AL FINAL (aditivo para el gateway, que lee por nombre)
+  budget_limit_amount text,  -- † G14, descifrada; AL FINAL (aditivo para el gateway, que lee por nombre)
+  is_person boolean  -- g37_01, AL FINAL
 ) language sql security invoker stable set search_path = public, extensions as $$
   select
     t.group_id, public.yala_try_decrypt(t.name, p_key), t.icon_name, t.color_hex, t.currency_code,
@@ -1519,7 +1525,8 @@ create function public.groups_pull_rows_split_groups(
     t.default_split_type, t.is_archived, t.is_hidden_for_all, t.owner_user_id,
     t.created_at, t.field_hlcs, t.hlc, t.deleted, t.deleted_hlc,
     t.server_seq, t.schema_version, t.updated_at,
-    public.yala_try_decrypt(t.budget_limit_amount, p_key)
+    public.yala_try_decrypt(t.budget_limit_amount, p_key),
+    t.is_person
   from public.split_groups t
   where t.group_id = p_group_id and t.server_seq > p_after_seq
   order by t.server_seq asc

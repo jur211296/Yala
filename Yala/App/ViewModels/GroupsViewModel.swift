@@ -66,6 +66,10 @@ final class GroupsViewModel {
     /// puede haber cambiado — el mismo ciclo que ya gobierna `balancesByGroup`.
     private(set) var debtsByGroup: [String: [DebtRow]] = [:]
 
+    /// Compartido · Personas (lote 1, 26-nov-2026): una tarjeta por persona con su neto sumando todos tus grupos. Sale de
+    /// las MISMAS deudas que las tarjetas de grupo, en el mismo recálculo (`CompartidoPersonasLogic`).
+    private(set) var compartidoPeople = CompartidoPersonasLogic.Result(active: [], settled: [])
+
     // MARK: - DebtRow (M6 D3)
 
     /// Una deuda perspectiva del current user para renderizar en la card del grupo.
@@ -101,6 +105,11 @@ final class GroupsViewModel {
     }
 
     var showArchived: Bool = false
+
+    /// Compartido: lo que enseña la lista de Grupos. Una persona (`SplitGroup.isPerson`) es por dentro un grupo de dos
+    /// que no se ve como grupo: su saldo sale en el chip Personas, y la cifra de arriba la sigue contando.
+    var listedActiveGroups: [SplitGroup] { activeGroups.filter { !$0.isPerson } }
+    var listedArchivedGroups: [SplitGroup] { archivedGroups.filter { !$0.isPerson } }
 
     // MARK: - Context
 
@@ -165,6 +174,9 @@ final class GroupsViewModel {
         var newDebtsByGroup: [String: [DebtRow]] = [:]
         var archivedSources: [GroupBalanceService.GroupSummarySource] = []
         var archivedMemberIDs = Set<String>()
+        // Compartido · Personas: activos primero, luego archivados (archivar no salda: cuentan igual).
+        var peopleInputs: [CompartidoPersonasLogic.GroupInput] = []
+        var archivedPeopleInputs: [CompartidoPersonasLogic.GroupInput] = []
 
         for group in groups {
             let zoneID = group.cloudKitZoneID
@@ -175,7 +187,13 @@ final class GroupsViewModel {
             // un grupo archivado EN ESTA SESIÓN conserva sus fuentes en los dicts (nadie las
             // retira) y por eso su tarjeta sigue mostrando deudas hasta el próximo arranque.
             // Saltárselo aquí cambiaría lo que ve el usuario, que no es lo que vengo a tocar.
-            if let rows = computeDebts(for: group) { newDebtsByGroup[zoneID] = rows }
+            if let computed = computeDebts(for: group) {
+                newDebtsByGroup[zoneID] = computed.rows
+                if !group.isHiddenForAll, let me = computed.currentMemberID {
+                    let input = peopleInput(for: group, debts: computed.debts, me: me)
+                    if group.isArchived { archivedPeopleInputs.append(input) } else { peopleInputs.append(input) }
+                }
+            }
 
             if group.isArchived {
                 // L19-9: la deuda de los archivados va a su propio resumen, con la misma identidad resuelta.
@@ -226,6 +244,9 @@ final class GroupsViewModel {
 
         if newBalancesByGroup != balancesByGroup { balancesByGroup = newBalancesByGroup }
         if newDebtsByGroup != debtsByGroup { debtsByGroup = newDebtsByGroup }
+        let newPeople = CompartidoPersonasLogic.people(
+            from: peopleInputs + archivedPeopleInputs, noGroupLabel: L10n.Compartido.noGroup)
+        if newPeople != compartidoPeople { compartidoPeople = newPeople }
 
         // Global summary
         let newSummary: GroupGlobalSummary?
@@ -326,21 +347,51 @@ final class GroupsViewModel {
     /// Devuelve `nil` —y no `[]`— cuando al grupo le falta alguna fuente, para distinguir
     /// "sin datos cargados" de "cargado y sin deudas": lo primero no entra en `debtsByGroup`, y
     /// así el lookup cae en su `?? []`. Es el mismo corte que hacía el guard del body.
-    private func computeDebts(for group: SplitGroup) -> [DebtRow]? {
+    private func computeDebts(for group: SplitGroup) -> GroupDebts? {
         guard let members = membersByGroup[group.cloudKitZoneID],
               let expenses = expensesByGroup[group.cloudKitZoneID],
               let shares = sharesByGroup[group.cloudKitZoneID],
               let settlements = settlementsByGroup[group.cloudKitZoneID] else {
             return nil
         }
-        return Self.computeCurrentUserDebts(
-            members: members,
-            expenses: expenses,
-            shares: shares,
-            settlements: settlements,
+        let (debts, wasConverted) = Self.effectiveDebts(
+            expenses: expenses, shares: shares, settlements: settlements,
             simplifyDebts: group.simplifyDebts,
-            convertTo: group.showDebtsInSingleCurrency ? group.currencyCode : nil
-        )
+            convertTo: group.showDebtsInSingleCurrency ? group.currencyCode : nil)
+        let me = GroupExpenseService.resolveCurrentUserMember(from: members)
+        return GroupDebts(
+            rows: Self.currentUserRows(debts, wasConverted: wasConverted, currentMember: me, members: members),
+            debts: debts,
+            currentMemberID: me?.id.uuidString)
+    }
+
+    /// Lo que la lista de Personas necesita de un grupo: sus miembros con su cuenta, sus deudas y con quién tuve algo.
+    private func peopleInput(for group: SplitGroup, debts: [Debt], me: String) -> CompartidoPersonasLogic.GroupInput {
+        let zoneID = group.cloudKitZoneID
+        let members = (membersByGroup[zoneID] ?? []).map { member in
+            CompartidoPersonasLogic.Member(
+                id: member.id.uuidString,
+                name: member.resolvedDisplayName,
+                accountKey: CompartidoPersonasLogic.accountKey(
+                    userID: member.userID, cloudKitUserRecordID: member.cloudKitUserRecordID,
+                    displayName: member.displayName))
+        }
+        let interacted = CompartidoPersonasLogic.interactedMemberIDs(
+            myMemberIDs: [me],
+            expenses: (expensesByGroup[zoneID] ?? []).map { (id: $0.id, paidBy: $0.paidByMemberID) },
+            shares: (sharesByGroup[zoneID] ?? []).map { (expenseID: $0.expenseID, memberID: $0.memberID) },
+            settlements: (settlementsByGroup[zoneID] ?? []).map { (from: $0.fromMemberID, to: $0.toMemberID) })
+        return CompartidoPersonasLogic.GroupInput(
+            groupKey: zoneID, groupName: group.name, isPerson: group.isPerson, members: members, myMemberIDs: [me],
+            debts: debts, interactedMemberIDs: interacted)
+    }
+
+    /// Las deudas de un grupo calculadas UNA vez por recálculo: las filas de su tarjeta y las deudas de las que salen,
+    /// que la lista de Personas de Compartido reparte por persona.
+    private struct GroupDebts {
+        let rows: [DebtRow]
+        let debts: [Debt]
+        let currentMemberID: String?
     }
 
     /// Pure-logic helper para tests sin contexto. Calcula debts filtradas al current
@@ -364,34 +415,24 @@ final class GroupsViewModel {
         // Identidad RESUELTA, gemela de `currentUserBalance(for:)`: sin ella el recién llegado veía la
         // lista de deudas vacía. Sigue siendo pure-logic para el test: sin sesión ni `recordName` los dos
         // fallbacks no matchean nada y la resolución es byte-idéntica al `first { $0.isCurrentUser }`.
-        guard let currentMember = GroupExpenseService.resolveCurrentUserMember(from: members) else {
-            return []
-        }
+        let (effectiveDebts, wasConverted) = Self.effectiveDebts(
+            expenses: expenses, shares: shares, settlements: settlements,
+            simplifyDebts: simplifyDebts, convertTo: convertTo, converter: converter)
+        return currentUserRows(
+            effectiveDebts, wasConverted: wasConverted,
+            currentMember: GroupExpenseService.resolveCurrentUserMember(from: members), members: members)
+    }
+
+    /// Las filas de la tarjeta (las deudas que me tocan, con su perspectiva y el nombre del otro), de mayor a menor.
+    static func currentUserRows(
+        _ effectiveDebts: [Debt], wasConverted: Bool, currentMember: SplitMember?, members: [SplitMember]
+    ) -> [DebtRow] {
+        guard let currentMember else { return [] }
         let currentMemberID = currentMember.id.uuidString
         let nameLookup = Dictionary(
             members.map { ($0.id.uuidString, $0.resolvedDisplayName) },
             uniquingKeysWith: { first, _ in first }
         )
-
-        let allDebts = GroupBalanceService.calculateDebts(
-            expenses: expenses,
-            shares: shares,
-            settlements: settlements,
-            simplifyDebts: simplifyDebts
-        )
-
-        let wasConverted: Bool
-        let effectiveDebts: [Debt]
-        if let target = convertTo {
-            wasConverted = allDebts.contains { $0.currencyCode != target }
-            let actualConverter = converter ?? CurrencyConverter.shared
-            effectiveDebts = wasConverted
-                ? GroupBalanceService.consolidatedDebts(from: allDebts, targetCurrency: target, converter: actualConverter)
-                : allDebts
-        } else {
-            wasConverted = false
-            effectiveDebts = allDebts
-        }
 
         return effectiveDebts.compactMap { debt -> DebtRow? in
             if debt.fromMemberID == currentMemberID {
@@ -415,6 +456,30 @@ final class GroupsViewModel {
             }
             return nil
         }.sorted { $0.amount > $1.amount }
+    }
+
+    /// Las deudas del grupo tal como las enseña su tarjeta: con «Menos pagos» del grupo y, con «Ver en una moneda»,
+    /// consolidadas. Las comparten la tarjeta de grupo y la lista de Personas de Compartido, para que digan lo mismo.
+    static func effectiveDebts(
+        expenses: [SplitExpense],
+        shares: [SplitShare],
+        settlements: [SplitSettlement],
+        simplifyDebts: Bool,
+        convertTo: String?,
+        converter: CurrencyConverting? = nil
+    ) -> (debts: [Debt], wasConverted: Bool) {
+        let allDebts = GroupBalanceService.calculateDebts(
+            expenses: expenses,
+            shares: shares,
+            settlements: settlements,
+            simplifyDebts: simplifyDebts
+        )
+        guard let target = convertTo else { return (allDebts, false) }
+        let wasConverted = allDebts.contains { $0.currencyCode != target }
+        guard wasConverted else { return (allDebts, false) }
+        let actualConverter = converter ?? CurrencyConverter.shared
+        return (GroupBalanceService.consolidatedDebts(
+            from: allDebts, targetCurrency: target, converter: actualConverter), true)
     }
 
     // MARK: - Direction-Grouped Debts (card trailing)

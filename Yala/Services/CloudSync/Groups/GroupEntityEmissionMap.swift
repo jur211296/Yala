@@ -168,6 +168,9 @@ enum GroupEntityEmissionMap {
             // límite se exprese en ella: el manifest es append-only y una columna no puede cambiar de
             // grupo después de existir (residual documentado en el ticket).
             ColumnEmitter("budget_limit_amount") { m, _ in Emit.money(m.budgetLimitAmount) },
+            // g37_01 (Compartido lote 1): el grupo es una persona. Columna propia, sin `group:`, como el presupuesto.
+            // Su `since: 4` vive en `GroupsSyncCapability.columnSince`, no aquí (la trampa de su cabecera).
+            ColumnEmitter("is_person") { m, _ in .bool(m.isPerson) },
             // created_at NO se emite: el column-grant del server (supabase-groups-staging.ddl, hallazgo #1
             // de G1) lo excluye del UPDATE de split_groups — emitirlo haría 42501 → rechazo del delta ENTERO
             // de meta. El manifest lo conserva solo para la proyección del PULL (applyGroupMeta sí lo lee).
@@ -184,6 +187,7 @@ enum GroupEntityEmissionMap {
             \SplitGroup.isArchived: ["is_archived"],
             \SplitGroup.isHiddenForAll: ["is_hidden_for_all"],
             \SplitGroup.budgetLimitAmount: ["budget_limit_amount"],
+            \SplitGroup.isPerson: ["is_person"],
         ]
     )
 

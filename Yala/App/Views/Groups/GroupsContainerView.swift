@@ -70,6 +70,9 @@ struct GroupsContainerView: View {
     @State private var receiptRequest: GroupReceiptRequest?
     /// «Dividir una boleta» sin grupo (maqueta 1A, 26-nov-2026).
     @State private var showDividirBoleta = false
+    /// Compartido (lote 1, 26-nov-2026): el chip elegido, «Grupos» o «Personas», y el pliegue de las liquidadas.
+    @State private var compartidoChip: CompartidoChip = .groups
+    @State private var showsSettledPeople = false
     /// El veredicto de App Attest de ESTE teléfono, y **solo el veredicto**. Es un `@State` porque
     /// `GroupsAttestStreakStore.isTerminal()` lee `UserDefaults` —que no repinta ninguna vista— y además depende
     /// del RELOJ: una racha de ayer se vuelve terminal sin que nadie escriba nada. Se recalcula en los CINCO
@@ -230,17 +233,7 @@ struct GroupsContainerView: View {
                             // venza descarta la fila, cancela ese task y `recordDismissed(...,
                             // autoDismissed: true)` no llega a correr: el aviso deja de retirarse
                             // solo y puede reaparecer. Eager, su reloj sigue siendo un reloj.
-                            LazyVStack(spacing: DS.Spacing.lg) {
-                                // Group cards
-                                ForEach(viewModel.activeGroups, id: \.id) { group in
-                                    groupCardRow(group: group)
-                                }
-
-                                // Archived groups
-                                if !viewModel.archivedGroups.isEmpty {
-                                    archivedGroupsSection
-                                }
-                            }
+                            chipContent
                         }
                         .padding(.top, DS.Spacing.sm)
                         .padding(.bottom, DS.Spacing.safeBottom)
@@ -253,6 +246,9 @@ struct GroupsContainerView: View {
                         .animation(reduceMotion ? nil : DS.Animation.appear, value: notificationsCardDismissals)
                     }
                     .scrollViewGlassEdges()
+                    // Compartido (lote 1, 26-nov-2026): los chips «Grupos | Personas» bajo el título grande, como los de
+                    // Planificación. Solo con la lista: sin grupos la pestaña sigue con su tarjeta de pasos.
+                    .navigationChipsInset { CompartidoChipsBar(selection: $compartidoChip) }
                     // Sin buscador propio (Jürgen, 2026-10-30): la búsqueda vive en la pestaña Buscar. Tampoco hay cajón
                     // en la barra, así que no vuelve el salto del resumen al entrar (el alto del cajón que se plegaba,
                     // PR #703). Lo fija `GroupsSearchDrawerWiringTests`.
@@ -305,14 +301,8 @@ struct GroupsContainerView: View {
             .toolbar {
                 // «Nuevo grupo» sale de la fila de arriba a la barra (Jürgen, 2026-11-14): la fila queda como la de
                 // personal. El + flotante lo sigue ofreciendo.
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        Task { await requestCreateGroup() }
-                    } label: {
-                        Label(L10n.Groups.newGroup, systemImage: "person.2.badge.plus")
-                    }
-                    .accessibilityIdentifier("groups_toolbar_new_group")
-                }
+                // Compartido: en el chip Personas, «Añadir persona» ocupa ese sitio.
+                ToolbarItem(placement: .topBarTrailing) { primaryToolbarButton }
                 ToolbarSpacer(.fixed, placement: .topBarTrailing)
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -961,6 +951,60 @@ struct GroupsContainerView: View {
         }
     }
 
+    // MARK: - Compartido (lote 1)
+
+    /// Lo que va debajo de la fila de captura según el chip: la lista de grupos de siempre o la de Personas. Fuera del
+    /// `body` por el presupuesto del type-checker del CI (`swiftui-ds.md`).
+    @ViewBuilder
+    private var chipContent: some View {
+        if shownCompartidoChip == .people {
+            // Lo de arriba igual en los dos chips; debajo, una tarjeta por persona.
+            CompartidoPeopleList(people: viewModel.compartidoPeople, showsSettled: $showsSettledPeople)
+        } else {
+            // LazyVStack sólo alrededor de las TARJETAS (ver el comentario de arriba, en el `body`).
+            LazyVStack(spacing: DS.Spacing.lg) {
+                ForEach(viewModel.listedActiveGroups, id: \.id) { group in
+                    groupCardRow(group: group)
+                }
+                if !viewModel.listedArchivedGroups.isEmpty {
+                    archivedGroupsSection
+                }
+            }
+        }
+    }
+
+    /// El primer botón de la barra: «Nuevo grupo» en Grupos, «Añadir persona» en Personas.
+    @ViewBuilder
+    private var primaryToolbarButton: some View {
+        if shownCompartidoChip == .people {
+            Button {
+                addPerson()
+            } label: {
+                Label(L10n.Compartido.addPerson, systemImage: "person.badge.plus")
+            }
+            .accessibilityIdentifier("compartido_toolbar_add_person")
+        } else {
+            Button {
+                Task { await requestCreateGroup() }
+            } label: {
+                Label(L10n.Groups.newGroup, systemImage: "person.2.badge.plus")
+            }
+            .accessibilityIdentifier("groups_toolbar_new_group")
+        }
+    }
+
+    /// El chip que se ve: los chips solo están con la lista de grupos; sin ella (cargando, sin grupos o solo archivados)
+    /// la pestaña es la de hoy y se porta como el chip Grupos.
+    private var shownCompartidoChip: CompartidoChip {
+        CompartidoChipLogic.shown(
+            selected: compartidoChip, hasLoaded: viewModel.hasLoadedOnce, hasActiveGroups: !viewModel.activeGroups.isEmpty)
+    }
+
+    /// «Añadir persona». Mientras una persona no sea un grupo de dos (lotes 2 y 3), abre el alta de grupo de hoy.
+    private func addPerson() {
+        Task { await requestCreateGroup() }
+    }
+
     // MARK: - Archived Groups
 
     private var archivedGroupsSection: some View {
@@ -974,7 +1018,7 @@ struct GroupsContainerView: View {
                         .foregroundStyle(.secondary)
                     Text(viewModel.showArchived
                          ? L10n.Groups.Settings.hideArchived
-                         : L10n.Groups.Settings.showArchivedCount(viewModel.archivedGroups.count))
+                         : L10n.Groups.Settings.showArchivedCount(viewModel.listedArchivedGroups.count))
                         .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                         // En seco: fundido, «Ocultar archivados» quedaría encima de «Mostrar archivados (N)».
@@ -985,7 +1029,7 @@ struct GroupsContainerView: View {
             .buttonStyle(.plain)
 
             if viewModel.showArchived {
-                ForEach(viewModel.archivedGroups, id: \.id) { group in
+                ForEach(viewModel.listedArchivedGroups, id: \.id) { group in
                     groupCardRow(group: group)
                         .opacity(0.6)
                 }

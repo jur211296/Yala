@@ -665,7 +665,7 @@
 "tab.search" = "Zoeken";
 "tab.records" = "Boekingen";
 "tab.reports" = "Rapporten";
-"tab.groups" = "Groepen";
+"tab.groups" = "Gedeeld";
 "report.title" = "Financiële rapporten";
 "report.tab.comparative" = "Vergelijking";
 "report.tab.cashFlow" = "Kasstroom";
@@ -2995,7 +2995,7 @@
 "split.sharesPart" = "aandeel";
 
 // MARK: - Groups
-"groups.title" = "Groepen";
+"groups.title" = "Gedeeld";
 "groups.new" = "Nieuwe groep";
 "groups.edit" = "Groep bewerken";
 "groups.empty.title" = "Geen groepen";
@@ -4672,7 +4672,7 @@
 "groups.invite.slow.title" = "Dit duurt iets langer dan normaal";
 
 /* Invite onboarding: soft-timeout body, honest copy */
-"groups.invite.slow.body" = "We verbinden je groep op de achtergrond. Je kunt Yala intussen gewoon gebruiken: de groep verschijnt in het tabblad Groepen zodra hij klaar is.";
+"groups.invite.slow.body" = "We verbinden je groep op de achtergrond. Je kunt Yala intussen gewoon gebruiken: de groep verschijnt in het tabblad Gedeeld zodra hij klaar is.";
 
 /* Invite onboarding: exit CTA from soft-timeout state */
 "groups.invite.slow.continueButton" = "Door naar de app";
@@ -5002,7 +5002,7 @@
 "groups.empty.signedOut.reentryBanner" = "Je bent uitgelogd bij groepen. Meld je aan wanneer je ze weer wilt zien.";
 
 /* D5: aviso condicional de saldos pendientes en el diálogo de eliminar cuenta (informa, no bloquea) */
-"settings.deleteAccountDebtWarning" = "Je hebt openstaande saldi in je groepen. Voor de andere leden blijven die staan als schuld van “Verwijderde gebruiker”. Als je wilt, kun je ze eerst vereffenen via het tabblad Groepen.";
+"settings.deleteAccountDebtWarning" = "Je hebt openstaande saldi in je groepen. Voor de andere leden blijven die staan als schuld van “Verwijderde gebruiker”. Als je wilt, kun je ze eerst vereffenen via het tabblad Gedeeld.";
 
 /* D5: botón del diálogo de eliminar cuenta que lleva a la pestaña Grupos para saldar deudas */
 "settings.deleteAccountViewGroups" = "Mijn groepen bekijken";
@@ -5117,7 +5117,7 @@
 "settings.wipeExportBeforeCloudCaption" = "Met je gegevens in je Yala-account kan dit je enige kopie zijn";
 
 /* Vaciar v2: fila de grupos de la hoja de alcance cuando el usuario tiene saldos pendientes */
-"settings.wipeScopeGroupsDebt" = "Je groepen blijven behouden, maar je hebt openstaande saldi. Je kunt ze vereffenen via het tabblad Groepen.";
+"settings.wipeScopeGroupsDebt" = "Je groepen blijven behouden, maar je hebt openstaande saldi. Je kunt ze vereffenen via het tabblad Gedeeld.";
 
 /* D10 batch: secondary action label in the wipe scope sheet */
 /* D10 batch: dedicated flow title */
@@ -10206,7 +10206,7 @@
 "iaGuided.group.header" = "Nieuwe groep";
 "iaGuided.debt.header" = "Schuld van vroeger";
 "iaGuided.expense.header" = "Groepsuitgave";
-"iaGuided.group.needsAccount" = "Om een groep te maken, koppel je eerst je Yala-account in het tabblad Groepen.";
+"iaGuided.group.needsAccount" = "Om een groep te maken, koppel je eerst je Yala-account in het tabblad Gedeeld.";
 "iaGuided.debt.noGroup" = "Om een schuld van vroeger te noteren heb je een groep van twee of meer mensen nodig waarin je beheerder bent.";
 "iaGuided.expense.noGroup" = "Je hebt nog geen groep om deze uitgave in te noteren. Maak er een of doe mee via een uitnodiging.";
 "iaGuided.group.purpose.question" = "Waarvoor is de groep?";
