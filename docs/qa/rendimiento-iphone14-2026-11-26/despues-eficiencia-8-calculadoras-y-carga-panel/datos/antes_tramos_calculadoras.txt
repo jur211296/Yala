@@ -1,0 +1,28 @@
+saldo vivo                       total  1215 ms · tramos   39 · el mayor  201 ms · > 50 ms: 7
+      t=   9.43s   201 ms  (Panel)
+      t=   7.06s   197 ms  (Panel)
+      t=   7.69s   197 ms  (Panel)
+      t=   8.32s   197 ms  (foto)
+      t=   2.85s   185 ms  (Panel)
+      t=   3.22s    62 ms  (Panel)
+      t=   7.33s    56 ms  (Panel)
+valoración (BalanceValuation)    total     1 ms · tramos    1 · el mayor    1 ms · > 50 ms: 0
+tasas en bloque (rateFactors)    total   178 ms · tramos    7 · el mayor  146 ms · > 50 ms: 1
+      t=   9.03s   146 ms  (foto)
+saldos por cuenta                total   472 ms · tramos    3 · el mayor  165 ms · > 50 ms: 3
+      t=   9.83s   165 ms  (Panel)
+      t=   9.99s   158 ms  (foto)
+      t=   1.76s   149 ms  (Panel)
+carga del Panel (loadData)       total   329 ms · tramos    3 · el mayor  293 ms · > 50 ms: 1
+      t=   1.61s   293 ms  (Panel)
+curva de la foto (TendenciaFoto) total   255 ms · tramos    4 · el mayor  218 ms · > 50 ms: 1
+      t=   9.01s   218 ms  (foto)
+curva de la app (fillBalanceBuckets) total   527 ms · tramos    3 · el mayor  177 ms · > 50 ms: 3
+      t=   7.28s   177 ms  (Panel)
+      t=   7.49s   177 ms  (Panel)
+      t=   3.18s   173 ms  (Panel)
+resultado cambiario (FXPnL)      total    82 ms · tramos    1 · el mayor   82 ms · > 50 ms: 1
+      t=   7.88s    82 ms  (Panel)
+ajuste de grupos                 total   286 ms · tramos  187 · el mayor   23 ms · > 50 ms: 0
+huérfanos                        total   108 ms · tramos    1 · el mayor  108 ms · > 50 ms: 1
+      t=   1.64s   108 ms  (Panel)

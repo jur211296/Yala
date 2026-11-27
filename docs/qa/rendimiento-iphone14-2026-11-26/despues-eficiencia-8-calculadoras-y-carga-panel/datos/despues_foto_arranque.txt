@@ -1,0 +1,26 @@
+muestras de la foto en el hilo principal: 2492 ms
+  otro                               1783 ms
+  fetch                               264 ms
+  calculateBudgetSpent                180 ms
+  GroupBridgeStatsAdjustment          167 ms
+  buildPeriodSummary                   80 ms
+  saveSnapshot                         17 ms
+  buildPaymentsMonth                    1 ms
+bloques > 100 ms (inicio s, ms):
+    10.73    153
+hojas más frecuentes:
+      90  swift::RefCounts<swift::RefCountBitsT<(swift::RefCountInlinedness)1>>::incrementSlow(swift::RefCountBitsT<(swi
+      84  bool swift::RefCounts<swift::RefCountBitsT<(swift::RefCountInlinedness)1>>::doDecrementSlow<(swift::PerformDei
+      75  swift_getTypeByMangledName
+      66  _platform_memmove
+      66  tryCast(swift::OpaqueValue*, swift::TargetMetadata<swift::InProcess> const*, swift::OpaqueValue*, swift::Targe
+      62  swift_beginAccess
+      52  swift::Demangle::__runtime::Demangler::demangleType(__swift::__runtime::llvm::StringRef, std::__1::function<sw
+      49  <deduplicated_symbol>
+      48  0x1a1633098
+      44  Hasher.init(_seed:)
+      34  specialized _pop<A>(from:as:count:)
+      30  swift_conformsToProtocolMaybeInstantiateSuperclasses(swift::TargetMetadata<swift::InProcess> const*, swift::Ta
+      29  swift::Demangle::__runtime::TypeDecoder<(anonymous namespace)::DecodedMetadataBuilder>::decodeMangledType(swif
+      27  objc_msgSend
+      25  specialized static MemoryLayout<>._roundingUpBaseToAlignment(_:)

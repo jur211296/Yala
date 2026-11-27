@@ -871,21 +871,28 @@ enum WidgetDataCache {
 
         var totalBalance: Double = 0
         var widgetTransactions: [WidgetTransaction] = []
-        stages.append(unaVez {
-            // Total balance: TC actual sobre saldo nativo (LiveBalanceCalculator).
-            // El widget consume este Double ya convertido — el calculator NO se
-            // expone al target widget extension.
-            totalBalance = LiveBalanceCalculator.liveBalance(
-                accounts: accounts,
-                transactions: eligibleTransactions,
-                preferredCurrencyCode: preferredCurrency
-            )
+        // Total balance: TC actual sobre saldo nativo (LiveBalanceCalculator). El widget consume este Double ya
+        // convertido — el calculator NO se expone al target widget extension. Sobre las filas elegibles (las mismas, en el
+        // mismo orden, que `eligibleTransactions`) y por tramos: de una vez eran ~200 ms con 16 k movimientos en el
+        // iPhone 14 (lote 8 de eficiencia). La suma es la de `liveBalance` (`SumaSaldoVivo`).
+        var sumaSaldo: LiveBalanceCalculator.SumaSaldoVivo?
+        var recorridoSaldo: RecorridoConReloj?
+        stages.append {
+            var suma = sumaSaldo ?? LiveBalanceCalculator.SumaSaldoVivo(accounts: accounts)
+            let recorrido = recorridoSaldo ?? RecorridoConReloj(total: filasElegibles.count, cadaCuantos: 128)
+            recorridoSaldo = recorrido
+            let terminado = recorrido.avanzar { indice in filasElegibles[indice].sumarSaldoVivo(a: &suma) }
+            sumaSaldo = suma
+            guard terminado else { return false }
+            let desglose = suma.desglose(preferredCurrencyCode: preferredCurrency, converter: CurrencyConverter.shared)
+            totalBalance = (desglose.convertedTotal as NSDecimalNumber).doubleValue
 
             // Build widget transactions (last 10 for display, from recent 90 days, excluyendo cuentas excluidas de stats)
             widgetTransactions = Array(eligibleRecentTransactions.prefix(10)).map { tx in
                 widgetTransaction(tx, currencyCode: preferredCurrency, converter: converter)
             }
-        })
+            return true
+        }
 
         var widgetBudgets: [WidgetBudget] = []
         var widgetPayments: [WidgetScheduledPayment] = []
@@ -960,13 +967,24 @@ enum WidgetDataCache {
         // Build account balances for widgets (only visible accounts shown as cards).
         // Cada card muestra el saldo en moneda NATIVA de la cuenta. Una sola
         // pasada O(N+M) sobre transactions vía batchCalculateBalances.
+        // Sobre las filas (las mismas, en el mismo orden, que `allTransactions`) y por tramos: de una vez eran ~170 ms con
+        // 16 k movimientos en el iPhone 14 (lote 8 de eficiencia). La suma es la de `batchCalculateBalances`
+        // (`SumaSaldosPorCuenta`).
         var nativeBalancesByAccount: [PersistentIdentifier: Decimal] = [:]
         var widgetAccountBalances: [WidgetAccountBalance] = []
-        stages.append(unaVez {
-            let visibleAccounts = filterVisibleAccountsForWidget(accounts)
-            nativeBalancesByAccount = AccountBalanceCalculator.batchCalculateBalances(
-                accounts: visibleAccounts, transactions: allTransactions
-            )
+        var cuentasVisibles: [Account]?
+        var sumaCuentas: AccountBalanceCalculator.SumaSaldosPorCuenta?
+        var recorridoCuentas: RecorridoConReloj?
+        stages.append {
+            let visibleAccounts = cuentasVisibles ?? filterVisibleAccountsForWidget(accounts)
+            cuentasVisibles = visibleAccounts
+            var suma = sumaCuentas ?? AccountBalanceCalculator.SumaSaldosPorCuenta(accounts: visibleAccounts)
+            let recorrido = recorridoCuentas ?? RecorridoConReloj(total: filas.count, cadaCuantos: 128)
+            recorridoCuentas = recorrido
+            let terminado = recorrido.avanzar { indice in filas[indice].sumarSaldoPorCuenta(a: &suma) }
+            sumaCuentas = suma
+            guard terminado else { return false }
+            nativeBalancesByAccount = suma.saldos
             widgetAccountBalances = visibleAccounts.map { account in
                 let nativeBalance = nativeBalancesByAccount[account.persistentModelID] ?? 0
                 return WidgetAccountBalance(
@@ -977,7 +995,8 @@ enum WidgetDataCache {
                     isExcludedFromStats: account.excludeFromStatistics
                 )
             }
-        })
+            return true
+        }
 
         // Get currency display format preference
         let currencyDisplayFormat = UserDefaults.standard.string(forKey: "currencyDisplayFormat") ?? "symbol"
@@ -1370,30 +1389,49 @@ enum WidgetDataCache {
     @MainActor
     final class TendenciaFoto {
         private let calendar = Calendar.current
+        private let filas: [FilaFotoWidget]
         private let totalBalance: Double
+        private let currencyCode: String
+        private let converter: CurrencyConverting
         private var nativeByDay: [Date: [String: Decimal]] = [:]
         private var totalNative: [String: Decimal] = [:]
-        private let closings: [[(date: Date, closing: Date)]]
-        private let valuation: BalanceValuation
+        private var closings: [[(date: Date, closing: Date)]] = []
+        private var valuation: BalanceValuation?
         private var points: [[WidgetTrendPoint]] = [[], [], []]
         private var serie = 0
         private var recorrido: RecorridoConReloj?
+        /// Lote 8 de eficiencia: lo que antes hacía el `init` de una vez (~218 ms con 16 k movimientos en el iPhone 14)
+        /// va también por tramos: sumar las filas por día y leer las tasas de los cierres por tandas
+        /// (`BalanceValuation.LecturaDeTasas`). Mismo trabajo, en el mismo orden.
+        private var recorridoFilas: RecorridoConReloj?
+        private var lecturaDeTasas: BalanceValuation.LecturaDeTasas?
+        private var recorridoTasas: RecorridoConReloj?
+        /// Días de cierre por tanda de tasas: una tanda cuesta del orden de 10 ms en el iPhone 14.
+        nonisolated static let diasPorTanda = 24
 
         init(filas: [FilaFotoWidget], totalBalance: Double, currencyCode: String, converter: CurrencyConverting) {
+            self.filas = filas
             self.totalBalance = totalBalance
+            self.currencyCode = currencyCode
+            self.converter = converter
+        }
+
+        /// Lo que cambió cada día, en divisa NATIVA. Cada punto es el saldo al cierre de su día (o de su semana o mes)
+        /// valorado con el tipo de cambio de esa fecha, la regla de la curva de la app (`BalanceValuation`,
+        /// `panel-balance-chart-contradicts-its-own-figure`). El punto de hoy es `totalBalance`, el saldo vivo.
+        /// Solo las filas que entran en un saldo, como el saldo vivo (`LiveBalanceCalculator.entersBalance`): si no, el
+        /// punto de hoy —que es ese saldo— y los de antes contarían filas distintas y la curva pintaría un escalón.
+        private func sumarFila(_ indice: Int) {
+            let tx = filas[indice]
+            guard tx.entraEnSaldo else { return }
+            let day = calendar.startOfDay(for: tx.fecha)
+            tx.sumarNativo(a: &nativeByDay[day, default: [:]])
+            tx.sumarNativo(a: &totalNative)
+        }
+
+        /// Los cierres de las tres curvas y la lectura de sus tasas, con las filas ya sumadas.
+        private func prepararCierres() -> BalanceValuation.LecturaDeTasas {
             let calendar = self.calendar
-
-            // Lo que cambió cada día, en divisa NATIVA. Cada punto es el saldo al cierre de su día (o de su semana o
-            // mes) valorado con el tipo de cambio de esa fecha, la regla de la curva de la app (`BalanceValuation`,
-            // `panel-balance-chart-contradicts-its-own-figure`). El punto de hoy es `totalBalance`, el saldo vivo.
-            // Solo las filas que entran en un saldo, como el saldo vivo (`LiveBalanceCalculator.entersBalance`): si no,
-            // el punto de hoy —que es ese saldo— y los de antes contarían filas distintas y la curva pintaría un escalón.
-            for tx in filas where tx.entraEnSaldo {
-                let day = calendar.startOfDay(for: tx.fecha)
-                tx.sumarNativo(a: &nativeByDay[day, default: [:]])
-                tx.sumarNativo(a: &totalNative)
-            }
-
             // Find the earliest transaction date to avoid showing flat line before data exists
             let earliestTransactionDate = filas.map(\.fecha).min()
             let daysOfData: Int
@@ -1415,7 +1453,7 @@ enum WidgetDataCache {
             let monthlyClosings = WidgetDataCache.aggregatedTrendClosings(
                 periods: monthlyPeriods, component: .month, calendar: calendar)
             closings = [dailyClosings, weeklyClosings, monthlyClosings]
-            valuation = BalanceValuation(
+            return BalanceValuation.LecturaDeTasas(
                 currencies: Set(totalNative.keys),
                 to: currencyCode,
                 closingDates: (dailyClosings + weeklyClosings + monthlyClosings).map(\.closing),
@@ -1424,14 +1462,31 @@ enum WidgetDataCache {
             )
         }
 
-        /// Calcula puntos hasta agotar el tramo. `true` si ya están las tres curvas.
+        /// Calcula hasta agotar el tramo. `true` si ya están las tres curvas.
         func avanzar() -> Bool {
+            if valuation == nil {
+                let filasSumadas = recorridoFilas ?? RecorridoConReloj(total: filas.count, cadaCuantos: 128)
+                recorridoFilas = filasSumadas
+                guard filasSumadas.avanzar({ sumarFila($0) }) else { return false }
+                var lectura = lecturaDeTasas ?? prepararCierres()
+                let tandas = recorridoTasas ?? RecorridoConReloj(
+                    total: (lectura.diasPendientes + Self.diasPorTanda - 1) / Self.diasPorTanda, cadaCuantos: 1)
+                recorridoTasas = tandas
+                let leidas = tandas.avanzar { _ in
+                    lectura.leerTanda(dias: Self.diasPorTanda)
+                }
+                lecturaDeTasas = lectura
+                guard leidas else { return false }
+                valuation = BalanceValuation(lectura: lectura)
+                return false
+            }
+            guard let valuation else { return false }
             while serie < closings.count {
                 let entradas = closings[serie]
                 let recorrido = self.recorrido ?? RecorridoConReloj(total: entradas.count, cadaCuantos: 4)
                 self.recorrido = recorrido
                 let terminada = recorrido.avanzar { indice in
-                    points[serie].append(point(entradas[indice]))
+                    points[serie].append(point(entradas[indice], valuation: valuation))
                 }
                 guard terminada else { return false }
                 self.recorrido = nil
@@ -1440,7 +1495,7 @@ enum WidgetDataCache {
             return true
         }
 
-        private func point(_ entry: (date: Date, closing: Date)) -> WidgetTrendPoint {
+        private func point(_ entry: (date: Date, closing: Date), valuation: BalanceValuation) -> WidgetTrendPoint {
             // El primero es hoy: el saldo vivo tal cual, que es el número que pinta el widget al lado.
             if entry.closing >= calendar.startOfDay(for: Date.now) {
                 return WidgetTrendPoint(date: entry.date, balance: totalBalance)

@@ -65,27 +65,52 @@ struct AccountBalanceCalculator {
         asOf now: Date = .now,
         converter: CurrencyConverting = CurrencyConverter.shared
     ) -> [PersistentIdentifier: Decimal] {
-        let cutoff = LiveBalanceCalculator.TodayCutoff(asOf: now)
-        // 1. Inicializar saldos en 0 (el saldo inicial es ahora una transacción)
-        var balances: [PersistentIdentifier: Decimal] = [:]
-        for account in accounts {
-            balances[account.persistentModelID] = Decimal(0)
-        }
+        var suma = SumaSaldosPorCuenta(accounts: accounts, asOf: now, converter: converter)
+        for transaction in transactions { suma.sumar(transaction) }
+        return suma.saldos
+    }
 
-        // 2. Iterar transacciones una sola vez y acumular en la cuenta correspondiente
-        for transaction in transactions where cutoff.counts(transaction.date) {
-            if let account = transaction.account {
-                let amount = amountInAccountCurrency(transaction, converter: converter)
-                let accountID = account.persistentModelID
+    /// Los saldos por cuenta, fila a fila: la regla entera de `batchCalculateBalances`, que la recorre de una vez.
+    ///
+    /// **Lote 8 de eficiencia (27-nov-2026).** Con 16.004 movimientos en el iPhone 14 eran ~170 ms de hilo principal sin
+    /// ceder, en la foto de los widgets y en la carga del Panel. Quien no puede bloquear tanto suma por tramos y cede
+    /// entre uno y otro; la foto suma sobre las filas que ya leyó (`sumar(cuentaID:fecha:moneda:monto:)`). Las tres vías
+    /// pasan por el mismo `sumar`: la cifra sale de un solo sitio.
+    struct SumaSaldosPorCuenta {
+        /// Empiezan en 0 (el saldo inicial es una transacción) y solo suman las cuentas pedidas.
+        private(set) var saldos: [PersistentIdentifier: Decimal] = [:]
+        /// La divisa de cada cuenta pedida, leída una vez: la de destino de `amountInAccountCurrency`.
+        private let divisaDeCuenta: [PersistentIdentifier: String]
+        private let cutoff: LiveBalanceCalculator.TodayCutoff
+        private let converter: CurrencyConverting
 
-                // Solo sumamos si la cuenta está en nuestro mapa de interés
-                if let current = balances[accountID] {
-                    balances[accountID] = current + amount
-                }
+        init(accounts: [Account], asOf now: Date = .now, converter: CurrencyConverting = CurrencyConverter.shared) {
+            cutoff = LiveBalanceCalculator.TodayCutoff(asOf: now)
+            self.converter = converter
+            var divisas: [PersistentIdentifier: String] = [:]
+            for account in accounts {
+                saldos[account.persistentModelID] = Decimal(0)
+                divisas[account.persistentModelID] = account.currencyCode
             }
+            divisaDeCuenta = divisas
         }
 
-        return balances
+        /// Suma un movimiento, leyendo de él lo que la regla pide.
+        mutating func sumar(_ transaction: TransactionItem) {
+            // Solo los fechados hasta hoy, y solo en una cuenta del mapa.
+            guard cutoff.counts(transaction.date), let account = transaction.account else { return }
+            sumar(cuentaID: account.persistentModelID, fecha: transaction.date,
+                  moneda: transaction.currencyCode, monto: Decimal(transaction.amount))
+        }
+
+        /// La regla, sobre lo ya leído de la fila: `moneda` y `monto` son `tx.currencyCode` y `Decimal(tx.amount)`.
+        mutating func sumar(cuentaID: PersistentIdentifier?, fecha: Date, moneda: String, monto: Decimal) {
+            guard cutoff.counts(fecha), let cuentaID, let current = saldos[cuentaID],
+                  let divisaCuenta = divisaDeCuenta[cuentaID]
+            else { return }
+            saldos[cuentaID] = current + amountInAccountCurrency(
+                monto, currencyCode: moneda, accountCurrencyCode: divisaCuenta, date: fecha, converter: converter)
+        }
     }
 
     // MARK: - Normalización de monto
@@ -104,11 +129,20 @@ struct AccountBalanceCalculator {
     /// tomarla por dólares (`recognizedCurrencyCode`). Sin cuenta no hay divisa de destino: tal cual.
     private static func amountInAccountCurrency(_ item: TransactionItem, converter: CurrencyConverting) -> Decimal {
         let amount = Decimal(item.amount)
-        guard let account = item.account,
-              let from = recognizedCurrencyCode(item.currencyCode),
-              let to = recognizedCurrencyCode(account.currencyCode),
+        guard let account = item.account else { return amount }
+        return amountInAccountCurrency(
+            amount, currencyCode: item.currencyCode, accountCurrencyCode: account.currencyCode, date: item.date,
+            converter: converter)
+    }
+
+    /// La misma regla sobre lo ya leído de la fila y de su cuenta (`SumaSaldosPorCuenta`).
+    static func amountInAccountCurrency(
+        _ amount: Decimal, currencyCode: String, accountCurrencyCode: String, date: Date, converter: CurrencyConverting
+    ) -> Decimal {
+        guard let from = recognizedCurrencyCode(currencyCode),
+              let to = recognizedCurrencyCode(accountCurrencyCode),
               from != to
         else { return amount }
-        return converter.convert(amount, from: from, to: to, on: item.date)
+        return converter.convert(amount, from: from, to: to, on: date)
     }
 }

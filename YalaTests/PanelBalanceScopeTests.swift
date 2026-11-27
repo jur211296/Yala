@@ -105,13 +105,18 @@ struct PanelBalanceScopeTests {
         // Por trozos que ceden el hilo desde el lote 4 de eficiencia (26-nov-2026): la misma regla, trozo a trozo.
         #expect(code.contains("let balanceTransactions = try await cesion.porTrozos(transactions) {\n            PanelBalanceScopeLogic.transactions($0, accountIDs: balanceAccountIDs)"))
         #expect(!code.contains("let balanceCriteria"), "el saldo volvió a pasar por los chips")
-        // Las dos llamadas al ancla viva (curva del widget y comparativa) cuentan las cuentas del saldo.
-        let anclas = code.components(separatedBy: "LiveBalanceCalculator.liveBalanceOverride(").dropFirst()
+        // Las dos llamadas al ancla viva (curva del widget y comparativa) cuentan las cuentas del saldo. Desde el lote 8 de
+        // eficiencia (27-nov-2026) las dos pasan por `liveBalanceOverride(for:context:cesion:memoria:)`, que suma el saldo
+        // vivo por tramos una vez por cálculo con las cuentas y movimientos del saldo.
+        let anclas = code.components(separatedBy: "try await liveBalanceOverride(").dropFirst()
         #expect(anclas.count == 2)
         for ancla in anclas {
-            let tramo = ancla.prefix(400)
-            #expect(tramo.contains("accounts: calcContext.balanceAccounts") || tramo.contains("accounts: context.balanceAccounts"),
-                    "un ancla viva no usa las cuentas del saldo: \(tramo)")
+            #expect(ancla.prefix(160).contains("context: calcContext"), "un ancla viva no usa el contexto del cálculo")
         }
+        let cuerpo = try #require(code.components(separatedBy: "private func liveBalanceOverride(").dropFirst().first)
+            .prefix(1_200)
+        #expect(cuerpo.contains("accounts: context.balanceAccounts"), "el ancla viva no usa las cuentas del saldo")
+        #expect(cuerpo.contains("transactions: context.balanceTransactions"), "el ancla viva no usa los movimientos del saldo")
+        #expect(cuerpo.contains("LiveBalanceCalculator.overrideApplies(to: metric, interval: context.effectiveInterval)"))
     }
 }
