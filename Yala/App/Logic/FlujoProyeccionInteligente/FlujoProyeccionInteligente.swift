@@ -152,7 +152,7 @@ enum FlujoProyeccionInteligente {
             guard mov.esIngreso == esIngreso else { return nil }
             if esIngreso { return fijoQueReconoce(mov) }
             let base = FlujoProyeccionInteligente.base(de: mov)
-            if let comercio = mov.comercio,
+            if fijosAFuturo.contains(where: { $0.clave.comercio != nil }), let comercio = mov.comercio,
                let fijo = fijosAFuturo.first(where: { $0.clave == Clave(base: base, comercio: comercio) }) {
                 return fijo
             }
@@ -203,6 +203,12 @@ enum FlujoProyeccionInteligente {
     /// (los dos lados; se filtra aquí); los enlazados a un pago programado y los fechados no cuentan, porque se
     /// proyectan aparte. `primerMes` es el del primer movimiento de toda la historia: un mes antes de empezar a usar
     /// Yala no es un mes sin gastos.
+    ///
+    /// Corre en el hilo principal en cada cálculo del flujo de caja, del Panel y del widget. YALA-IOS-15 (build 5 de 2.3):
+    /// la app se trababa segundos aquí porque el orden entre grupos convertía dos `PersistentIdentifier` en texto en cada
+    /// comparación del `sort` (`String(describing:)` va por reflexión) y cada lectura del comercio pasaba la nota por dos
+    /// expresiones regulares, varias veces por movimiento. Ahora el orden se calcula una vez por grupo y el comercio una
+    /// vez por nota distinta (`ComerciosPorNota`); el resultado es el mismo (paridad en `YalaTests/TrabasFlujoYConvertir/`).
     static func detectar(
         esIngreso: Bool,
         historia: [FlujoMotorMes.Movimiento],
@@ -217,8 +223,17 @@ enum FlujoProyeccionInteligente {
         }.filter { $0 >= primerMes }
         guard !ventana.isEmpty else { return .vacio(esIngreso: esIngreso) }
         let enVentana = Set(ventana)
-        let delLado = historia.filter { $0.esIngreso == esIngreso && !$0.enPagoProgramado && !$0.esFechado }
-        let movs = delLado.filter { enVentana.contains($0.mes) }
+        // Un solo recorrido: los de la ventana y, aparte, los del mes en curso (que nunca está en la ventana).
+        var movs: [FlujoMotorMes.Movimiento] = []
+        var enCurso: [FlujoMotorMes.Movimiento] = []
+        for mov in historia where mov.esIngreso == esIngreso && !mov.enPagoProgramado && !mov.esFechado {
+            if enVentana.contains(mov.mes) {
+                movs.append(mov)
+            } else if mov.mes == mesEnCurso, mov.importe > 0 {
+                enCurso.append(mov)
+            }
+        }
+        let comercios = ComerciosPorNota()
 
         var mayorPorGrupo: [Clave.Base: Double] = [:]
         // El mayor importe de cada grupo en cada mes: «se repite» mira los otros meses sin recorrer todo.
@@ -238,7 +253,6 @@ enum FlujoProyeccionInteligente {
                 mayorPorGrupo: mayorPorGrupo
             )
         }
-        let enCurso = delLado.filter { $0.mes == mesEnCurso && $0.importe > 0 }
 
         // 1. Fijos por grupo (subcategoría, categoría o sin categoría), solo en ingresos: el sueldo o un alquiler que
         // cobras. En gastos lo que se repite ya entra entero en la mediana mensual; partirla por grupos cambiaría cómo se
@@ -246,27 +260,28 @@ enum FlujoProyeccionInteligente {
         var fijos: [Fijo] = []
         var restantes: [Int] = []
         let porGrupo = Dictionary(grouping: movs.indices, by: { base(de: movs[$0]) })
-        for (grupoBase, indices) in porGrupo.sorted(by: { orden($0.key) < orden($1.key) }) {
+        for (grupoBase, indices) in enOrden(porGrupo) {
             guard esIngreso else { restantes += indices; continue }
             let delGrupo = indices.map { movs[$0] }
-            if let fijo = fijo(Clave(base: grupoBase, comercio: nil), delGrupo, ventana: ventana, enCurso: enCurso) {
+            if let fijo = fijo(Clave(base: grupoBase, comercio: nil), delGrupo, ventana: ventana, enCurso: enCurso,
+                               comercios: comercios) {
                 fijos.append(fijo)
                 continue
             }
             // 2. Dentro de un grupo que no se repite entero, un comercio que sí.
-            let comercios: [Int: String] = Dictionary(uniqueKeysWithValues: indices.compactMap { i in
-                movs[i].comercio.map { (i, $0) }
-            })
-            let porComercio = Dictionary(grouping: comercios.keys, by: { comercios[$0] ?? "" })
+            var porComercio: [String: [Int]] = [:]
+            for i in indices {
+                if let comercio = comercios.de(movs[i]) { porComercio[comercio, default: []].append(i) }
+            }
             var conFijo: Set<String> = []
             for (comercio, delComercio) in porComercio.sorted(by: { $0.key < $1.key }) {
                 if let fijo = fijo(Clave(base: grupoBase, comercio: comercio), delComercio.map { movs[$0] },
-                                   ventana: ventana, enCurso: enCurso) {
+                                   ventana: ventana, enCurso: enCurso, comercios: comercios) {
                     fijos.append(fijo)
                     conFijo.insert(comercio)
                 }
             }
-            restantes += indices.filter { i in comercios[i].map { !conFijo.contains($0) } ?? true }
+            restantes += indices.filter { i in comercios.de(movs[i]).map { !conFijo.contains($0) } ?? true }
         }
 
         // 3. Aislados entre lo que no es fijo: de mayor a menor, cada uno contra el mes típico del lado entero (con los
@@ -274,8 +289,10 @@ enum FlujoProyeccionInteligente {
         // cuesta lo que los 6 meses, no lo que la ventana entera (corre en el hilo principal, en cada cálculo).
         var fuera: Set<Int> = []
         var totalesSinAislados = totalesPorMes(movs, ventana: ventana)
-        let candidatos = restantes.filter { movs[$0].importe > 0 }
-            .sorted { (movs[$0].importe, $1) > (movs[$1].importe, $0) }
+        // El orden compara importes de un arreglo aparte: `movs[i]` copia el movimiento entero en cada comparación.
+        let importes = movs.map(\.importe)
+        let candidatos = restantes.filter { importes[$0] > 0 }
+            .sorted { (importes[$0], $1) > (importes[$1], $0) }
         for i in candidatos {
             let mov = movs[i]
             var sinEl = totalesSinAislados
@@ -306,7 +323,7 @@ enum FlujoProyeccionInteligente {
         // lo que llega una vez al mes cerca de su día. No toca lo variable: en el mes en curso y sin plan se sigue
         // proyectando por la mediana, como hasta ahora.
         let fijosAFuturo: [Fijo] = esIngreso ? fijos : gastosFijos(
-            variables.filter { $0.importe > 0 }, ventana: ventana, enCurso: enCurso
+            variables.filter { $0.importe > 0 }, ventana: ventana, enCurso: enCurso, comercios: comercios
         )
         var lado = Lado(
             esIngreso: esIngreso,
@@ -326,20 +343,25 @@ enum FlujoProyeccionInteligente {
     /// Los gastos fijos de verdad: por grupo y, dentro de un grupo que no lo es, por comercio; con la regla de un fijo
     /// (`fijo(_:_:ventana:enCurso:)`) y además una vez al mes y cerca de su día en todos los meses en que apareció.
     private static func gastosFijos(
-        _ movs: [FlujoMotorMes.Movimiento], ventana: [Date], enCurso: [FlujoMotorMes.Movimiento]
+        _ movs: [FlujoMotorMes.Movimiento], ventana: [Date], enCurso: [FlujoMotorMes.Movimiento],
+        comercios: ComerciosPorNota
     ) -> [Fijo] {
         var result: [Fijo] = []
         let porGrupo = Dictionary(grouping: movs, by: { base(de: $0) })
-        for (grupoBase, delGrupo) in porGrupo.sorted(by: { orden($0.key) < orden($1.key) }) {
-            if let fijo = fijo(Clave(base: grupoBase, comercio: nil), delGrupo, ventana: ventana, enCurso: enCurso),
+        for (grupoBase, delGrupo) in enOrden(porGrupo) {
+            if let fijo = fijo(Clave(base: grupoBase, comercio: nil), delGrupo, ventana: ventana, enCurso: enCurso,
+                               comercios: comercios),
                esFijoDeVerdad(fijo, delGrupo) {
                 result.append(fijo)
                 continue
             }
-            let porComercio = Dictionary(grouping: delGrupo.filter { $0.comercio != nil }, by: { $0.comercio ?? "" })
+            var porComercio: [String: [FlujoMotorMes.Movimiento]] = [:]
+            for mov in delGrupo {
+                if let comercio = comercios.de(mov) { porComercio[comercio, default: []].append(mov) }
+            }
             for (comercio, delComercio) in porComercio.sorted(by: { $0.key < $1.key }) {
                 if let fijo = fijo(Clave(base: grupoBase, comercio: comercio), delComercio, ventana: ventana,
-                                   enCurso: enCurso),
+                                   enCurso: enCurso, comercios: comercios),
                    esFijoDeVerdad(fijo, delComercio) {
                     result.append(fijo)
                 }
@@ -376,20 +398,29 @@ enum FlujoProyeccionInteligente {
     /// Si el último mes completo trajo menos (otro trabajo, un inquilino que se fue), se proyecta eso: es lo
     /// conservador, y si el nivel nuevo se queda, los meses siguientes lo confirman.
     private static func fijo(
-        _ clave: Clave, _ movs: [FlujoMotorMes.Movimiento], ventana: [Date], enCurso: [FlujoMotorMes.Movimiento]
+        _ clave: Clave, _ movs: [FlujoMotorMes.Movimiento], ventana: [Date], enCurso: [FlujoMotorMes.Movimiento],
+        comercios: ComerciosPorNota
     ) -> Fijo? {
+        let requeridos = max(Umbrales.mesesFijoMinimos,
+                             Int((Umbrales.presenciaMinima * Double(ventana.count)).rounded(.up)))
+        // Un mes que suma algo tiene al menos un movimiento positivo: con menos meses así que los requeridos no hay fijo,
+        // y se sale antes de sumar. Es lo que se mira de cada comercio de cada grupo, casi siempre para nada.
+        var mesesConAlgo: [Date] = []
+        for mov in movs where mov.importe > 0 && !mesesConAlgo.contains(mov.mes) {
+            mesesConAlgo.append(mov.mes)
+            if mesesConAlgo.count >= requeridos { break }
+        }
+        guard mesesConAlgo.count >= requeridos else { return nil }
         let porMes = totalesPorMes(movs, ventana: ventana)
         let presentes = ventana.filter { (porMes[$0] ?? 0) > 0 }
         guard !presentes.isEmpty else { return nil }
         let tipico = FlujoMotorMes.mediana(presentes.map { porMes[$0] ?? 0 })
         guard tipico > 0 else { return nil }
         let parecidos = presentes.filter { abs((porMes[$0] ?? 0) - tipico) <= Umbrales.toleranciaMonto * tipico }
-        let requeridos = max(Umbrales.mesesFijoMinimos,
-                             Int((Umbrales.presenciaMinima * Double(ventana.count)).rounded(.up)))
         guard parecidos.count >= requeridos else { return nil }
         let recientes = Set(ventana.prefix(Umbrales.mesesRecientes))
         let delGrupoEnCurso = enCurso.filter { mov in
-            base(de: mov) == clave.base && (clave.comercio == nil || mov.comercio == clave.comercio)
+            base(de: mov) == clave.base && (clave.comercio == nil || comercios.de(mov) == clave.comercio)
         }.reduce(0.0) { $0 + $1.importe }
         // Un reembolso chico en «Sueldo» no revive un sueldo que ya no llega: el mes en curso tiene que traer un monto
         // parecido (o, si llega en dos partes, al menos la mitad).
@@ -417,7 +448,7 @@ enum FlujoProyeccionInteligente {
             mesesVentana: ventana.count,
             categoria: muestra?.categoria,
             subcategoriaNombre: clave.base.esSubcategoria ? muestra?.subcategoriaNombre : nil,
-            comercioVisible: clave.comercio == nil ? nil : movs.compactMap(\.comercioVisible).first,
+            comercioVisible: clave.comercio == nil ? nil : comercios.visible(movs),
             subcategoria: clave.base.esSubcategoria ? muestra?.subcategoria : nil
         )
     }
@@ -498,8 +529,18 @@ enum FlujoProyeccionInteligente {
         )
     }
 
+    /// Los grupos en un orden estable, con el orden calculado una vez por grupo: `String(describing:)` de un id
+    /// persistente va por reflexión, y dentro del comparador del `sort` se repetía en cada comparación (YALA-IOS-15).
+    private static func enOrden<Valor>(_ porGrupo: [Clave.Base: Valor]) -> [(key: Clave.Base, value: Valor)] {
+        let claves = Dictionary(uniqueKeysWithValues: porGrupo.keys.map { ($0, orden($0)) })
+        return porGrupo.sorted { (claves[$0.key] ?? "") < (claves[$1.key] ?? "") }
+    }
+
     /// Un orden estable entre grupos (por la descripción del id persistente).
     private static func orden(_ base: Clave.Base) -> String {
+        #if DEBUG
+        _testOrdenes += 1
+        #endif
         switch base {
         case .subcategoria(let id): return "s\(String(describing: id))"
         case .categoria(let id): return "c\(String(describing: id))"
@@ -510,6 +551,37 @@ enum FlujoProyeccionInteligente {
     private static func nombreOrden(_ fijo: Fijo) -> String {
         fijo.comercioVisible ?? fijo.subcategoriaNombre ?? fijo.categoria?.name ?? ""
     }
+
+    /// El comercio de cada nota, calculado una vez por detección: `Movimiento.comercio` pasa la nota por dos expresiones
+    /// regulares cada vez que se lee, y una nota se repite en muchos movimientos (el mismo comercio cada mes). Da lo
+    /// mismo que `Movimiento.comercio` y `comercioVisible`.
+    private final class ComerciosPorNota {
+        private var canonicos: [String: String?] = [:]
+
+        func de(_ mov: FlujoMotorMes.Movimiento) -> String? {
+            guard let nota = mov.nota else { return nil }
+            if let hecho = canonicos[nota] { return hecho }
+            #if DEBUG
+            FlujoProyeccionInteligente._testComerciosCalculados += 1
+            #endif
+            let comercio = mov.comercio
+            canonicos[nota] = .some(comercio)
+            return comercio
+        }
+
+        /// El comercio como lo escribió la persona: el del primero de esos movimientos que tenga comercio.
+        func visible(_ movs: [FlujoMotorMes.Movimiento]) -> String? {
+            guard let mov = movs.first(where: { de($0) != nil }), let nota = mov.nota else { return nil }
+            return MerchantCanonicalizer.displayName(for: nota)
+        }
+    }
+
+    #if DEBUG
+    /// Testigos de `YalaTests/TrabasFlujoYConvertir/`: cuántas veces se calculó el orden de un grupo y el comercio de una
+    /// nota. Una por grupo y una por nota distinta; la traba de YALA-IOS-15 eran miles.
+    nonisolated(unsafe) static var _testOrdenes = 0
+    nonisolated(unsafe) static var _testComerciosCalculados = 0
+    #endif
 }
 
 extension FlujoProyeccionInteligente.Clave.Base {

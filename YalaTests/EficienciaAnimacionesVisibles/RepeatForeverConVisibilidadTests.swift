@@ -22,8 +22,6 @@ struct RepeatForeverConVisibilidadTests {
     private static let excepciones: [String: String] = [
         "Yala/App/Views/SplashScreenView.swift": "el splash se desmonta al entrar en la app",
         "Yala/App/Views/Onboarding/WelcomeShowcaseDemoView.swift": "demo del Welcome, en su cover, antes de la app",
-        "Yala/App/Views/Image/ImageSelectionView.swift": "foto leyéndose de la entrada por imagen, en su hoja; fuera del lote 2",
-        "Yala/App/Views/Voice/VoiceLiveListeningViews.swift": "escucha del registro por voz, en su hoja; fuera del lote 2",
     ]
 
     private static func codeOnly(_ text: String) -> String {

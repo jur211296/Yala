@@ -63,14 +63,16 @@ struct VoiceRecordingTimeLabel: View {
                 .frame(width: 8, height: 8) // A11Y-DT: punto de «grabando»
                 .opacity(reduceMotion || !isPulsing ? 1 : 0.35)
                 .animation(
-                    reduceMotion ? nil : .easeInOut(duration: 0.6).repeatForever(autoreverses: true),
+                    isPulsing ? .easeInOut(duration: 0.6).repeatForever(autoreverses: true) : nil,
                     value: isPulsing
                 )
             Text(Duration.seconds(duration.rounded(.down)).formatted(.time(pattern: .minuteSecond)))
                 .font(DS.Typography.body.monospacedDigit())
                 .foregroundStyle(.secondary)
         }
-        .onAppear { isPulsing = true }
+        // El punto late solo con la hoja a la vista y la app activa (encargo de trabas, 27-nov-2026; el mismo molde que
+        // el dictado de Yala IA).
+        .animaSoloVisible($isPulsing, si: !reduceMotion)
     }
 }
 
