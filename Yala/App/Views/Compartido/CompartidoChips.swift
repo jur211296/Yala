@@ -60,6 +60,8 @@ struct CompartidoChipsBar: View {
 struct CompartidoPeopleList: View {
     let people: CompartidoPersonasLogic.Result
     @Binding var showsSettled: Bool
+    /// Abre el detalle de una persona (lote 2).
+    var onOpen: ((CompartidoPersonasLogic.Person) -> Void)?
 
     var body: some View {
         LazyVStack(spacing: DS.Spacing.lg) {
@@ -67,7 +69,7 @@ struct CompartidoPeopleList: View {
                 emptyLine
             }
             ForEach(people.active) { person in
-                CompartidoPersonCard(person: person)
+                CompartidoPersonCard(person: person, onOpen: onOpen.map { open in { open(person) } })
                     .accessibilityIdentifier("compartido_person_card")
             }
             if !people.settled.isEmpty {
@@ -118,7 +120,7 @@ struct CompartidoPeopleList: View {
 
             if showsSettled {
                 ForEach(people.settled) { person in
-                    CompartidoPersonCard(person: person)
+                    CompartidoPersonCard(person: person, onOpen: onOpen.map { open in { open(person) } })
                         .opacity(0.6)
                         .accessibilityIdentifier("compartido_settled_card")
                 }

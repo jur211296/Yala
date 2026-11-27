@@ -16,6 +16,15 @@ struct GroupStatsView: View {
     let settlements: [SplitSettlement]
     let currentUserMemberID: String?
     let currencyCode: String
+    /// Compartido · detalle de persona (lote 2). Todo `nil`/vacío en el detalle de grupo, que queda como estaba.
+    /// Cada fila de miembro → la fila con la que cuenta (juntar a la persona y a ti entre grupos).
+    var memberAliases: [String: String] = [:]
+    /// El rótulo de la cifra («Total gastado juntos»); `nil` → «Total gastado».
+    var heroTitle: String?
+    /// La cápsula del filtro de grupo, debajo de las del período y la moneda.
+    var filterAccessory: AnyView?
+    /// «Por grupo», bajo la cifra.
+    var extraSection: AnyView?
 
     @State private var viewModel = GroupStatsViewModel()
     /// Moneda activa del carrusel del modo "Todas" (currencyCode de la página visible).
@@ -34,14 +43,28 @@ struct GroupStatsView: View {
 
     var body: some View {
         if expenses.isEmpty {
-            YalaEmptyState(
-                icon: "chart.pie",
-                title: L10n.Groups.Stats.noExpenses
-            )
+            VStack(spacing: DS.Spacing.none) {
+                // Sin gastos en el filtro, la cápsula sigue a la vista: si no, no se podría volver a «Todos los grupos».
+                if let filterAccessory {
+                    HStack {
+                        Spacer(minLength: 0)
+                        filterAccessory
+                    }
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.top, DS.Spacing.sm)
+                }
+                YalaEmptyState(
+                    icon: "chart.pie",
+                    title: L10n.Groups.Stats.noExpenses
+                )
+            }
         } else {
             ScrollView {
                 VStack(spacing: DS.Spacing.lg) {
                     statsHero
+                    if let extraSection {
+                        extraSection
+                    }
                     if viewModel.isAllCurrencies {
                         allCurrenciesContent
                     } else {
@@ -178,13 +201,18 @@ struct GroupStatsView: View {
     /// grupo tiene más de una), la cifra de 36 pt y debajo lo tuyo. Antes, dos menús propios y dos tarjetas.
     private var statsHero: some View {
         HeroHeader {
-            HeroHeaderLabel(text: L10n.Groups.Stats.totalSpent)
+            HeroHeaderLabel(text: heroTitle ?? L10n.Groups.Stats.totalSpent)
         } period: {
-            HStack(spacing: DS.Spacing.sm) {
-                if viewModel.availableCurrencies.count > 1 {
-                    currencyMenu
+            VStack(alignment: .trailing, spacing: DS.Spacing.sm) {
+                HStack(spacing: DS.Spacing.sm) {
+                    if viewModel.availableCurrencies.count > 1 {
+                        currencyMenu
+                    }
+                    periodMenu
                 }
-                periodMenu
+                if let filterAccessory {
+                    filterAccessory
+                }
             }
         } content: {
             let totals = viewModel.totalsByCurrency
@@ -511,7 +539,8 @@ struct GroupStatsView: View {
             settlements: settlements,
             currentUserMemberID: currentUserMemberID,
             currencyCode: currencyCode,
-            preferredCurrency: appPreferences.defaultCurrencyCode.rawValue
+            preferredCurrency: appPreferences.defaultCurrencyCode.rawValue,
+            memberAliases: memberAliases
         )
         syncCarouselPage()
     }

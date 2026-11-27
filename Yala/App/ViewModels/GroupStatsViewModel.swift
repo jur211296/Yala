@@ -144,6 +144,9 @@ final class GroupStatsViewModel {
     private var allShares: [SplitShare] = []
     private var allMembers: [SplitMember] = []
     private var currentUserMemberID: String?
+    /// Compartido · detalle de persona (lote 2): cada fila de miembro → la fila con la que cuenta. Junta a la persona y a
+    /// ti entre grupos en «¿Quién puso más?» y «Mi parte». Vacío en un grupo: cada fila es ella misma.
+    private var memberAliases: [String: String] = [:]
     private var currencyCode: String = ""
     /// Moneda destino del donut convertido en modo "Todas" (la preferida del usuario).
     private(set) var targetCurrency: String = ""
@@ -170,7 +173,8 @@ final class GroupStatsViewModel {
         settlements: [SplitSettlement],
         currentUserMemberID: String?,
         currencyCode: String,
-        preferredCurrency: String? = nil
+        preferredCurrency: String? = nil,
+        memberAliases: [String: String] = [:]
     ) {
         // Dedup por id: los gastos llegan repetidos por merges del canal de sync (la premisa está en
         // `GroupBalanceService`). Molde exacto de `GroupBudgetLogic.progress`: dedup y después fuera
@@ -183,6 +187,7 @@ final class GroupStatsViewModel {
         self.allShares = shares
         self.allMembers = members
         self.currentUserMemberID = currentUserMemberID
+        self.memberAliases = memberAliases
         self.currencyCode = currencyCode
         // Moneda destino del donut convertido (modo "Todas"): la preferida del usuario,
         // con la principal del grupo como fallback.
@@ -276,7 +281,7 @@ final class GroupStatsViewModel {
             return
         }
         let currencyByExpense = Dictionary(period.map { ($0.id, $0.currencyCode) }, uniquingKeysWith: { first, _ in first })
-        let myShares = allShares.filter { $0.memberID == myID && currencyByExpense[$0.expenseID] != nil }
+        let myShares = allShares.filter { alias($0.memberID) == myID && currencyByExpense[$0.expenseID] != nil }
         let sharesGrouped = Dictionary(grouping: myShares, by: { currencyByExpense[$0.expenseID] ?? "" })
         myPortionsByCurrency = orderedCurrencies(Set(sharesGrouped.keys)).map { code in
             (currencyCode: code, amount: sharesGrouped[code]?.reduce(0) { $0 + $1.amount } ?? 0)
@@ -299,7 +304,7 @@ final class GroupStatsViewModel {
         guard let myID = currentUserMemberID else { return 0 }
         let expenseIDs = Set(expenses.map(\.id))
         return allShares
-            .filter { $0.memberID == myID && expenseIDs.contains($0.expenseID) }
+            .filter { alias($0.memberID) == myID && expenseIDs.contains($0.expenseID) }
             .reduce(0) { $0 + $1.amount }
     }
 
@@ -318,7 +323,7 @@ final class GroupStatsViewModel {
             allMembers.map { ($0.id.uuidString, $0.resolvedDisplayName) },
             uniquingKeysWith: { first, _ in first }
         )
-        let grouped = Dictionary(grouping: expenses, by: \.paidByMemberID)
+        let grouped = Dictionary(grouping: expenses, by: { alias($0.paidByMemberID) })
         return grouped.map { memberID, expenses in
             MemberSpending(
                 id: memberID,
@@ -328,6 +333,11 @@ final class GroupStatsViewModel {
             )
         }
         .sorted { $0.totalPaid > $1.totalPaid }
+    }
+
+    /// La fila con la que cuenta un miembro (`memberAliases`); sin alias, ella misma.
+    private func alias(_ memberID: String) -> String {
+        memberAliases[memberID] ?? memberID
     }
 
     /// Gasto agregado por mes, ascendente.

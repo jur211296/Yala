@@ -16,3 +16,34 @@
 "compartido.people.noGroup" = "Bez grupy";
 "compartido.people.emptyTitle" = "Nie dzielisz jeszcze wydatków z nikim";
 "compartido.people.emptyMessage" = "Gdy dodasz wydatek z kimś w grupie, zobaczysz tu, ile ta osoba jest ci winna albo ile ty jesteś winien jej, ze wszystkich grup razem.";
+
+/* Lote 2: el detalle de una persona (cifra con filtro de grupo, Saldar todo, Estadísticas). */
+"compartido.detail.filter.all" = "Wszystkie grupy";
+"compartido.detail.filter.label" = "Filtruj według grupy";
+"compartido.detail.hero.with.owed" = "%@ jest ci winien";
+"compartido.detail.hero.with.owe" = "Jesteś winien: %@";
+"compartido.detail.hero.with.settled" = "Z %@ jesteście rozliczeni";
+"compartido.detail.hero.in.owed" = "W %@ należy ci się";
+"compartido.detail.hero.in.owe" = "W %@ jesteś winien";
+"compartido.detail.hero.in.settled" = "W %@ jesteś rozliczony";
+"compartido.detail.hero.youOweNothing" = "Nic nie jesteś tej osobie winien.";
+"compartido.detail.hero.theyOweNothing" = "Ta osoba nic ci nie jest winna.";
+"compartido.detail.hero.alsoYouOwe" = "A ty jesteś winien %@.";
+"compartido.detail.hero.alsoTheyOwe" = "A ta osoba jest ci winna %@.";
+"compartido.detail.hero.onlyThisGroup" = "Tylko ta grupa.";
+"compartido.detail.hero.onlyNoGroup" = "Tylko to, co nie jest w grupie.";
+"compartido.detail.settle.all" = "Rozlicz wszystko";
+"compartido.detail.settle.allNote" = "Zapisuje się jedną płatność na grupę i walutę.";
+"compartido.detail.settle.pickGroupHint" = "Aby potwierdzić płatność lub zobaczyć płatności grupy, wybierz ją powyżej.";
+"compartido.detail.settle.sheetTitle" = "Rozlicz wszystko z: %@";
+"compartido.detail.settle.sheetMessage" = "Zostanie zapisanych %d płatności, po jednej na grupę i walutę, tak jakbyś rozliczał każdą osobno.";
+"compartido.detail.settle.rowTheyPay" = "%1$@ płaci ci %2$@";
+"compartido.detail.settle.rowYouPay" = "Płacisz %2$@ osobie %1$@";
+"compartido.detail.settle.confirm" = "Zapisz płatności (%d)";
+"compartido.detail.settle.savedNotice" = "Zapisano %d płatności z: %@. Jesteście rozliczeni.";
+"compartido.detail.settle.failed" = "Nie udało się zapisać wszystkich płatności. Sprawdź każdą grupę.";
+"compartido.detail.stats.totalTogether" = "Wydane razem";
+"compartido.detail.stats.byGroup" = "Według grupy";
+"compartido.detail.stats.theyOwe" = "jest ci winien %@";
+"compartido.detail.stats.youOwe" = "jesteś winien %@";
+"compartido.detail.openHint" = "Otwiera to, co dzielisz z tą osobą";

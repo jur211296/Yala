@@ -16,3 +16,34 @@
 "compartido.people.noGroup" = "Sin grupo";
 "compartido.people.emptyTitle" = "Aún no compartes gastos con nadie";
 "compartido.people.emptyMessage" = "Cuando apuntes un gasto con alguien en un grupo, aquí verás lo que te debe o le debes, sumando todos tus grupos.";
+
+/* Lote 2: el detalle de una persona (cifra con filtro de grupo, Saldar todo, Estadísticas). */
+"compartido.detail.filter.all" = "Todos los grupos";
+"compartido.detail.filter.label" = "Filtrar por grupo";
+"compartido.detail.hero.with.owed" = "Con %@ te deben";
+"compartido.detail.hero.with.owe" = "Con %@ debes";
+"compartido.detail.hero.with.settled" = "Con %@ estás a mano";
+"compartido.detail.hero.in.owed" = "En %@ te deben";
+"compartido.detail.hero.in.owe" = "En %@ debes";
+"compartido.detail.hero.in.settled" = "En %@ estás a mano";
+"compartido.detail.hero.youOweNothing" = "Tú no le debes nada.";
+"compartido.detail.hero.theyOweNothing" = "No te debe nada.";
+"compartido.detail.hero.alsoYouOwe" = "Y tú le debes %@.";
+"compartido.detail.hero.alsoTheyOwe" = "Y te debe %@.";
+"compartido.detail.hero.onlyThisGroup" = "Solo este grupo.";
+"compartido.detail.hero.onlyNoGroup" = "Solo lo que no está en un grupo.";
+"compartido.detail.settle.all" = "Saldar todo";
+"compartido.detail.settle.allNote" = "Se apunta un pago por cada grupo y moneda.";
+"compartido.detail.settle.pickGroupHint" = "Para confirmar un pago o ver los pagos de un grupo, elígelo arriba.";
+"compartido.detail.settle.sheetTitle" = "Saldar todo con %@";
+"compartido.detail.settle.sheetMessage" = "Se apuntarán %d pagos, uno por grupo y moneda, igual que si saldaras cada uno.";
+"compartido.detail.settle.rowTheyPay" = "%1$@ te paga %2$@";
+"compartido.detail.settle.rowYouPay" = "Le pagas %2$@ a %1$@";
+"compartido.detail.settle.confirm" = "Apuntar %d pagos";
+"compartido.detail.settle.savedNotice" = "Apuntaste %d pagos con %@. Quedan a mano.";
+"compartido.detail.settle.failed" = "No se pudieron apuntar todos los pagos. Revisa cada grupo.";
+"compartido.detail.stats.totalTogether" = "Total gastado juntos";
+"compartido.detail.stats.byGroup" = "Por grupo";
+"compartido.detail.stats.theyOwe" = "te debe %@";
+"compartido.detail.stats.youOwe" = "le debes %@";
+"compartido.detail.openHint" = "Abre lo que compartes con esta persona";

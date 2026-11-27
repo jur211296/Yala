@@ -72,6 +72,8 @@ struct GroupsContainerView: View {
     @State private var showDividirBoleta = false
     /// Compartido (lote 1, 26-nov-2026): el chip elegido, «Grupos» o «Personas», y el pliegue de las liquidadas.
     @State private var compartidoChip: CompartidoChip = .groups
+    /// Compartido (lote 2): la persona abierta desde su tarjeta.
+    @State private var openedPerson: CompartidoPersonasLogic.Person?
     @State private var showsSettledPeople = false
     /// El veredicto de App Attest de ESTE teléfono, y **solo el veredicto**. Es un `@State` porque
     /// `GroupsAttestStreakStore.isTerminal()` lee `UserDefaults` —que no repinta ninguna vista— y además depende
@@ -390,6 +392,8 @@ struct GroupsContainerView: View {
                 // 2026-10-12). La identidad del grupo hace de cada grupo una vista nueva, como en Registros.
                 .id(group.persistentModelID)
             }
+            .compartidoPersonDestination(
+                person: $openedPerson, isWide: horizontalSizeClass == .regular, onClosed: { viewModel.loadData() })
             .onChange(of: viewModel.selectedGroup) { _, newValue in
                 // Al volver del detalle (pop → nil) refrescamos la lista, igual que el
                 // antiguo onDismiss del fullScreenCover.
@@ -959,7 +963,8 @@ struct GroupsContainerView: View {
     private var chipContent: some View {
         if shownCompartidoChip == .people {
             // Lo de arriba igual en los dos chips; debajo, una tarjeta por persona.
-            CompartidoPeopleList(people: viewModel.compartidoPeople, showsSettled: $showsSettledPeople)
+            CompartidoPeopleList(people: viewModel.compartidoPeople, showsSettled: $showsSettledPeople,
+                                 onOpen: { openedPerson = $0 })
         } else {
             // LazyVStack sólo alrededor de las TARJETAS (ver el comentario de arriba, en el `body`).
             LazyVStack(spacing: DS.Spacing.lg) {

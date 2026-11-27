@@ -45,13 +45,22 @@ enum CompartidoPersonasLogic {
 
     // MARK: - Salida
 
-    struct Person: Identifiable, Equatable, Sendable {
+    /// Dónde está la persona: un grupo y su fila de miembro en él (lote 2: el detalle de persona la lee de aquí).
+    struct Membership: Hashable, Sendable {
+        let groupKey: String
+        let memberID: String
+        let isPerson: Bool
+    }
+
+    struct Person: Identifiable, Hashable, Sendable {
         let id: String
         let name: String
         /// Los grupos donde compartes con esta persona, en el orden de la lista de Grupos.
         let groupNames: [String]
         /// Neto por moneda: positivo, te debe; negativo, le debes. Sin las monedas en cero.
         let netByCurrency: [String: Double]
+        /// Sus filas de miembro, grupo a grupo, en el orden de la lista de Grupos (lote 2).
+        var memberships: [Membership] = []
 
         var isSettled: Bool { netByCurrency.isEmpty }
 
@@ -93,6 +102,7 @@ enum CompartidoPersonasLogic {
         var order: [String] = []
         var names: [String: String] = [:]
         var groupNames: [String: [String]] = [:]
+        var memberships: [String: [Membership]] = [:]
         var net: [String: [String: Double]] = [:]
         var interacted = Set<String>()
 
@@ -107,6 +117,8 @@ enum CompartidoPersonasLogic {
                     names[key] = member.name
                     order.append(key)
                 }
+                let membership = Membership(groupKey: group.groupKey, memberID: memberID, isPerson: group.isPerson)
+                if !(memberships[key] ?? []).contains(membership) { memberships[key, default: []].append(membership) }
                 if !touched.contains(key) {
                     touched.insert(key)
                     let label = group.isPerson ? noGroupLabel : group.groupName
@@ -137,7 +149,8 @@ enum CompartidoPersonasLogic {
                 return abs(rounded) >= epsilon ? rounded : nil
             }
             let person = Person(
-                id: key, name: names[key] ?? "", groupNames: groupNames[key] ?? [], netByCurrency: cleaned)
+                id: key, name: names[key] ?? "", groupNames: groupNames[key] ?? [], netByCurrency: cleaned,
+                memberships: memberships[key] ?? [])
             if person.isSettled { settled.append(person) } else { active.append(person) }
         }
         active.sort { lhs, rhs in

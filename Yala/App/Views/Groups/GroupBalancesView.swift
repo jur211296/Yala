@@ -55,6 +55,9 @@ struct GroupBalancesView: View {
     /// «¡Están al día!», que en un grupo recién creado era falso.
     var hasExpenses = true
     var hasSettlements = true
+    /// Compartido · detalle de persona (lote 2): la cifra con el filtro de grupo en el sitio de la del grupo, y siempre a
+    /// la vista (sin ella no se podría cambiar de filtro con todo a mano). `nil` en el detalle de grupo.
+    var header: AnyView?
 
     @ScaledMetric(relativeTo: .body) private var avatarSize: CGFloat = 32 // A11Y-DT: @ScaledMetric
     @ScaledMetric(relativeTo: .body) private var largeAvatarSize: CGFloat = 40 // A11Y-DT: @ScaledMetric
@@ -111,7 +114,7 @@ struct GroupBalancesView: View {
 
     var body: some View {
         let pending = pendingForMe
-        if balances.isEmpty && debts.isEmpty && pending.isEmpty {
+        if header == nil && balances.isEmpty && debts.isEmpty && pending.isEmpty {
             let isNew = GroupBalancesPresentationLogic.emptyState(
                 hasExpenses: hasExpenses, hasSettlements: hasSettlements) == .noEntries
             YalaEmptyState(
@@ -124,13 +127,16 @@ struct GroupBalancesView: View {
         } else {
             ScrollView {
                 VStack(spacing: DS.Spacing.xxl) {
+                    if let header {
+                        header
+                    }
                     if !pending.isEmpty {
                         VStack(spacing: DS.Spacing.md) {
                             ForEach(pending, id: \.id) { pendingCard($0) }
                         }
                     }
 
-                    if !balances.isEmpty || !debts.isEmpty,
+                    if header == nil, !balances.isEmpty || !debts.isEmpty,
                        let summary = GroupBalancesPresentationLogic.summary(
                         debts: debts, currentUserMemberID: currentUserMemberID) {
                         summaryCard(summary)

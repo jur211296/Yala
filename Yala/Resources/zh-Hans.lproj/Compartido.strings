@@ -16,3 +16,34 @@
 "compartido.people.noGroup" = "无群组";
 "compartido.people.emptyTitle" = "你还没有和任何人分摊支出";
 "compartido.people.emptyMessage" = "当你在群组中和某人记录一笔支出后，这里会汇总你所有群组，显示对方欠你或你欠对方的金额。";
+
+/* Lote 2: el detalle de una persona (cifra con filtro de grupo, Saldar todo, Estadísticas). */
+"compartido.detail.filter.all" = "所有群组";
+"compartido.detail.filter.label" = "按群组筛选";
+"compartido.detail.hero.with.owed" = "%@ 欠你";
+"compartido.detail.hero.with.owe" = "你欠 %@";
+"compartido.detail.hero.with.settled" = "你和 %@ 已结清";
+"compartido.detail.hero.in.owed" = "在 %@ 别人欠你";
+"compartido.detail.hero.in.owe" = "在 %@ 你欠款";
+"compartido.detail.hero.in.settled" = "在 %@ 已结清";
+"compartido.detail.hero.youOweNothing" = "你不欠对方任何钱。";
+"compartido.detail.hero.theyOweNothing" = "对方不欠你任何钱。";
+"compartido.detail.hero.alsoYouOwe" = "你还欠对方 %@。";
+"compartido.detail.hero.alsoTheyOwe" = "对方还欠你 %@。";
+"compartido.detail.hero.onlyThisGroup" = "仅此群组。";
+"compartido.detail.hero.onlyNoGroup" = "仅不在群组中的部分。";
+"compartido.detail.settle.all" = "全部结清";
+"compartido.detail.settle.allNote" = "每个群组和币种各记录一笔付款。";
+"compartido.detail.settle.pickGroupHint" = "要确认付款或查看某个群组的付款，请在上方选择该群组。";
+"compartido.detail.settle.sheetTitle" = "与 %@ 全部结清";
+"compartido.detail.settle.sheetMessage" = "将记录 %d 笔付款，每个群组和币种各一笔，与逐笔结清相同。";
+"compartido.detail.settle.rowTheyPay" = "%1$@ 付给你 %2$@";
+"compartido.detail.settle.rowYouPay" = "你付给 %1$@ %2$@";
+"compartido.detail.settle.confirm" = "记录 %d 笔付款";
+"compartido.detail.settle.savedNotice" = "你与 %2$@ 记录了 %1$d 笔付款。已结清。";
+"compartido.detail.settle.failed" = "未能记录所有付款。请检查每个群组。";
+"compartido.detail.stats.totalTogether" = "共同支出总额";
+"compartido.detail.stats.byGroup" = "按群组";
+"compartido.detail.stats.theyOwe" = "欠你 %@";
+"compartido.detail.stats.youOwe" = "你欠 %@";
+"compartido.detail.openHint" = "打开你与此人共享的内容";

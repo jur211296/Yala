@@ -16,3 +16,34 @@
 "compartido.people.noGroup" = "Senza gruppo";
 "compartido.people.emptyTitle" = "Non condividi ancora spese con nessuno";
 "compartido.people.emptyMessage" = "Quando registri una spesa con qualcuno in un gruppo, qui vedrai quanto ti deve o quanto gli devi, sommando tutti i tuoi gruppi.";
+
+/* Lote 2: el detalle de una persona (cifra con filtro de grupo, Saldar todo, Estadísticas). */
+"compartido.detail.filter.all" = "Tutti i gruppi";
+"compartido.detail.filter.label" = "Filtra per gruppo";
+"compartido.detail.hero.with.owed" = "%@ ti deve";
+"compartido.detail.hero.with.owe" = "Devi a %@";
+"compartido.detail.hero.with.settled" = "Con %@ siete pari";
+"compartido.detail.hero.in.owed" = "In %@ ti devono";
+"compartido.detail.hero.in.owe" = "In %@ devi";
+"compartido.detail.hero.in.settled" = "In %@ sei in pari";
+"compartido.detail.hero.youOweNothing" = "Non gli devi niente.";
+"compartido.detail.hero.theyOweNothing" = "Non ti deve niente.";
+"compartido.detail.hero.alsoYouOwe" = "E tu gli devi %@.";
+"compartido.detail.hero.alsoTheyOwe" = "E ti deve %@.";
+"compartido.detail.hero.onlyThisGroup" = "Solo questo gruppo.";
+"compartido.detail.hero.onlyNoGroup" = "Solo ciò che non è in un gruppo.";
+"compartido.detail.settle.all" = "Salda tutto";
+"compartido.detail.settle.allNote" = "Si registra un pagamento per ogni gruppo e valuta.";
+"compartido.detail.settle.pickGroupHint" = "Per confermare un pagamento o vedere i pagamenti di un gruppo, sceglilo in alto.";
+"compartido.detail.settle.sheetTitle" = "Salda tutto con %@";
+"compartido.detail.settle.sheetMessage" = "Verranno registrati %d pagamenti, uno per gruppo e valuta, come se li saldassi uno per uno.";
+"compartido.detail.settle.rowTheyPay" = "%1$@ ti paga %2$@";
+"compartido.detail.settle.rowYouPay" = "Paghi %2$@ a %1$@";
+"compartido.detail.settle.confirm" = "Registra %d pagamenti";
+"compartido.detail.settle.savedNotice" = "Hai registrato %d pagamenti con %@. Siete pari.";
+"compartido.detail.settle.failed" = "Non è stato possibile registrare tutti i pagamenti. Controlla ogni gruppo.";
+"compartido.detail.stats.totalTogether" = "Totale speso insieme";
+"compartido.detail.stats.byGroup" = "Per gruppo";
+"compartido.detail.stats.theyOwe" = "ti deve %@";
+"compartido.detail.stats.youOwe" = "gli devi %@";
+"compartido.detail.openHint" = "Apre ciò che condividi con questa persona";

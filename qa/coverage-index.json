@@ -4728,6 +4728,23 @@
       "coverage": "xcuitest:YalaUITests/CompartidoSeccionPersonasUITests + unit:YalaTests/CompartidoSeccionPersonas/CompartidoPersonasLogicTests,CompartidoChipLogicTests,CompartidoCableadoTests | 2026-11-26 (lote 1 de Compartido, 2.3): la pestaña Grupos se llama «Compartido» en los 16 idiomas sin cambiar de id; chips «Grupos | Personas» de Planificación; en los dos, el mismo «Te deben en total», la fila de captura y «Dividir una boleta»; Grupos igual que hoy; Personas con una tarjeta por persona (juntada por cuenta entre grupos, neto por moneda con las deudas de cada tarjeta de grupo, archivados incluidos) y «Ver liquidadas (N)» plegable; «Añadir persona» en la barra del chip Personas. Capturas claro/oscuro en CompartidoCapturasUITests. Device-QA en el ticket.",
       "owner": "frank",
       "lastVerified": "2026-11-26"
+    },
+    {
+      "area": "compartido-detalle-persona",
+      "codeGlobs": [
+        "Yala/App/Views/Compartido/CompartidoPersonDetail*.swift",
+        "Yala/App/Views/Compartido/CompartidoSettleAllSheet.swift",
+        "Yala/App/Logic/Compartido/CompartidoPersonDetail*.swift",
+        "Yala/App/Views/Groups/GroupRecordsView.swift",
+        "Yala/App/Views/Groups/GroupBalancesView.swift",
+        "Yala/App/Views/Groups/GroupStatsView.swift",
+        "Yala/App/ViewModels/GroupStatsViewModel.swift"
+      ],
+      "scenarioIDs": [],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/CompartidoDetallePersonaUITests + unit:YalaTests/CompartidoDetallePersona/CompartidoPersonDetailLogicTests,CompartidoDetallePersonaCableadoTests | 2026-11-26 (lote 2 de Compartido, 2.3): la tarjeta de Personas abre el detalle de la persona con «Gastos · Saldos · Estadísticas» y el filtro de grupo («Todos los grupos · <grupos> · Sin grupo») junto a la cifra; Gastos con la etiqueta de grupo; Saldos con el «Saldar» de siempre con un grupo elegido y «Saldar todo» con desglose (un pago por grupo y moneda, suma exacta) con todos; Estadísticas con alias entre grupos y «Por grupo». El detalle de grupo no pasa ninguna pieza nueva (cableado). Capturas claro/oscuro en CompartidoDetallePersonaCapturasUITests.",
+      "owner": "frank",
+      "lastVerified": "2026-11-26"
     }
   ]
 }
