@@ -55,6 +55,18 @@ enum ImageEntrySheetHeightLogic {
     /// altura empieza mucho más abajo (en el iPhone 14, ~370 pt; la grande, ~55 pt).
     static let largeSheetTopMax: CGFloat = 120
 
+    /// La hoja se ve grande: su borde de arriba, medido, está pegado a la barra de estado. Sin medida aún, no.
+    static func isLarge(sheetTop: CGFloat?) -> Bool {
+        guard let sheetTop else { return false }
+        return sheetTop <= largeSheetTopMax
+    }
+
+    /// Lo leído se pinta «en grande» (fondo de card del Panel y deslizar): con la hoja vista grande, o cuando la ventana
+    /// fuerza las hojas grandes.
+    static func showsLargePresentation(sheetTop: CGFloat?, usesLargeSheets: Bool) -> Bool {
+        usesLargeSheets || isLarge(sheetTop: sheetTop)
+    }
+
     // MARK: - Media altura de «Esto leí» (encargo del 2026-11-23)
 
     /// La media altura de la hoja personal de foto: la `.medium` de siempre salvo cuando no le cabe lo leído de un

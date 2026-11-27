@@ -67,6 +67,7 @@ struct GroupRecordsView: View {
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
     @State private var expenseToDelete: SplitExpense?
 
     var body: some View {
@@ -75,22 +76,23 @@ struct GroupRecordsView: View {
         // y el scroll entra y sale en el acto, porque lleva el título grande del grupo y fundido se fundiría con él.
         ZStack {
             if items.isEmpty {
-                // Un grupo recién creado es justo donde se apunta el primero: la fila también aquí.
-                VStack(spacing: DS.Spacing.none) {
-                    if let header {
-                        header
-                            .padding(.horizontal, DS.Spacing.lg)
-                            .padding(.top, DS.Spacing.sm)
+                // Un grupo recién creado es justo donde se apunta el primero: la fila también aquí. Con texto de
+                // accesibilidad o poco alto (girado) puede no caber, y entonces se desplaza en vez de cortarse por abajo
+                // (encargo del 27-nov-2026; `ViewThatFits` no lo eligió: medido girado a AX5, «Sin gastos» quedaba
+                // fuera). A tamaño normal en vertical, sin scroll: el título grande vive en el scroll de la rama con gastos.
+                Group {
+                    if dynamicTypeSize.isAccessibilitySize || verticalSizeClass == .compact {
+                        GeometryReader { proxy in
+                            ScrollView {
+                                emptyColumn
+                                    .frame(minHeight: proxy.size.height, alignment: .top)
+                            }
+                            .scrollBounceBehavior(.basedOnSize)
+                        }
+                    } else {
+                        emptyColumn
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                     }
-                    quickActions
-                        .padding(.horizontal, DS.Spacing.lg)
-                        .padding(.top, DS.Spacing.sm)
-                    YalaEmptyState(
-                        icon: "receipt",
-                        title: L10n.Groups.Expense.noExpenses,
-                        actionTitle: onInvite != nil ? L10n.Groups.Settings.invite : nil,
-                        action: onInvite
-                    )
                 }
                 .transition(.stateSwap)
                 // Sin gastos la fila está siempre a la vista: si el último se borró con el flotante fuera, se apaga.
@@ -101,6 +103,28 @@ struct GroupRecordsView: View {
             }
         }
         .animatesEmptyStateSwap(ids: items.prefix(4).map(\.id))
+    }
+
+    /// Sin gastos: la cabecera (persona), la fila de registro arriba, bajo los chips, y «Sin gastos», que se centra en el
+    /// alto que sobra (Jürgen, 27-nov-2026: centrada junto a «Sin gastos», la fila dejaba un hueco arriba).
+    private var emptyColumn: some View {
+        VStack(spacing: DS.Spacing.none) {
+            if let header {
+                header
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.top, DS.Spacing.sm)
+            }
+            quickActions
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.top, DS.Spacing.sm)
+            YalaEmptyState(
+                icon: "receipt",
+                title: L10n.Groups.Expense.noExpenses,
+                actionTitle: onInvite != nil ? L10n.Groups.Settings.invite : nil,
+                action: onInvite
+            )
+            .frame(maxHeight: .infinity)
+        }
     }
 
     @ViewBuilder

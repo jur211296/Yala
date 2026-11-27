@@ -85,6 +85,12 @@ struct ImageSelectionView: View {
     @State private var selectedDetent: PresentationDetent = ImageEntrySheetHeightLogic.estoLeiPartial
     /// El borde de arriba de la hoja en la ventana, medido: decide el fondo junto con los detents.
     @State private var sheetTop: CGFloat?
+    /// Deslizar una fila ya guardada pide confirmar el borrado de su registro, como «Eliminar» de un registro (encargo del
+    /// 27-nov-2026). Título y mensaje se copian al abrir la pregunta: si el registro se borra, no se vuelven a leer.
+    @State private var draftAwaitingRecordDelete: InboxDraft?
+    @State private var showsRecordDeleteConfirmation = false
+    @State private var recordDeleteTitle = ""
+    @State private var recordDeleteMessage = ""
 
     @State private var selectedPhotos: [PhotosPickerItem] = []
     @State private var showPhotosPicker = false
@@ -163,6 +169,17 @@ struct ImageSelectionView: View {
         .dsAnimation(.easeInOut(duration: 0.25), value: phase, reduceMotion: reduceMotion)
         // Dónde está la hoja de verdad: a media altura lleva glass aunque solo se ofrezca grande (Jürgen, 25-nov-2026).
         .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).minY } action: { sheetTop = $0 }
+        // Vista grande con el detent de media altura (el teclado la sube, o la persona la estira), el fondo del sistema es
+        // gris y la tarjeta de lo leído salía del mismo gris: la captura de Jürgen del 27-nov-2026. Debajo va el fondo
+        // sólido del tema, encendido solo entonces. Una capa fija que cambia de opacidad y no otra variante de
+        // `yalaScreenBackground`: cambiar de variante cambia la estructura de la vista y la tarjeta se rehacía al subir el
+        // teclado, sin el campo en edición (medido con `XNativaHojaFotoUITests`).
+        .background {
+            theme.background
+                .ignoresSafeArea()
+                .opacity(isLargePresentation ? 1 : 0)
+                .accessibilityHidden(true)
+        }
         .yalaScreenBackground(
             ImageEntrySheetHeightLogic.background(
                 detents: sheetDetents,
@@ -746,6 +763,11 @@ struct ImageSelectionView: View {
                             VoiceDraftReviewCard(draft: draft, editsNoteInPlace: true) {
                                 openEditor(draft)
                             }
+                            .estoLeiDeslizable(
+                                EstoLeiDeslizarLogic.accion(for: draft),
+                                isEnabled: isLargePresentation,
+                                cornerRadius: EstoLeiCardLayout.cornerRadius(large: true)
+                            ) { swiped(draft, $0) }
                         }
                     }
 
@@ -775,6 +797,9 @@ struct ImageSelectionView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             .scrollBounceBehavior(.basedOnSize)
+            // En grande: fondo de card del Panel y deslizar, en las dos formas de lo leído (encargo del 27-nov-2026).
+            .environment(\.estoLeiEnGrande, isLargePresentation)
+            .environment(\.estoLeiAlDeslizar, swiped)
 
             if saveFailed {
                 Text(L10n.Chat.Draft.saveFailedGeneric)
@@ -804,6 +829,100 @@ struct ImageSelectionView: View {
         // la miniatura (encargo del 2026-11-23).
         .padding(.top, EstoLeiCardLayout.airAboveFirstCard)
         .onChange(of: drafts.map(\.persistentModelID), initial: true) { _, ids in selection.sync(with: ids) }
+        // La pregunta de «Eliminar» de un registro (`RecordDeleteConfirmationText`), centrada y con Cancelar a la vista.
+        .alert(recordDeleteTitle, isPresented: $showsRecordDeleteConfirmation) {
+            Button(L10n.Action.cancel, role: .cancel) { draftAwaitingRecordDelete = nil }
+            Button(L10n.Action.delete, role: .destructive) { confirmRecordDelete() }
+        } message: {
+            Text(recordDeleteMessage)
+        }
+    }
+
+    // MARK: - Deslizar (encargo del 27-nov-2026)
+
+    /// Lo leído se pinta en grande: con la hoja vista grande, el fondo de card del Panel y el deslizar.
+    private var isLargePresentation: Bool {
+        ImageEntrySheetHeightLogic.showsLargePresentation(sheetTop: sheetTop, usesLargeSheets: usesLargeSheets)
+    }
+
+    private func swiped(_ draft: InboxDraft, _ accion: EstoLeiDeslizarLogic.Accion) {
+        switch accion {
+        case .descartar: discardSwiped(draft)
+        case .eliminar: askToDeleteRecord(of: draft)
+        }
+    }
+
+    /// Como «Descartar» del editor: a Archivados, con «Deshacer» en el aviso de siempre, sin pregunta.
+    private func discardSwiped(_ draft: InboxDraft) {
+        guard !draft.isDeleted, draft.modelContext != nil, draft.status == .pending else { return }
+        autoCloseTask?.cancel()
+        isClosingAlone = false
+        let service = DraftService.shared
+        let context = modelContext
+        service.setContext(context)
+        do {
+            try service.rejectDraft(draft)
+            DS.Haptic.warning()
+            DraftDiscardUndoNotice.show {
+                // Si en esos segundos se borró o cambió de estado por otro camino, no hay nada que deshacer.
+                guard !draft.isDeleted, draft.status == .rejected else { return }
+                service.setContext(context)
+                do {
+                    try service.returnToPending(draft)
+                    DS.Haptic.success()
+                } catch {
+                    #if DEBUG
+                    print("ImageSelectionView: Error undoing swiped discard: \(error)")
+                    #endif
+                }
+            }
+            afterSwipeRemoval()
+        } catch {
+            #if DEBUG
+            print("ImageSelectionView: Error discarding swiped draft: \(error)")
+            #endif
+        }
+    }
+
+    private func askToDeleteRecord(of draft: InboxDraft) {
+        guard !draft.isDeleted, draft.modelContext != nil, let record = draft.approvedTransaction,
+              !record.isDeleted, record.modelContext != nil
+        else { return }
+        recordDeleteTitle = RecordDeleteConfirmationText.title(for: record, preferences: appPreferences)
+        recordDeleteMessage = RecordDeleteConfirmationText.message(for: record)
+        draftAwaitingRecordDelete = draft
+        showsRecordDeleteConfirmation = true
+    }
+
+    private func confirmRecordDelete() {
+        let draft = draftAwaitingRecordDelete
+        draftAwaitingRecordDelete = nil
+        guard let draft, !draft.isDeleted, draft.modelContext != nil, let record = draft.approvedTransaction,
+              !record.isDeleted, record.modelContext != nil
+        else { return }
+        let id = draft.persistentModelID
+        do {
+            try EstoLeiBorrarRegistro.borrar(record, context: modelContext)
+            // Borrado al confirmarlo (mapa de `DS.Haptic`).
+            DS.Haptic.warning()
+            drafts.removeAll { $0.persistentModelID == id }
+            afterSwipeRemoval()
+        } catch {
+            #if DEBUG
+            print("ImageSelectionView: Error deleting the record of a swiped draft: \(error)")
+            #endif
+        }
+    }
+
+    /// Tras quitar una fila: sin filas, la hoja se cierra; con todo lo que queda guardado, se cierra como al guardar.
+    private func afterSwipeRemoval() {
+        drafts.removeAll { $0.isDeleted || $0.modelContext == nil || $0.status == .rejected }
+        guard phase == .review else { return }
+        switch EstoLeiDeslizarLogic.despuesDeQuitar(filasRestantes: rowCount, pendientesRestantes: pendingDrafts.count) {
+        case .cerrarHoja: dismiss()
+        case .cerrarComoAlGuardar: closeIfEverythingIsSaved()
+        case .seguir: break
+        }
     }
 
     /// Con varios y alguno sin marcar, la hoja dice que esos siguen en la Bandeja; si no, el aviso de siempre.
