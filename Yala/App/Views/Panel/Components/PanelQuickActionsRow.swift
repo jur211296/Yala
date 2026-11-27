@@ -58,6 +58,11 @@ struct PanelQuickActionsRow: View {
     /// antes se recorta texto o se deja que el scroll horizontal haga su trabajo.
     private static let pillHeight: CGFloat = 44
 
+    /// La sombra pequeña del DS como estilo del relleno de la píldora.
+    private static let pillShadow: ShadowStyle = .drop(
+        color: DS.Shadow.small.color, radius: DS.Shadow.small.radius, x: DS.Shadow.small.x, y: DS.Shadow.small.y
+    )
+
     /// Alto común del icono en las píldoras con palabra debajo (Voz y Foto). La onda y la foto tienen alturas de glifo
     /// distintas y, sin un marco igual, «Voz» y «Foto» quedaban a alturas diferentes (Jürgen, 2026-10-17). Escala con el
     /// texto, para que con letra grande el icono no se quede pequeño respecto a su palabra.
@@ -301,11 +306,13 @@ struct PanelQuickActionsRow: View {
             }
             .frame(minHeight: Self.pillHeight)
             .background {
+                // La sombra va en el relleno de la cápsula, no en el botón: la de la vista se calcula fuera de pantalla
+                // en cada fotograma del scroll; la del relleno se dibuja con la forma (lote 5 de eficiencia).
                 if isPrimary {
-                    Capsule().fill(theme.accent)
+                    Capsule().fill(theme.accent.shadow(Self.pillShadow))
                 } else {
                     Capsule()
-                        .fill(theme.card)
+                        .fill(theme.card.shadow(Self.pillShadow))
                         .overlay {
                             if usaDorado {
                                 Capsule().strokeBorder(Color.proGoldOnCard, lineWidth: 1.5)
@@ -318,12 +325,6 @@ struct PanelQuickActionsRow: View {
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
-        .shadow(
-            color: DS.Shadow.small.color,
-            radius: DS.Shadow.small.radius,
-            x: DS.Shadow.small.x,
-            y: DS.Shadow.small.y
-        )
         // VoiceOver lee lo mismo que se ve: «Voz», «Foto» (el nombre accesible contiene la etiqueta visible).
         .accessibilityLabel(text ?? caption ?? "")
         .accessibilityIdentifier(identifier)

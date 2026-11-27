@@ -97,12 +97,11 @@ struct FABStackView: View {
 
                 // Con poco alto, en fila: uno encima del otro subían hasta la cabecera y tapaban el selector de
                 // Registros y el importe de la primera fila (UX 2.2 · L15-14). Mismos hijos en las dos formas.
-                fabLayout {
-                    if chatFABVisible && !showFABMenu {
-                        aiFAB.transition(Self.fabScaleTransition)
-                    }
-
-                    transactionFAB(background: fabBackground)
+                // Los dos círculos de cristal en un solo contenedor: el sistema los compone en una pasada en vez de una
+                // por botón (lote 5 de eficiencia). El espaciado del contenedor queda por debajo del hueco entre
+                // botones, así que no se funden entre sí.
+                GlassEffectContainer(spacing: DS.Spacing.xs) {
+                    fabButtons(fabBackground)
                 }
             }
             // Implícita: en una pestaña un `withAnimation` no anima (card oxyr).
@@ -135,6 +134,16 @@ struct FABStackView: View {
             missingStepFAB
         } else {
             disabledFAB(background: fabBackground)
+        }
+    }
+
+    private func fabButtons(_ fabBackground: Color) -> some View {
+        fabLayout {
+            if chatFABVisible && !showFABMenu {
+                aiFAB.transition(Self.fabScaleTransition)
+            }
+
+            transactionFAB(background: fabBackground)
         }
     }
 

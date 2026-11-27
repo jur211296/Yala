@@ -1,0 +1,2 @@
+Panel|64,790|
+Registros|190,790|

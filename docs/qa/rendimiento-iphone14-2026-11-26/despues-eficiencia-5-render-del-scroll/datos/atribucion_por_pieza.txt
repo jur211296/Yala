@@ -1,0 +1,59 @@
+Atribución en el iPhone 14 (ruta Panel + Registros, 3 rondas). Copia experimental con todos los cambios nuevos y
+un interruptor -perfTempRenderViejo <pieza> que devuelve esa pieza a como estaba (o -perfTempRenderSonda).
+
+== none
+  Panel                      mediana   29  máx   54  tirones/s  1.50  (de render 0.56)
+  Registros                  mediana   18  máx   44  tirones/s  2.65  (de render 0.19)
+  TODAS                      mediana   22  máx   54  tirones/s  2.07  (de render 0.38)
+== todo
+  Panel                      mediana   44  máx  114  tirones/s  2.62  (de render 0.19)
+  Registros                  mediana   68  máx  114  tirones/s  2.30  (de render 0.58)
+  TODAS                      mediana   61  máx  114  tirones/s  2.46  (de render 0.38)
+== lr
+  Panel                      mediana   32  máx   55  tirones/s  1.78  (de render 0.59)
+  Registros                  mediana   19  máx   52  tirones/s  2.14  (de render 0.58)
+  TODAS                      mediana   26  máx   55  tirones/s  1.96  (de render 0.59)
+== sc
+  Panel                      mediana   28  máx   60  tirones/s  1.64  (de render 0.55)
+  Registros                  mediana   18  máx   44  tirones/s  2.55  (de render 0.18)
+  TODAS                      mediana   23  máx   60  tirones/s  2.10  (de render 0.36)
+== qa
+  Panel                      mediana   36  máx   87  tirones/s  2.07  (de render 0.38)
+  Registros                  mediana   18  máx   80  tirones/s  2.70  (de render 0.77)
+  TODAS                      mediana   25  máx   87  tirones/s  2.38  (de render 0.57)
+== fab
+  Panel                      mediana   37  máx   70  tirones/s  1.89  (de render 0.57)
+  Registros                  mediana   32  máx   47  tirones/s  3.27  (de render 0.38)
+  TODAS                      mediana   32  máx   70  tirones/s  2.57  (de render 0.48)
+== rq
+  Panel                      mediana   30  máx   54  tirones/s  1.69  (de render 0.19)
+  Registros                  mediana   18  máx   45  tirones/s  2.29  (de render 0.19)
+  TODAS                      mediana   23  máx   54  tirones/s  1.99  (de render 0.19)
+== ch
+  Panel                      mediana   30  máx   56  tirones/s  1.87  (de render 0.42)
+  Registros                  mediana   19  máx   55  tirones/s  1.81  (de render 0.20)
+  TODAS                      mediana   25  máx   56  tirones/s  1.84  (de render 0.31)
+== sec
+  Panel                      mediana   30  máx   56  tirones/s  1.80  (de render 0.40)
+  Registros                  mediana   18  máx   42  tirones/s  2.90  (de render 0.00)
+  TODAS                      mediana   23  máx   56  tirones/s  2.36  (de render 0.20)
+== pie
+  Panel                      mediana   30  máx   56  tirones/s  1.88  (de render 0.63)
+  Registros                  mediana   18  máx   39  tirones/s  2.48  (de render 0.38)
+  TODAS                      mediana   22  máx   56  tirones/s  2.19  (de render 0.50)
+== sonda/conjunto reducido: base
+  Panel                      mediana   32  máx   72  tirones/s  1.74  (de render 0.39)
+  Registros                  mediana   52  máx   73  tirones/s  1.83  (de render 0.37)
+  TODAS                      mediana   42  máx   73  tirones/s  1.79  (de render 0.38)
+== sonda/conjunto reducido: fabsh
+  Panel                      mediana   32  máx   66  tirones/s  2.10  (de render 0.38)
+  Registros                  mediana   52  máx   77  tirones/s  2.52  (de render 0.39)
+  TODAS                      mediana   40  máx   77  tirones/s  2.31  (de render 0.39)
+== sonda/conjunto reducido: sinfab
+  Panel                      mediana   32  máx   66  tirones/s  3.18  (de render 0.20)
+  Registros                  mediana   52  máx   74  tirones/s  1.99  (de render 0.20)
+  TODAS                      mediana   41  máx   74  tirones/s  2.58  (de render 0.20)
+== conjunto final (fila + píldoras + FAB)
+  Panel                      mediana   31  máx   66  tirones/s  1.14  (de render 0.19)
+  Registros                  mediana   18  máx   48  tirones/s  2.57  (de render 0.18)
+  TODAS                      mediana   23  máx   66  tirones/s  1.87  (de render 0.19)

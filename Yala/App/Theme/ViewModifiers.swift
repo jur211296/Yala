@@ -189,14 +189,18 @@ struct ListRowCardModifier: ViewModifier {
         content
             .padding(.vertical, DS.ListRow.paddingV)
             .padding(.horizontal, DS.ListRow.paddingH)
-            .background(.thCard)
-            .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
-            .shadow(
-                color: .black.opacity(theme.shadowOpacity),
-                radius: DS.ListRow.shadowRadius,
-                x: 0,
-                y: DS.ListRow.shadowY
-            )
+            // Fondo y sombra dibujados con la forma, sin recortar el contenido: la sombra de una vista recortada se
+            // calcula fuera de pantalla en cada fotograma del scroll, una vez por fila (lote 5 de eficiencia). En el
+            // tema claro, el contorno de `.thCard` lo recortaba el `clipShape`; aquí va el color liso, igual que se veía.
+            .background {
+                RoundedRectangle(cornerRadius: radius, style: .continuous)
+                    .fill(theme.card.shadow(.drop(
+                        color: .black.opacity(theme.shadowOpacity),
+                        radius: DS.ListRow.shadowRadius,
+                        x: 0,
+                        y: DS.ListRow.shadowY
+                    )))
+            }
     }
 }
 
