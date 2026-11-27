@@ -4767,6 +4767,22 @@
       "coverage": "xcuitest:YalaUITests/CompartidoInvitarYEntradaUITests + unit:YalaTests/CompartidoInvitarYEntrada/CompartidoInvitarYEntradaLogicTests,CompartidoInvitarYEntradaCableadoTests,CompartidoAltaPersonaTransporteTests | 2026-11-26 (lote 3 de Compartido, 2.3): sin grupos, la pestaña enseña chips, fila de captura y un vacío por chip (la cuenta se pide al crear); «¿Con quién?» en el selector de Grupos con «Escribir un nombre» para Nuevo gasto, Voz, Foto e Yala IA; «Añadir persona»; hoja de persona añadida; la invitación a una persona («X te invita a Yala», k=p, sin aprobación: g38_01 en staging con su banco `qa/cloud/g38_01-remote.sh staging test`). El alta real y la entrada por el enlace necesitan servidor: device-QA en el ticket.",
       "owner": "frank",
       "lastVerified": "2026-11-26"
+    },
+    {
+      "area": "pulido-grupos-vacio-y-esto-lei",
+      "codeGlobs": [
+        "Yala/App/Logic/PulidoGruposVacioEstoLei/*.swift",
+        "Yala/App/Views/Groups/GroupRecordsView.swift",
+        "Yala/App/Views/Image/ImageEntrySheetHeight.swift",
+        "Yala/App/Views/Image/ImageSelectionView.swift",
+        "Yala/App/Views/Voice/MultiDraftReviewList.swift",
+        "Yala/App/Views/Voice/VoiceDraftReviewCard.swift"
+      ],
+      "scenarioIDs": [],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/PulidoGruposVacioEstoLeiUITests + unit:YalaTests/PulidoGruposVacioEstoLei/EstoLeiDeslizarLogicTests,PulidoGruposVacioEstoLeiWiringTests | 2026-11-27 (pulido de 2.3): grupo y persona sin gastos con la fila de registro bajo los chips y «Sin gastos» centrado en lo que sobra (también girado a AX5, desplazable); «Esto leí» vista en grande con el fondo de card de los widgets del Panel y deslizar: descartar una lectura nueva, eliminar el registro de una guardada con su pregunta, y la última o la única cierran la hoja.",
+      "owner": "frank",
+      "lastVerified": "2026-11-27"
     }
   ]
 }

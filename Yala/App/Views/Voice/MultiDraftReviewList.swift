@@ -26,6 +26,11 @@ struct MultiDraftReviewList: View {
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.yalaTheme) private var theme
+    /// La hoja de la foto se ve grande: cada bloque lleva el fondo de card del Panel y las filas se deslizan para
+    /// descartar o eliminar (encargo del 27-nov-2026). A media altura, y en la voz, como siempre.
+    @Environment(\.estoLeiEnGrande) private var largePresentation
+    @Environment(\.estoLeiAlDeslizar) private var onSwipe
 
     /// La fila desplegada (una a la vez).
     @State private var expandedID: PersistentIdentifier?
@@ -60,6 +65,8 @@ struct MultiDraftReviewList: View {
         expandedID = EstoLeiLogic.expandedAfterChange(
             current: expandedID, items, selection, order: Logic.days(items).flatMap(\.ids))
     }
+
+    private var blockRadius: CGFloat { EstoLeiCardLayout.cornerRadius(large: largePresentation) }
 
     private func toggleExpansion(_ id: PersistentIdentifier) {
         expandedID = expandedID == id ? nil : id
@@ -241,14 +248,31 @@ struct MultiDraftReviewList: View {
                             onToggleExpanded: { toggleExpansion(id) },
                             onOpenDetails: { onOpenDetails(draft) }
                         )
+                        // Deslizar para descartar o eliminar, solo en grande. La fila lleva el color del bloque debajo
+                        // para tapar el botón que asoma; el bloque ya la recorta a su forma.
+                        .background(largePresentation && onSwipe != nil ? theme.card : Color.clear)
+                        .estoLeiDeslizable(
+                            EstoLeiDeslizarLogic.accion(for: draft),
+                            isEnabled: largePresentation && onSwipe != nil,
+                            cornerRadius: 0
+                        ) { accion in onSwipe?(draft, accion) }
                     }
                 }
             }
             .background(
-                RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
+                RoundedRectangle(cornerRadius: blockRadius, style: .continuous)
                     .fill(.thCard)
             )
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: blockRadius, style: .continuous))
+            // En grande, el borde de los widgets del Panel (`solidCard`).
+            .overlay {
+                if largePresentation {
+                    RoundedRectangle(cornerRadius: blockRadius, style: .continuous)
+                        .stroke(theme.cardBorder, lineWidth: 1)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
+            }
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("multi_review_day")

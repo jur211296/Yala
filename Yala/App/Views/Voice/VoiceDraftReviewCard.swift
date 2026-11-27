@@ -28,6 +28,9 @@ enum EstoLeiCardLayout {
     /// El margen extra a cada lado del contenido: el del chevron a la derecha y el mismo a la izquierda, para que lo de
     /// dentro siga centrado en la tarjeta.
     static let chevronColumn = DS.Spacing.xl
+    /// Con la hoja en grande, la tarjeta es la de los widgets del Panel (Jürgen, 27-nov-2026): su radio, su relleno y su
+    /// borde del tema. A media altura, la de siempre sobre el glass.
+    static func cornerRadius(large: Bool) -> CGFloat { large ? DS.Panel.widgetRadius : DS.Radius.card }
     static let edge = Color(uiColor: UIColor { traits in // A11Y-DM: contorno propio por modo, sube con «Aumentar contraste»
         let high = traits.accessibilityContrast == .high
         return traits.userInterfaceStyle == .dark
@@ -54,6 +57,9 @@ struct VoiceDraftReviewCard: View {
 
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.yalaTheme) private var theme
+    /// La hoja de la foto se ve grande: la tarjeta lleva el fondo de card del Panel (encargo del 27-nov-2026).
+    @Environment(\.estoLeiEnGrande) private var largePresentation
 
     @Query(filter: #Predicate<Account> { !$0.isArchived }) private var allAccounts: [Account]
     @Query(filter: #Predicate<Subcategory> { $0.isVisible == true }) private var allSubcategories: [Subcategory]
@@ -72,6 +78,7 @@ struct VoiceDraftReviewCard: View {
 
     private var isSaved: Bool { draft.status == .approved }
     private var isRow: Bool { style == .row }
+    private var cardRadius: CGFloat { EstoLeiCardLayout.cornerRadius(large: largePresentation) }
 
     var body: some View {
         // La tarjeta puede volver a pintarse con su borrador ya borrado (desde «Ver todo»): no se lee nada de él.
@@ -154,17 +161,25 @@ struct VoiceDraftReviewCard: View {
             }
         }
         .background(
-            RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
+            RoundedRectangle(cornerRadius: cardRadius, style: .continuous)
                 .fill(.thCard)
         )
         // Sin contorno, sobre el glass de la hoja a media altura no se veía dónde terminaba la tarjeta por arriba
-        // (encargo del 2026-11-23). Va encima del relleno, dentro del borde: no cambia el tamaño de la tarjeta.
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
-                .strokeBorder(EstoLeiCardLayout.edge, lineWidth: EstoLeiCardLayout.edgeWidth)
-                .allowsHitTesting(false)
-                .accessibilityHidden(true)
-        )
+        // (encargo del 2026-11-23). Va encima del relleno, dentro del borde: no cambia el tamaño de la tarjeta. En grande,
+        // el borde de los widgets del Panel (`solidCard`), sobre el fondo sólido de la hoja.
+        .overlay {
+            if largePresentation {
+                RoundedRectangle(cornerRadius: cardRadius, style: .continuous)
+                    .strokeBorder(theme.cardBorder, lineWidth: EstoLeiCardLayout.edgeWidth)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            } else {
+                RoundedRectangle(cornerRadius: cardRadius, style: .continuous)
+                    .strokeBorder(EstoLeiCardLayout.edge, lineWidth: EstoLeiCardLayout.edgeWidth)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            }
+        }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("voice_draft_card")
     }
