@@ -21,12 +21,16 @@ enum FinancialScoreCopy {
     }
 
     /// Lo que va mal y la nota no ve, en una línea. `nil` si no hay nada.
+    ///
+    /// Cada texto sale una vez: con tres cuentas en negativo que se llaman igual, la tarjeta decía «Cuenta Principal en
+    /// negativo» tres veces seguidas (barrido de QA antes de la build 12 de 2.3, iPhone 14, 27-nov-2026).
     static func unseenLine(for score: FinancialScore, isExpensesOnlyMode: Bool) -> String? {
+        var seen = Set<String>()
         let items = score.alerts.unseen(isExpensesOnlyMode: isExpensesOnlyMode).map { item in
             switch item {
             case .negativeAccount(let name): return L10n.Panel.Health.unseenNegativeAccount(name)
             }
-        }
+        }.filter { seen.insert($0).inserted }
         guard !items.isEmpty else { return nil }
         return L10n.Panel.Health.unseen(items.joined(separator: " · "))
     }
