@@ -3647,7 +3647,7 @@
 "panel.widgetInfo.categoriesPie.smallHowQ" = "如何操作?";
 
 /* Panel Polish #2 — CategoriesPie S: respuesta a 'cómo interactúo' */
-"panel.widgetInfo.categoriesPie.smallHowA" = "点击气泡可按该类别筛选面板其余内容。长按气泡可查看完整名称。";
+"panel.widgetInfo.categoriesPie.smallHowA" = "在面板中,点击气泡可只看该类别,再点一次即可恢复全部显示。在分布中,点击会打开该类别的详情。长按气泡可查看完整名称。";
 
 /* Panel Polish #2 — CategoriesPie L: pregunta '¿Qué estás viendo?' */
 "panel.widgetInfo.categoriesPie.largeWhatQ" = "你看到了什么?";
@@ -3659,7 +3659,7 @@
 "panel.widgetInfo.categoriesPie.largeHowQ" = "如何与图表互动?";
 
 /* Panel Polish #2 — CategoriesPie L: respuesta a 'cómo interactúo' */
-"panel.widgetInfo.categoriesPie.largeHowA" = "点击环形图的某一段、气泡或图例中的一行,可按该类别筛选面板其余内容。长按气泡可查看完整名称。";
+"panel.widgetInfo.categoriesPie.largeHowA" = "点击环形图的某一段、气泡或图例中的一行。在面板中会只显示该类别,再点一次即可恢复全部显示;在分布中会打开该类别的详情。长按气泡可查看完整名称。";
 
 /* Panel Polish #2 — Title sheet pedagógico SubcategoriesPie */
 "panel.widgetInfo.subcategoriesPie.title" = "按子类别分布";
@@ -3683,7 +3683,7 @@
 "panel.widgetInfo.subcategoriesPie.smallHowQ" = "如何操作?";
 
 /* Panel Polish #2 — SubcategoriesPie S: respuesta */
-"panel.widgetInfo.subcategoriesPie.smallHowA" = "点击气泡可按该子类别筛选面板其余内容。长按气泡可查看完整名称。";
+"panel.widgetInfo.subcategoriesPie.smallHowA" = "点击气泡可只看该子类别,再点一次即可恢复全部显示。长按气泡可查看完整名称。";
 
 /* Panel Polish #2 — SubcategoriesPie L: pregunta */
 "panel.widgetInfo.subcategoriesPie.largeWhatQ" = "你看到了什么?";
@@ -3695,7 +3695,7 @@
 "panel.widgetInfo.subcategoriesPie.largeHowQ" = "如何与图表互动?";
 
 /* Panel Polish #2 — SubcategoriesPie L: respuesta */
-"panel.widgetInfo.subcategoriesPie.largeHowA" = "点击环形图的某一段、气泡或图例中的一行,可按该子类别筛选面板其余内容。长按气泡可查看完整名称。";
+"panel.widgetInfo.subcategoriesPie.largeHowA" = "点击环形图的某一段、气泡或图例中的一行,可只看该子类别,再点一次即可恢复全部显示。长按气泡可查看完整名称。";
 
 /* Panel Polish #2 — Title sheet pedagógico TagsPie */
 "panel.widgetInfo.tagsPie.title" = "按标签分布";
@@ -3719,7 +3719,7 @@
 "panel.widgetInfo.tagsPie.smallHowQ" = "如何操作?";
 
 /* Panel Polish #2 — TagsPie S: respuesta */
-"panel.widgetInfo.tagsPie.smallHowA" = "点击气泡可按该标签筛选面板其余内容。长按气泡可查看完整名称。";
+"panel.widgetInfo.tagsPie.smallHowA" = "点击气泡可只看该标签,再点一次即可恢复全部显示。长按气泡可查看完整名称。";
 
 /* Panel Polish #2 — TagsPie L: pregunta */
 "panel.widgetInfo.tagsPie.largeWhatQ" = "你看到了什么?";
@@ -3731,7 +3731,7 @@
 "panel.widgetInfo.tagsPie.largeHowQ" = "如何与图表互动?";
 
 /* Panel Polish #2 — TagsPie L: respuesta */
-"panel.widgetInfo.tagsPie.largeHowA" = "点击环形图的某一段、气泡或图例中的一行,可按该标签筛选面板其余内容。长按气泡可查看完整名称。";
+"panel.widgetInfo.tagsPie.largeHowA" = "点击环形图的某一段、气泡或图例中的一行,可只看该标签,再点一次即可恢复全部显示。长按气泡可查看完整名称。";
 
 /* Panel Polish #2 — Title sheet pedagógico ExpensesByNeed */
 "panel.widgetInfo.expensesByNeed.title" = "按需求分布";

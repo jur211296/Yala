@@ -3647,7 +3647,7 @@
 "panel.widgetInfo.categoriesPie.smallHowQ" = "Jak z tym pracować?";
 
 /* Panel Polish #2 — CategoriesPie S: respuesta a 'cómo interactúo' */
-"panel.widgetInfo.categoriesPie.smallHowA" = "Stuknij w bąbel, aby przefiltrować resztę Panelu według tej kategorii. Przytrzymaj bąbel, aby zobaczyć pełną nazwę.";
+"panel.widgetInfo.categoriesPie.smallHowA" = "W Panelu stuknij w bąbel, aby zobaczyć tylko tę kategorię; stuknij go ponownie, aby znów zobaczyć wszystko. W Rozkładzie otwiera on szczegóły kategorii. Przytrzymaj bąbel, aby zobaczyć pełną nazwę.";
 
 /* Panel Polish #2 — CategoriesPie L: pregunta '¿Qué estás viendo?' */
 "panel.widgetInfo.categoriesPie.largeWhatQ" = "Co widzisz?";
@@ -3659,7 +3659,7 @@
 "panel.widgetInfo.categoriesPie.largeHowQ" = "Jak działa wykres?";
 
 /* Panel Polish #2 — CategoriesPie L: respuesta a 'cómo interactúo' */
-"panel.widgetInfo.categoriesPie.largeHowA" = "Stuknij w fragment pączka, bąbel lub wiersz legendy, aby przefiltrować resztę Panelu według tej kategorii. Przytrzymaj bąbel, aby zobaczyć pełną nazwę.";
+"panel.widgetInfo.categoriesPie.largeHowA" = "Stuknij w fragment pączka, bąbel lub wiersz legendy. W Panelu zobaczysz tylko tę kategorię; stuknij ponownie, aby znów zobaczyć wszystko. W Rozkładzie otworzą się szczegóły kategorii. Przytrzymaj bąbel, aby zobaczyć pełną nazwę.";
 
 /* Panel Polish #2 — Title sheet pedagógico SubcategoriesPie */
 "panel.widgetInfo.subcategoriesPie.title" = "Rozkład według podkategorii";
@@ -3683,7 +3683,7 @@
 "panel.widgetInfo.subcategoriesPie.smallHowQ" = "Jak z tym pracować?";
 
 /* Panel Polish #2 — SubcategoriesPie S: respuesta */
-"panel.widgetInfo.subcategoriesPie.smallHowA" = "Stuknij w bąbel, aby przefiltrować resztę Panelu według tej podkategorii. Przytrzymaj bąbel, aby zobaczyć pełną nazwę.";
+"panel.widgetInfo.subcategoriesPie.smallHowA" = "Stuknij w bąbel, aby zobaczyć tylko tę podkategorię; stuknij go ponownie, aby znów zobaczyć wszystko. Przytrzymaj bąbel, aby zobaczyć pełną nazwę.";
 
 /* Panel Polish #2 — SubcategoriesPie L: pregunta */
 "panel.widgetInfo.subcategoriesPie.largeWhatQ" = "Co widzisz?";
@@ -3695,7 +3695,7 @@
 "panel.widgetInfo.subcategoriesPie.largeHowQ" = "Jak działa wykres?";
 
 /* Panel Polish #2 — SubcategoriesPie L: respuesta */
-"panel.widgetInfo.subcategoriesPie.largeHowA" = "Stuknij w fragment pączka, bąbel lub wiersz legendy, aby przefiltrować resztę Panelu według tej podkategorii. Przytrzymaj bąbel, aby zobaczyć pełną nazwę.";
+"panel.widgetInfo.subcategoriesPie.largeHowA" = "Stuknij w fragment pączka, bąbel lub wiersz legendy, aby zobaczyć tylko tę podkategorię; stuknij ponownie, aby znów zobaczyć wszystko. Przytrzymaj bąbel, aby zobaczyć pełną nazwę.";
 
 /* Panel Polish #2 — Title sheet pedagógico TagsPie */
 "panel.widgetInfo.tagsPie.title" = "Rozkład według tagów";
@@ -3719,7 +3719,7 @@
 "panel.widgetInfo.tagsPie.smallHowQ" = "Jak z tym pracować?";
 
 /* Panel Polish #2 — TagsPie S: respuesta */
-"panel.widgetInfo.tagsPie.smallHowA" = "Stuknij w bąbel, aby przefiltrować resztę Panelu według tego tagu. Przytrzymaj bąbel, aby zobaczyć pełną nazwę.";
+"panel.widgetInfo.tagsPie.smallHowA" = "Stuknij w bąbel, aby zobaczyć tylko ten tag; stuknij go ponownie, aby znów zobaczyć wszystko. Przytrzymaj bąbel, aby zobaczyć pełną nazwę.";
 
 /* Panel Polish #2 — TagsPie L: pregunta */
 "panel.widgetInfo.tagsPie.largeWhatQ" = "Co widzisz?";
@@ -3731,7 +3731,7 @@
 "panel.widgetInfo.tagsPie.largeHowQ" = "Jak działa wykres?";
 
 /* Panel Polish #2 — TagsPie L: respuesta */
-"panel.widgetInfo.tagsPie.largeHowA" = "Stuknij w fragment pączka, bąbel lub wiersz legendy, aby przefiltrować resztę Panelu według tego tagu. Przytrzymaj bąbel, aby zobaczyć pełną nazwę.";
+"panel.widgetInfo.tagsPie.largeHowA" = "Stuknij w fragment pączka, bąbel lub wiersz legendy, aby zobaczyć tylko ten tag; stuknij ponownie, aby znów zobaczyć wszystko. Przytrzymaj bąbel, aby zobaczyć pełną nazwę.";
 
 /* Panel Polish #2 — Title sheet pedagógico ExpensesByNeed */
 "panel.widgetInfo.expensesByNeed.title" = "Rozkład według potrzeb";

@@ -3647,7 +3647,7 @@
 "panel.widgetInfo.categoriesPie.smallHowQ" = "Hoe gebruik ik dit?";
 
 /* Panel Polish #2 — CategoriesPie S: respuesta a 'cómo interactúo' */
-"panel.widgetInfo.categoriesPie.smallHowA" = "Tik op een bol om de rest van het Panel te filteren op die categorie. Houd een bol ingedrukt om de volledige naam te zien.";
+"panel.widgetInfo.categoriesPie.smallHowA" = "Tik in het Panel op een bol om alleen die categorie te zien; tik er nog eens op om weer alles te zien. In Verdeling opent hij de details van de categorie. Houd een bol ingedrukt om de volledige naam te zien.";
 
 /* Panel Polish #2 — CategoriesPie L: pregunta '¿Qué estás viendo?' */
 "panel.widgetInfo.categoriesPie.largeWhatQ" = "Wat zie je?";
@@ -3659,7 +3659,7 @@
 "panel.widgetInfo.categoriesPie.largeHowQ" = "Hoe gebruik ik de grafiek?";
 
 /* Panel Polish #2 — CategoriesPie L: respuesta a 'cómo interactúo' */
-"panel.widgetInfo.categoriesPie.largeHowA" = "Tik op een schijf van de donut, een bol of een regel in de legenda om de rest van het Panel te filteren op die categorie. Houd een bol ingedrukt om de volledige naam te zien.";
+"panel.widgetInfo.categoriesPie.largeHowA" = "Tik op een schijf van de donut, een bol of een regel in de legenda. In het Panel zie je dan alleen die categorie; tik er nog eens op om weer alles te zien. In Verdeling openen de details van de categorie. Houd een bol ingedrukt om de volledige naam te zien.";
 
 /* Panel Polish #2 — Title sheet pedagógico SubcategoriesPie */
 "panel.widgetInfo.subcategoriesPie.title" = "Verdeling per subcategorie";
@@ -3683,7 +3683,7 @@
 "panel.widgetInfo.subcategoriesPie.smallHowQ" = "Hoe gebruik ik dit?";
 
 /* Panel Polish #2 — SubcategoriesPie S: respuesta */
-"panel.widgetInfo.subcategoriesPie.smallHowA" = "Tik op een bol om de rest van het Panel te filteren op die subcategorie. Houd een bol ingedrukt om de volledige naam te zien.";
+"panel.widgetInfo.subcategoriesPie.smallHowA" = "Tik op een bol om alleen die subcategorie te zien; tik er nog eens op om weer alles te zien. Houd een bol ingedrukt om de volledige naam te zien.";
 
 /* Panel Polish #2 — SubcategoriesPie L: pregunta */
 "panel.widgetInfo.subcategoriesPie.largeWhatQ" = "Wat zie je?";
@@ -3695,7 +3695,7 @@
 "panel.widgetInfo.subcategoriesPie.largeHowQ" = "Hoe gebruik ik de grafiek?";
 
 /* Panel Polish #2 — SubcategoriesPie L: respuesta */
-"panel.widgetInfo.subcategoriesPie.largeHowA" = "Tik op een schijf van de donut, een bol of een regel in de legenda om de rest van het Panel te filteren op die subcategorie. Houd een bol ingedrukt om de volledige naam te zien.";
+"panel.widgetInfo.subcategoriesPie.largeHowA" = "Tik op een schijf van de donut, een bol of een regel in de legenda om alleen die subcategorie te zien; tik er nog eens op om weer alles te zien. Houd een bol ingedrukt om de volledige naam te zien.";
 
 /* Panel Polish #2 — Title sheet pedagógico TagsPie */
 "panel.widgetInfo.tagsPie.title" = "Verdeling per tag";
@@ -3719,7 +3719,7 @@
 "panel.widgetInfo.tagsPie.smallHowQ" = "Hoe gebruik ik dit?";
 
 /* Panel Polish #2 — TagsPie S: respuesta */
-"panel.widgetInfo.tagsPie.smallHowA" = "Tik op een bol om de rest van het Panel te filteren op die tag. Houd een bol ingedrukt om de volledige naam te zien.";
+"panel.widgetInfo.tagsPie.smallHowA" = "Tik op een bol om alleen die tag te zien; tik er nog eens op om weer alles te zien. Houd een bol ingedrukt om de volledige naam te zien.";
 
 /* Panel Polish #2 — TagsPie L: pregunta */
 "panel.widgetInfo.tagsPie.largeWhatQ" = "Wat zie je?";
@@ -3731,7 +3731,7 @@
 "panel.widgetInfo.tagsPie.largeHowQ" = "Hoe gebruik ik de grafiek?";
 
 /* Panel Polish #2 — TagsPie L: respuesta */
-"panel.widgetInfo.tagsPie.largeHowA" = "Tik op een schijf van de donut, een bol of een regel in de legenda om de rest van het Panel te filteren op die tag. Houd een bol ingedrukt om de volledige naam te zien.";
+"panel.widgetInfo.tagsPie.largeHowA" = "Tik op een schijf van de donut, een bol of een regel in de legenda om alleen die tag te zien; tik er nog eens op om weer alles te zien. Houd een bol ingedrukt om de volledige naam te zien.";
 
 /* Panel Polish #2 — Title sheet pedagógico ExpensesByNeed */
 "panel.widgetInfo.expensesByNeed.title" = "Verdeling per behoefte";

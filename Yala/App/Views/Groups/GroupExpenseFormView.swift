@@ -820,6 +820,16 @@ struct GroupExpenseFormView: View {
         return memberNameLookup[viewModel.paidByMemberID] ?? "—"
     }
 
+    /// Lo que VoiceOver lee tras «Dividido»: el reparto real de las partes calculadas («Todo de Pia»), no el tipo
+    /// guardado, que es `equal` también cuando todo es de una persona (encargo del 2026-11-27).
+    private var spokenSplitLabel: String {
+        GruposPulidoDivisionDetalleText.splitLabel(
+            splitType: viewModel.splitType.rawValue,
+            shares: viewModel.calculatedShares ?? [],
+            currentMemberID: viewModel.currentUserMemberID
+        ) { memberNameLookup[$0] ?? "—" }
+    }
+
     /// Grupos de 3+: «Pagado por [Ana] y dividido [en partes iguales]». Si no cabe en una línea,
     /// pasa a dos, partida por la «y».
     private var splitSentence: some View {
@@ -844,7 +854,7 @@ struct GroupExpenseFormView: View {
                 isOpen: expandedSection == .split,
                 warning: !viewModel.isSharesBalanced,
                 identifier: "group_expense_split_row",
-                a11yLabel: "\(L10n.Groups.Expense.dividedLabel): \(viewModel.splitType.displayName)"
+                a11yLabel: "\(L10n.Groups.Expense.dividedLabel): \(spokenSplitLabel)"
             ) { toggle(.split) }
         }
         return ViewThatFits(in: .horizontal) {

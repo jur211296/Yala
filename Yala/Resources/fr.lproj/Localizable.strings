@@ -3637,7 +3637,7 @@
 "panel.widgetInfo.categoriesPie.smallHowQ" = "Comment interagir ?";
 
 /* Panel Polish #2 — CategoriesPie S: respuesta a 'cómo interactúo' */
-"panel.widgetInfo.categoriesPie.smallHowA" = "Touche une bulle pour filtrer le reste du Panel par cette catégorie. Appuie longuement sur une bulle pour voir son nom complet.";
+"panel.widgetInfo.categoriesPie.smallHowA" = "Dans le Panel, touche une bulle pour ne voir que cette catégorie ; touche-la à nouveau pour tout revoir. Dans Distribution, elle ouvre le détail de la catégorie. Appuie longuement sur une bulle pour voir son nom complet.";
 
 /* Panel Polish #2 — CategoriesPie L: pregunta '¿Qué estás viendo?' */
 "panel.widgetInfo.categoriesPie.largeWhatQ" = "Qu'est-ce que tu vois ?";
@@ -3649,7 +3649,7 @@
 "panel.widgetInfo.categoriesPie.largeHowQ" = "Comment interagir avec le graphique ?";
 
 /* Panel Polish #2 — CategoriesPie L: respuesta a 'cómo interactúo' */
-"panel.widgetInfo.categoriesPie.largeHowA" = "Touche une portion du donut, une bulle ou une ligne de la légende pour filtrer le reste du Panel par cette catégorie. Appuie longuement sur une bulle pour voir son nom complet.";
+"panel.widgetInfo.categoriesPie.largeHowA" = "Touche une portion du donut, une bulle ou une ligne de la légende. Dans le Panel, tu ne verras que cette catégorie ; touche-la à nouveau pour tout revoir. Dans Distribution, le détail de la catégorie s'ouvre. Appuie longuement sur une bulle pour voir son nom complet.";
 
 /* Panel Polish #2 — Title sheet pedagógico SubcategoriesPie */
 "panel.widgetInfo.subcategoriesPie.title" = "Répartition par sous-catégorie";
@@ -3673,7 +3673,7 @@
 "panel.widgetInfo.subcategoriesPie.smallHowQ" = "Comment interagir ?";
 
 /* Panel Polish #2 — SubcategoriesPie S: respuesta */
-"panel.widgetInfo.subcategoriesPie.smallHowA" = "Touche une bulle pour filtrer le reste du Panel par cette sous-catégorie. Appuie longuement sur une bulle pour voir son nom complet.";
+"panel.widgetInfo.subcategoriesPie.smallHowA" = "Touche une bulle pour ne voir que cette sous-catégorie ; touche-la à nouveau pour tout revoir. Appuie longuement sur une bulle pour voir son nom complet.";
 
 /* Panel Polish #2 — SubcategoriesPie L: pregunta */
 "panel.widgetInfo.subcategoriesPie.largeWhatQ" = "Qu'est-ce que tu vois ?";
@@ -3685,7 +3685,7 @@
 "panel.widgetInfo.subcategoriesPie.largeHowQ" = "Comment interagir avec le graphique ?";
 
 /* Panel Polish #2 — SubcategoriesPie L: respuesta */
-"panel.widgetInfo.subcategoriesPie.largeHowA" = "Touche une portion du donut, une bulle ou une ligne de la légende pour filtrer le reste du Panel par cette sous-catégorie. Appuie longuement sur une bulle pour voir son nom complet.";
+"panel.widgetInfo.subcategoriesPie.largeHowA" = "Touche une portion du donut, une bulle ou une ligne de la légende pour ne voir que cette sous-catégorie ; touche-la à nouveau pour tout revoir. Appuie longuement sur une bulle pour voir son nom complet.";
 
 /* Panel Polish #2 — Title sheet pedagógico TagsPie */
 "panel.widgetInfo.tagsPie.title" = "Répartition par étiquette";
@@ -3709,7 +3709,7 @@
 "panel.widgetInfo.tagsPie.smallHowQ" = "Comment interagir ?";
 
 /* Panel Polish #2 — TagsPie S: respuesta */
-"panel.widgetInfo.tagsPie.smallHowA" = "Touche une bulle pour filtrer le reste du Panel par cette étiquette. Appuie longuement sur une bulle pour voir son nom complet.";
+"panel.widgetInfo.tagsPie.smallHowA" = "Touche une bulle pour ne voir que cette étiquette ; touche-la à nouveau pour tout revoir. Appuie longuement sur une bulle pour voir son nom complet.";
 
 /* Panel Polish #2 — TagsPie L: pregunta */
 "panel.widgetInfo.tagsPie.largeWhatQ" = "Qu'est-ce que tu vois ?";
@@ -3721,7 +3721,7 @@
 "panel.widgetInfo.tagsPie.largeHowQ" = "Comment interagir avec le graphique ?";
 
 /* Panel Polish #2 — TagsPie L: respuesta */
-"panel.widgetInfo.tagsPie.largeHowA" = "Touche une portion du donut, une bulle ou une ligne de la légende pour filtrer le reste du Panel par cette étiquette. Appuie longuement sur une bulle pour voir son nom complet.";
+"panel.widgetInfo.tagsPie.largeHowA" = "Touche une portion du donut, une bulle ou une ligne de la légende pour ne voir que cette étiquette ; touche-la à nouveau pour tout revoir. Appuie longuement sur une bulle pour voir son nom complet.";
 
 /* Panel Polish #2 — Title sheet pedagógico ExpensesByNeed */
 "panel.widgetInfo.expensesByNeed.title" = "Répartition par besoin";

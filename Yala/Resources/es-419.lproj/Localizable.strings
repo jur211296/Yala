@@ -3622,7 +3622,7 @@
 "panel.widgetInfo.categoriesPie.smallHowQ" = "¿Cómo interactúo?";
 
 /* Panel Polish #2 — CategoriesPie S: respuesta a 'cómo interactúo' */
-"panel.widgetInfo.categoriesPie.smallHowA" = "Toca una burbuja para filtrar el resto del Panel por esa categoría. Mantén pulsada una burbuja para ver el nombre completo.";
+"panel.widgetInfo.categoriesPie.smallHowA" = "En el Panel, toca una burbuja para ver solo esa categoría; tócala otra vez para volver a verlo todo. En Distribución, abre el detalle de la categoría. Mantén pulsada una burbuja para ver el nombre completo.";
 
 /* Panel Polish #2 — CategoriesPie L: pregunta '¿Qué estás viendo?' */
 "panel.widgetInfo.categoriesPie.largeWhatQ" = "¿Qué estás viendo?";
@@ -3634,7 +3634,7 @@
 "panel.widgetInfo.categoriesPie.largeHowQ" = "¿Cómo interactúo con la gráfica?";
 
 /* Panel Polish #2 — CategoriesPie L: respuesta a 'cómo interactúo' */
-"panel.widgetInfo.categoriesPie.largeHowA" = "Toca una porción del donut, una burbuja o una fila de la leyenda para filtrar el resto del Panel por esa categoría. Mantén pulsada una burbuja para ver el nombre completo.";
+"panel.widgetInfo.categoriesPie.largeHowA" = "Toca una porción del donut, una burbuja o una fila de la leyenda. En el Panel, verás solo esa categoría; tócala otra vez para volver a verlo todo. En Distribución, se abre el detalle de la categoría. Mantén pulsada una burbuja para ver el nombre completo.";
 
 /* Panel Polish #2 — Title sheet pedagógico SubcategoriesPie */
 "panel.widgetInfo.subcategoriesPie.title" = "Distribución por subcategoría";
@@ -3658,7 +3658,7 @@
 "panel.widgetInfo.subcategoriesPie.smallHowQ" = "¿Cómo interactúo?";
 
 /* Panel Polish #2 — SubcategoriesPie S: respuesta */
-"panel.widgetInfo.subcategoriesPie.smallHowA" = "Toca una burbuja para filtrar el resto del Panel por esa subcategoría. Mantén pulsada una burbuja para ver el nombre completo.";
+"panel.widgetInfo.subcategoriesPie.smallHowA" = "Toca una burbuja para ver solo esa subcategoría; tócala otra vez para volver a verlo todo. Mantén pulsada una burbuja para ver el nombre completo.";
 
 /* Panel Polish #2 — SubcategoriesPie L: pregunta */
 "panel.widgetInfo.subcategoriesPie.largeWhatQ" = "¿Qué estás viendo?";
@@ -3670,7 +3670,7 @@
 "panel.widgetInfo.subcategoriesPie.largeHowQ" = "¿Cómo interactúo con la gráfica?";
 
 /* Panel Polish #2 — SubcategoriesPie L: respuesta */
-"panel.widgetInfo.subcategoriesPie.largeHowA" = "Toca una porción del donut, una burbuja o una fila de la leyenda para filtrar el resto del Panel por esa subcategoría. Mantén pulsada una burbuja para ver el nombre completo.";
+"panel.widgetInfo.subcategoriesPie.largeHowA" = "Toca una porción del donut, una burbuja o una fila de la leyenda para ver solo esa subcategoría; tócala otra vez para volver a verlo todo. Mantén pulsada una burbuja para ver el nombre completo.";
 
 /* Panel Polish #2 — Title sheet pedagógico TagsPie */
 "panel.widgetInfo.tagsPie.title" = "Distribución por etiqueta";
@@ -3694,7 +3694,7 @@
 "panel.widgetInfo.tagsPie.smallHowQ" = "¿Cómo interactúo?";
 
 /* Panel Polish #2 — TagsPie S: respuesta */
-"panel.widgetInfo.tagsPie.smallHowA" = "Toca una burbuja para filtrar el resto del Panel por esa etiqueta. Mantén pulsada una burbuja para ver el nombre completo.";
+"panel.widgetInfo.tagsPie.smallHowA" = "Toca una burbuja para ver solo esa etiqueta; tócala otra vez para volver a verlo todo. Mantén pulsada una burbuja para ver el nombre completo.";
 
 /* Panel Polish #2 — TagsPie L: pregunta */
 "panel.widgetInfo.tagsPie.largeWhatQ" = "¿Qué estás viendo?";
@@ -3706,7 +3706,7 @@
 "panel.widgetInfo.tagsPie.largeHowQ" = "¿Cómo interactúo con la gráfica?";
 
 /* Panel Polish #2 — TagsPie L: respuesta */
-"panel.widgetInfo.tagsPie.largeHowA" = "Toca una porción del donut, una burbuja o una fila de la leyenda para filtrar el resto del Panel por esa etiqueta. Mantén pulsada una burbuja para ver el nombre completo.";
+"panel.widgetInfo.tagsPie.largeHowA" = "Toca una porción del donut, una burbuja o una fila de la leyenda para ver solo esa etiqueta; tócala otra vez para volver a verlo todo. Mantén pulsada una burbuja para ver el nombre completo.";
 
 /* Panel Polish #2 — Title sheet pedagógico ExpensesByNeed */
 "panel.widgetInfo.expensesByNeed.title" = "Distribución por necesidad";

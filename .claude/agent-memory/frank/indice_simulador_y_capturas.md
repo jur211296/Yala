@@ -131,3 +131,4 @@ Subíndice de `MEMORY.md` (2026-11-05). Ábrelo antes de conducir el simulador o
 - [El tema de las capturas de Jürgen](reference_el_tema_de_las_capturas_de_jurgen.md) — su oscuro es `-userTheme 2`; el de fábrica no reproduce lo «plano».
 - [XCUITest con chips y semilla saldada](reference_xcuitest_con_chips_y_semilla_saldada.md) — firstMatch es la fila de chips; grupos-saldado deja pares cruzados.
 - [Capturas comparables en el iPhone 14](reference_capturas_comparables_en_el_iphone_14.md) — devicectl con args tras `--`, deeplink de pruebas, scroll por distancia; tap por texto engaña.
+- [Éxito de grupo sin teclear](reference_exito_de_grupo_sin_teclear.md) — Viaje a Cusco › Souvenirs › todo para Ana; el «?» de Distribución no se toca.
