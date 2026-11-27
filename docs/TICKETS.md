@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (188)
+## Index (1548)
 
 | id | status | path |
 | 2026-11-26-deuda-gate-y-docs-2-3 | done | tickets/done/2026-11-26-deuda-gate-y-docs-2-3.md |

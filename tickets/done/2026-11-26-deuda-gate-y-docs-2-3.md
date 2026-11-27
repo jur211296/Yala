@@ -27,7 +27,7 @@ encola · D. Ok». Cinco arreglos chicos que varias sesiones anotaron en sus cie
 3. **`docs/TICKETS.md`:** el encabezado decía 177 filas y había 1537. Las dos del 16-nov ya estaban, con su `id` del
    frontmatter (`groups-import-splitwise-tricount`, `new-transaction-form-sometimes-never-goes-idle-for-xcuitest`), no
    con el nombre del fichero. Se añadieron las nueve que faltaban de verdad y la de este ticket; había una sola cabecera
-   de conteo.
+   de conteo. Tras el rebase sobre el lote 3 de Compartido, 1548 filas para 1548 tickets.
 4. **Textos sin uso:** `rfr.planning.fromRecord` y `rfr.picker.footer` solo los usaban sus accesores (`fromRecord`,
    `pickerFooter`). Fuera accesores y claves en los 16 idiomas.
 5. **`mcp/RUNBOOK-produccion.md`:** Grok web y Grok Bot ya están en la lista de vueltas del conector desde el 24-nov, y
