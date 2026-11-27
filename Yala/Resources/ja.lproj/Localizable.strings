@@ -3647,7 +3647,7 @@
 "panel.widgetInfo.categoriesPie.smallHowQ" = "どう操作しますか?";
 
 /* Panel Polish #2 — CategoriesPie S: respuesta a 'cómo interactúo' */
-"panel.widgetInfo.categoriesPie.smallHowA" = "バブルをタップすると、そのカテゴリーでパネル全体をフィルタリングできます。バブルを長押しすると正式名称が表示されます。";
+"panel.widgetInfo.categoriesPie.smallHowA" = "パネルでは、バブルをタップするとそのカテゴリーだけを表示し、もう一度タップするとすべて表示に戻ります。内訳では、カテゴリーの詳細が開きます。バブルを長押しすると正式名称が表示されます。";
 
 /* Panel Polish #2 — CategoriesPie L: pregunta '¿Qué estás viendo?' */
 "panel.widgetInfo.categoriesPie.largeWhatQ" = "何が表示されていますか?";
@@ -3659,7 +3659,7 @@
 "panel.widgetInfo.categoriesPie.largeHowQ" = "グラフはどう操作しますか?";
 
 /* Panel Polish #2 — CategoriesPie L: respuesta a 'cómo interactúo' */
-"panel.widgetInfo.categoriesPie.largeHowA" = "ドーナツのスライス、バブル、または凡例の行をタップすると、そのカテゴリーでパネル全体をフィルタリングできます。バブルを長押しすると正式名称が表示されます。";
+"panel.widgetInfo.categoriesPie.largeHowA" = "ドーナツのスライス、バブル、または凡例の行をタップします。パネルではそのカテゴリーだけが表示され、もう一度タップするとすべて表示に戻ります。内訳では、カテゴリーの詳細が開きます。バブルを長押しすると正式名称が表示されます。";
 
 /* Panel Polish #2 — Title sheet pedagógico SubcategoriesPie */
 "panel.widgetInfo.subcategoriesPie.title" = "サブカテゴリー別の内訳";
@@ -3683,7 +3683,7 @@
 "panel.widgetInfo.subcategoriesPie.smallHowQ" = "どう操作しますか?";
 
 /* Panel Polish #2 — SubcategoriesPie S: respuesta */
-"panel.widgetInfo.subcategoriesPie.smallHowA" = "バブルをタップすると、そのサブカテゴリーでパネル全体をフィルタリングできます。バブルを長押しすると正式名称が表示されます。";
+"panel.widgetInfo.subcategoriesPie.smallHowA" = "バブルをタップするとそのサブカテゴリーだけを表示し、もう一度タップするとすべて表示に戻ります。バブルを長押しすると正式名称が表示されます。";
 
 /* Panel Polish #2 — SubcategoriesPie L: pregunta */
 "panel.widgetInfo.subcategoriesPie.largeWhatQ" = "何が表示されていますか?";
@@ -3695,7 +3695,7 @@
 "panel.widgetInfo.subcategoriesPie.largeHowQ" = "グラフはどう操作しますか?";
 
 /* Panel Polish #2 — SubcategoriesPie L: respuesta */
-"panel.widgetInfo.subcategoriesPie.largeHowA" = "ドーナツのスライス、バブル、または凡例の行をタップすると、そのサブカテゴリーでパネル全体をフィルタリングできます。バブルを長押しすると正式名称が表示されます。";
+"panel.widgetInfo.subcategoriesPie.largeHowA" = "ドーナツのスライス、バブル、または凡例の行をタップするとそのサブカテゴリーだけを表示し、もう一度タップするとすべて表示に戻ります。バブルを長押しすると正式名称が表示されます。";
 
 /* Panel Polish #2 — Title sheet pedagógico TagsPie */
 "panel.widgetInfo.tagsPie.title" = "タグ別の内訳";
@@ -3719,7 +3719,7 @@
 "panel.widgetInfo.tagsPie.smallHowQ" = "どう操作しますか?";
 
 /* Panel Polish #2 — TagsPie S: respuesta */
-"panel.widgetInfo.tagsPie.smallHowA" = "バブルをタップすると、そのタグでパネル全体をフィルタリングできます。バブルを長押しすると正式名称が表示されます。";
+"panel.widgetInfo.tagsPie.smallHowA" = "バブルをタップするとそのタグだけを表示し、もう一度タップするとすべて表示に戻ります。バブルを長押しすると正式名称が表示されます。";
 
 /* Panel Polish #2 — TagsPie L: pregunta */
 "panel.widgetInfo.tagsPie.largeWhatQ" = "何が表示されていますか?";
@@ -3731,7 +3731,7 @@
 "panel.widgetInfo.tagsPie.largeHowQ" = "グラフはどう操作しますか?";
 
 /* Panel Polish #2 — TagsPie L: respuesta */
-"panel.widgetInfo.tagsPie.largeHowA" = "ドーナツのスライス、バブル、または凡例の行をタップすると、そのタグでパネル全体をフィルタリングできます。バブルを長押しすると正式名称が表示されます。";
+"panel.widgetInfo.tagsPie.largeHowA" = "ドーナツのスライス、バブル、または凡例の行をタップするとそのタグだけを表示し、もう一度タップするとすべて表示に戻ります。バブルを長押しすると正式名称が表示されます。";
 
 /* Panel Polish #2 — Title sheet pedagógico ExpensesByNeed */
 "panel.widgetInfo.expensesByNeed.title" = "ニーズ別の内訳";

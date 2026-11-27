@@ -3636,7 +3636,7 @@
 "panel.widgetInfo.categoriesPie.smallHowQ" = "Como interajo?";
 
 /* Panel Polish #2 — CategoriesPie S: respuesta a 'cómo interactúo' */
-"panel.widgetInfo.categoriesPie.smallHowA" = "Toque em uma bolha para filtrar o resto do Painel por essa categoria. Mantenha uma bolha pressionada para ver o nome completo.";
+"panel.widgetInfo.categoriesPie.smallHowA" = "No Painel, toque em uma bolha para ver só essa categoria; toque nela de novo para voltar a ver tudo. Em Distribuição, ela abre o detalhe da categoria. Mantenha uma bolha pressionada para ver o nome completo.";
 
 /* Panel Polish #2 — CategoriesPie L: pregunta '¿Qué estás viendo?' */
 "panel.widgetInfo.categoriesPie.largeWhatQ" = "O que você está vendo?";
@@ -3648,7 +3648,7 @@
 "panel.widgetInfo.categoriesPie.largeHowQ" = "Como interajo com o gráfico?";
 
 /* Panel Polish #2 — CategoriesPie L: respuesta a 'cómo interactúo' */
-"panel.widgetInfo.categoriesPie.largeHowA" = "Toque em uma fatia da rosquinha, em uma bolha ou em uma linha da legenda para filtrar o resto do Painel por essa categoria. Mantenha uma bolha pressionada para ver o nome completo.";
+"panel.widgetInfo.categoriesPie.largeHowA" = "Toque em uma fatia da rosquinha, em uma bolha ou em uma linha da legenda. No Painel, você verá só essa categoria; toque nela de novo para voltar a ver tudo. Em Distribuição, abre o detalhe da categoria. Mantenha uma bolha pressionada para ver o nome completo.";
 
 /* Panel Polish #2 — Title sheet pedagógico SubcategoriesPie */
 "panel.widgetInfo.subcategoriesPie.title" = "Distribuição por subcategoria";
@@ -3672,7 +3672,7 @@
 "panel.widgetInfo.subcategoriesPie.smallHowQ" = "Como interajo?";
 
 /* Panel Polish #2 — SubcategoriesPie S: respuesta */
-"panel.widgetInfo.subcategoriesPie.smallHowA" = "Toque em uma bolha para filtrar o resto do Painel por essa subcategoria. Mantenha uma bolha pressionada para ver o nome completo.";
+"panel.widgetInfo.subcategoriesPie.smallHowA" = "Toque em uma bolha para ver só essa subcategoria; toque nela de novo para voltar a ver tudo. Mantenha uma bolha pressionada para ver o nome completo.";
 
 /* Panel Polish #2 — SubcategoriesPie L: pregunta */
 "panel.widgetInfo.subcategoriesPie.largeWhatQ" = "O que você está vendo?";
@@ -3684,7 +3684,7 @@
 "panel.widgetInfo.subcategoriesPie.largeHowQ" = "Como interajo com o gráfico?";
 
 /* Panel Polish #2 — SubcategoriesPie L: respuesta */
-"panel.widgetInfo.subcategoriesPie.largeHowA" = "Toque em uma fatia da rosquinha, em uma bolha ou em uma linha da legenda para filtrar o resto do Painel por essa subcategoria. Mantenha uma bolha pressionada para ver o nome completo.";
+"panel.widgetInfo.subcategoriesPie.largeHowA" = "Toque em uma fatia da rosquinha, em uma bolha ou em uma linha da legenda para ver só essa subcategoria; toque nela de novo para voltar a ver tudo. Mantenha uma bolha pressionada para ver o nome completo.";
 
 /* Panel Polish #2 — Title sheet pedagógico TagsPie */
 "panel.widgetInfo.tagsPie.title" = "Distribuição por etiqueta";
@@ -3708,7 +3708,7 @@
 "panel.widgetInfo.tagsPie.smallHowQ" = "Como interajo?";
 
 /* Panel Polish #2 — TagsPie S: respuesta */
-"panel.widgetInfo.tagsPie.smallHowA" = "Toque em uma bolha para filtrar o resto do Painel por essa etiqueta. Mantenha uma bolha pressionada para ver o nome completo.";
+"panel.widgetInfo.tagsPie.smallHowA" = "Toque em uma bolha para ver só essa etiqueta; toque nela de novo para voltar a ver tudo. Mantenha uma bolha pressionada para ver o nome completo.";
 
 /* Panel Polish #2 — TagsPie L: pregunta */
 "panel.widgetInfo.tagsPie.largeWhatQ" = "O que você está vendo?";
@@ -3720,7 +3720,7 @@
 "panel.widgetInfo.tagsPie.largeHowQ" = "Como interajo com o gráfico?";
 
 /* Panel Polish #2 — TagsPie L: respuesta */
-"panel.widgetInfo.tagsPie.largeHowA" = "Toque em uma fatia da rosquinha, em uma bolha ou em uma linha da legenda para filtrar o resto do Painel por essa etiqueta. Mantenha uma bolha pressionada para ver o nome completo.";
+"panel.widgetInfo.tagsPie.largeHowA" = "Toque em uma fatia da rosquinha, em uma bolha ou em uma linha da legenda para ver só essa etiqueta; toque nela de novo para voltar a ver tudo. Mantenha uma bolha pressionada para ver o nome completo.";
 
 /* Panel Polish #2 — Title sheet pedagógico ExpensesByNeed */
 "panel.widgetInfo.expensesByNeed.title" = "Distribuição por necessidade";

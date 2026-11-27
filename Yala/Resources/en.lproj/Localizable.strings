@@ -3687,7 +3687,7 @@
 "panel.widgetInfo.categoriesPie.smallHowQ" = "How do I interact?";
 
 /* Panel Polish #2 — CategoriesPie S: respuesta a 'cómo interactúo' */
-"panel.widgetInfo.categoriesPie.smallHowA" = "Tap a bubble to filter the rest of the Panel by that category. Long-press a bubble to see the full name.";
+"panel.widgetInfo.categoriesPie.smallHowA" = "On the Panel, tap a bubble to see only that category; tap it again to see everything. In Distribution, it opens the category's details. Long-press a bubble to see the full name.";
 
 /* Panel Polish #2 — CategoriesPie L: pregunta '¿Qué estás viendo?' */
 "panel.widgetInfo.categoriesPie.largeWhatQ" = "What are you seeing?";
@@ -3699,7 +3699,7 @@
 "panel.widgetInfo.categoriesPie.largeHowQ" = "How do I interact with the chart?";
 
 /* Panel Polish #2 — CategoriesPie L: respuesta a 'cómo interactúo' */
-"panel.widgetInfo.categoriesPie.largeHowA" = "Tap a donut slice, a bubble or a legend row to filter the rest of the Panel by that category. Long-press a bubble to see the full name.";
+"panel.widgetInfo.categoriesPie.largeHowA" = "Tap a donut slice, a bubble or a legend row. On the Panel, you'll see only that category; tap it again to see everything. In Distribution, the category's details open. Long-press a bubble to see the full name.";
 
 /* Panel Polish #2 — Title sheet pedagógico SubcategoriesPie */
 "panel.widgetInfo.subcategoriesPie.title" = "Distribution by subcategory";
@@ -3723,7 +3723,7 @@
 "panel.widgetInfo.subcategoriesPie.smallHowQ" = "How do I interact?";
 
 /* Panel Polish #2 — SubcategoriesPie S: respuesta */
-"panel.widgetInfo.subcategoriesPie.smallHowA" = "Tap a bubble to filter the rest of the Panel by that subcategory. Long-press a bubble to see the full name.";
+"panel.widgetInfo.subcategoriesPie.smallHowA" = "Tap a bubble to see only that subcategory; tap it again to see everything. Long-press a bubble to see the full name.";
 
 /* Panel Polish #2 — SubcategoriesPie L: pregunta */
 "panel.widgetInfo.subcategoriesPie.largeWhatQ" = "What are you seeing?";
@@ -3735,7 +3735,7 @@
 "panel.widgetInfo.subcategoriesPie.largeHowQ" = "How do I interact with the chart?";
 
 /* Panel Polish #2 — SubcategoriesPie L: respuesta */
-"panel.widgetInfo.subcategoriesPie.largeHowA" = "Tap a donut slice, a bubble or a legend row to filter the rest of the Panel by that subcategory. Long-press a bubble to see the full name.";
+"panel.widgetInfo.subcategoriesPie.largeHowA" = "Tap a donut slice, a bubble or a legend row to see only that subcategory; tap it again to see everything. Long-press a bubble to see the full name.";
 
 /* Panel Polish #2 — Title sheet pedagógico TagsPie */
 "panel.widgetInfo.tagsPie.title" = "Distribution by tag";
@@ -3759,7 +3759,7 @@
 "panel.widgetInfo.tagsPie.smallHowQ" = "How do I interact?";
 
 /* Panel Polish #2 — TagsPie S: respuesta */
-"panel.widgetInfo.tagsPie.smallHowA" = "Tap a bubble to filter the rest of the Panel by that tag. Long-press a bubble to see the full name.";
+"panel.widgetInfo.tagsPie.smallHowA" = "Tap a bubble to see only that tag; tap it again to see everything. Long-press a bubble to see the full name.";
 
 /* Panel Polish #2 — TagsPie L: pregunta */
 "panel.widgetInfo.tagsPie.largeWhatQ" = "What are you seeing?";
@@ -3771,7 +3771,7 @@
 "panel.widgetInfo.tagsPie.largeHowQ" = "How do I interact with the chart?";
 
 /* Panel Polish #2 — TagsPie L: respuesta */
-"panel.widgetInfo.tagsPie.largeHowA" = "Tap a donut slice, a bubble or a legend row to filter the rest of the Panel by that tag. Long-press a bubble to see the full name.";
+"panel.widgetInfo.tagsPie.largeHowA" = "Tap a donut slice, a bubble or a legend row to see only that tag; tap it again to see everything. Long-press a bubble to see the full name.";
 
 /* Panel Polish #2 — Title sheet pedagógico ExpensesByNeed */
 "panel.widgetInfo.expensesByNeed.title" = "Distribution by need";

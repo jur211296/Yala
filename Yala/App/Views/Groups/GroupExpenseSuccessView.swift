@@ -265,11 +265,12 @@ struct GroupExpenseSuccessView: View {
                 }
             }
         case .split:
-            MinimalSuccessRow(icon: data.splitType.iconName, label: L10n.Groups.Expense.Success.splitLabel,
-                              spoken: [data.splitType.displayName, participantsLine].joined(separator: ", "),
+            // El reparto real («Todo de Pia»), no el tipo guardado: un «es todo de…» se guarda como `equal`.
+            MinimalSuccessRow(icon: data.splitIconName, label: L10n.Groups.Expense.Success.splitLabel,
+                              spoken: [data.splitLabel, participantsLine].joined(separator: ", "),
                               identifier: "group_expense_success_split_row") {
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(data.splitType.displayName)
+                    Text(data.splitLabel)
                     Text(participantsLine)
                         .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)

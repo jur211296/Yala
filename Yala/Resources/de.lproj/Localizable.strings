@@ -3636,7 +3636,7 @@
 "panel.widgetInfo.categoriesPie.smallHowQ" = "Wie interagiere ich?";
 
 /* Panel Polish #2 — CategoriesPie S: respuesta a 'cómo interactúo' */
-"panel.widgetInfo.categoriesPie.smallHowA" = "Tippe auf eine Blase, um den Rest des Panels nach dieser Kategorie zu filtern. Halte eine Blase gedrückt, um den vollständigen Namen zu sehen.";
+"panel.widgetInfo.categoriesPie.smallHowA" = "Im Panel tippst du auf eine Blase, um nur diese Kategorie zu sehen; tippe erneut darauf, um wieder alles zu sehen. In der Verteilung öffnet sie die Details der Kategorie. Halte eine Blase gedrückt, um den vollständigen Namen zu sehen.";
 
 /* Panel Polish #2 — CategoriesPie L: pregunta '¿Qué estás viendo?' */
 "panel.widgetInfo.categoriesPie.largeWhatQ" = "Was siehst du?";
@@ -3648,7 +3648,7 @@
 "panel.widgetInfo.categoriesPie.largeHowQ" = "Wie interagiere ich mit dem Diagramm?";
 
 /* Panel Polish #2 — CategoriesPie L: respuesta a 'cómo interactúo' */
-"panel.widgetInfo.categoriesPie.largeHowA" = "Tippe auf einen Donut-Abschnitt, eine Blase oder eine Zeile der Legende, um den Rest des Panels nach dieser Kategorie zu filtern. Halte eine Blase gedrückt, um den vollständigen Namen zu sehen.";
+"panel.widgetInfo.categoriesPie.largeHowA" = "Tippe auf einen Donut-Abschnitt, eine Blase oder eine Zeile der Legende. Im Panel siehst du dann nur diese Kategorie; tippe erneut darauf, um wieder alles zu sehen. In der Verteilung öffnen sich die Details der Kategorie. Halte eine Blase gedrückt, um den vollständigen Namen zu sehen.";
 
 /* Panel Polish #2 — Title sheet pedagógico SubcategoriesPie */
 "panel.widgetInfo.subcategoriesPie.title" = "Verteilung nach Unterkategorie";
@@ -3672,7 +3672,7 @@
 "panel.widgetInfo.subcategoriesPie.smallHowQ" = "Wie interagiere ich?";
 
 /* Panel Polish #2 — SubcategoriesPie S: respuesta */
-"panel.widgetInfo.subcategoriesPie.smallHowA" = "Tippe auf eine Blase, um den Rest des Panels nach dieser Unterkategorie zu filtern. Halte eine Blase gedrückt, um den vollständigen Namen zu sehen.";
+"panel.widgetInfo.subcategoriesPie.smallHowA" = "Tippe auf eine Blase, um nur diese Unterkategorie zu sehen; tippe erneut darauf, um wieder alles zu sehen. Halte eine Blase gedrückt, um den vollständigen Namen zu sehen.";
 
 /* Panel Polish #2 — SubcategoriesPie L: pregunta */
 "panel.widgetInfo.subcategoriesPie.largeWhatQ" = "Was siehst du?";
@@ -3684,7 +3684,7 @@
 "panel.widgetInfo.subcategoriesPie.largeHowQ" = "Wie interagiere ich mit dem Diagramm?";
 
 /* Panel Polish #2 — SubcategoriesPie L: respuesta */
-"panel.widgetInfo.subcategoriesPie.largeHowA" = "Tippe auf einen Donut-Abschnitt, eine Blase oder eine Zeile der Legende, um den Rest des Panels nach dieser Unterkategorie zu filtern. Halte eine Blase gedrückt, um den vollständigen Namen zu sehen.";
+"panel.widgetInfo.subcategoriesPie.largeHowA" = "Tippe auf einen Donut-Abschnitt, eine Blase oder eine Zeile der Legende, um nur diese Unterkategorie zu sehen; tippe erneut darauf, um wieder alles zu sehen. Halte eine Blase gedrückt, um den vollständigen Namen zu sehen.";
 
 /* Panel Polish #2 — Title sheet pedagógico TagsPie */
 "panel.widgetInfo.tagsPie.title" = "Verteilung nach Tag";
@@ -3708,7 +3708,7 @@
 "panel.widgetInfo.tagsPie.smallHowQ" = "Wie interagiere ich?";
 
 /* Panel Polish #2 — TagsPie S: respuesta */
-"panel.widgetInfo.tagsPie.smallHowA" = "Tippe auf eine Blase, um den Rest des Panels nach diesem Tag zu filtern. Halte eine Blase gedrückt, um den vollständigen Namen zu sehen.";
+"panel.widgetInfo.tagsPie.smallHowA" = "Tippe auf eine Blase, um nur diesen Tag zu sehen; tippe erneut darauf, um wieder alles zu sehen. Halte eine Blase gedrückt, um den vollständigen Namen zu sehen.";
 
 /* Panel Polish #2 — TagsPie L: pregunta */
 "panel.widgetInfo.tagsPie.largeWhatQ" = "Was siehst du?";
@@ -3720,7 +3720,7 @@
 "panel.widgetInfo.tagsPie.largeHowQ" = "Wie interagiere ich mit dem Diagramm?";
 
 /* Panel Polish #2 — TagsPie L: respuesta */
-"panel.widgetInfo.tagsPie.largeHowA" = "Tippe auf einen Donut-Abschnitt, eine Blase oder eine Zeile der Legende, um den Rest des Panels nach diesem Tag zu filtern. Halte eine Blase gedrückt, um den vollständigen Namen zu sehen.";
+"panel.widgetInfo.tagsPie.largeHowA" = "Tippe auf einen Donut-Abschnitt, eine Blase oder eine Zeile der Legende, um nur diesen Tag zu sehen; tippe erneut darauf, um wieder alles zu sehen. Halte eine Blase gedrückt, um den vollständigen Namen zu sehen.";
 
 /* Panel Polish #2 — Title sheet pedagógico ExpensesByNeed */
 "panel.widgetInfo.expensesByNeed.title" = "Verteilung nach Bedarf";

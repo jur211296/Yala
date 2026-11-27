@@ -1600,3 +1600,4 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | 2026-11-27-foto-widget-por-etapas-rojo-en-la-suite-completa | backlog | tickets/backlog/2026-11-27-foto-widget-por-etapas-rojo-en-la-suite-completa.md |
 | 2026-11-26-flujo-de-caja-duplicado-y-promedios | done | tickets/done/2026-11-26-flujo-de-caja-duplicado-y-promedios.md |
 | 2026-11-27-trabas-flujo-proyeccion-y-convertir-a-compartido | done | tickets/done/2026-11-27-trabas-flujo-proyeccion-y-convertir-a-compartido.md |
+| 2026-11-27-textos-reparto-y-ayuda-distribucion | done | tickets/done/2026-11-27-textos-reparto-y-ayuda-distribucion.md |
