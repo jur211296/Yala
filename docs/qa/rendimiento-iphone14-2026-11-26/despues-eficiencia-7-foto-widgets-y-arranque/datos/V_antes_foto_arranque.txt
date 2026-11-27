@@ -1,0 +1,41 @@
+muestras de la foto en el hilo principal: 5640 ms
+  buildPeriodSummary                 3095 ms
+  otro                               1274 ms
+  buildTrendData                      518 ms
+  liveBalance                         194 ms
+  calculateBudgetSpent                183 ms
+  batchCalculateBalances              157 ms
+  GroupBridgeStatsAdjustment          109 ms
+  fetch                                94 ms
+  saveSnapshot                         16 ms
+bloques > 100 ms (inicio s, ms):
+     1.96    436
+     2.58    195
+     2.80    206
+     3.17    519
+     3.82    159
+     4.17    198
+     4.51    207
+     4.87    216
+     5.24    218
+     5.61    220
+     5.98    395
+     6.52    409
+     7.07   1250
+     8.65    924
+hojas más frecuentes:
+     269  swift_getTypeByMangledName
+     213  bool swift::RefCounts<swift::RefCountBitsT<(swift::RefCountInlinedness)1>>::doDecrementSlow<(swift::PerformDei
+     174  swift::Demangle::__runtime::Demangler::demangleType(__swift::__runtime::llvm::StringRef, std::__1::function<sw
+     167  tryCast(swift::OpaqueValue*, swift::TargetMetadata<swift::InProcess> const*, swift::OpaqueValue*, swift::Targe
+     161  swift::RefCounts<swift::RefCountBitsT<(swift::RefCountInlinedness)1>>::incrementSlow(swift::RefCountBitsT<(swi
+     128  <deduplicated_symbol>
+     128  swift_conformsToProtocolMaybeInstantiateSuperclasses(swift::TargetMetadata<swift::InProcess> const*, swift::Ta
+     124  _platform_memmove
+     116  swift_beginAccess
+     111  specialized static AnyKeyPath.== infix(_:_:)
+      91  swift::Demangle::__runtime::TypeDecoder<(anonymous namespace)::DecodedMetadataBuilder>::decodeMangledType(swif
+      90  specialized _pop<A>(from:as:count:)
+      86  swift::MetadataResponse performOnMetadataCache<swift::MetadataResponse, swift_checkMetadataState::CheckStateCa
+      85  swift::Demangle::__runtime::Demangler::demangleOperator()
+      84  NSDecimal._divide(by:)

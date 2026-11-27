@@ -1,0 +1,5 @@
+1795779473329 PanelViewModel: volver al Panel → recarga
+1795779473533 PanelViewModel: volver al Panel → recarga
+1795779474564 PanelViewModel: performCalculation #1
+1795779488750 PERF panel-calculo completo total 14186 ms · tramo máx 867 ms · cesiones 40 · indice 28 ms · tendencia 0 ms · tendencia.contexto 8286 ms · tendencia.grafica 208 ms · tendencia.grafica.curva 223 ms · tendencia.grafica.inicio 236 ms · tendencia.grafica.proyeccion 867 ms · tendencia.widgets 755 ms · tendencia.saldo 581 ms · presupuestos 2019 ms · salud 970 ms · gastosPorCuenta 13 ms · hero 0 ms
+1795779488776 2026-11-27 06:38:08.768328-0500 Yala[3729:1996215] [carga] PERF arranque 15882.9 ms

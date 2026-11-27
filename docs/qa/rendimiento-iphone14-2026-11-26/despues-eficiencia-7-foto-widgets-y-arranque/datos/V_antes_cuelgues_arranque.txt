@@ -1,0 +1,29 @@
+inicio s  dura ms  dueño (muestras)
+     2.4      407  foto de widgets {'Panel': 86, 'otro': 10, 'foto de widgets': 309}
+     2.8      680  foto de widgets {'foto de widgets': 516, 'Spotlight': 107, 'otro': 4, 'Panel': 50}
+     3.9      314  foto de widgets {'foto de widgets': 131, 'otro': 33, 'Spotlight': 123, 'Panel': 26}
+     4.2      687  foto de widgets {'foto de widgets': 390, 'Spotlight': 244, 'Panel': 52, 'otro': 1}
+     5.2      376  foto de widgets {'Panel': 30, 'otro': 2, 'foto de widgets': 218, 'Spotlight': 125}
+     5.6      331  foto de widgets {'Panel': 11, 'foto de widgets': 220, 'Spotlight': 101}
+     6.3      345  foto de widgets {'foto de widgets': 195, 'Spotlight': 123, 'otro': 1, 'Panel': 26}
+     7.1      519  foto de widgets {'Panel': 14, 'foto de widgets': 505}
+     7.6      436  foto de widgets {'foto de widgets': 436}
+     8.2     1370  proyección {'foto de widgets': 215, 'Spotlight': 240, 'Panel': 82, 'proyección': 833}
+     9.7     1046  proyección {'Panel': 467, 'proyección': 568}
+    11.5      899  Panel {'Panel': 782, 'Spotlight': 117}
+    12.4      660  Spotlight {'Panel': 162, 'otro': 78, 'Spotlight': 416}
+    13.2      472  Spotlight {'Spotlight': 375, 'otro': 7, 'Panel': 90}
+    15.7      305  Panel {'Panel': 256, 'otro': 43, 'Spotlight': 2}
+    16.4      365  Panel {'Panel': 358, 'otro': 6}
+    17.7      397  Panel {'Panel': 377, 'otro': 1, 'proyección': 16}
+    19.4      923  Panel {'Panel': 911}
+    20.4      672  Panel {'Panel': 647, 'otro': 1}
+    21.0      299  Panel {'Panel': 296, 'otro': 1}
+    22.1      366  sin muestras {}
+
+21 cuelgues > 250 ms en los primeros 60 s · total 11.9 s · el más largo 1370 ms
+  foto de widgets    4.1 s
+  Panel              3.9 s
+  proyección         2.4 s
+  Spotlight          1.1 s
+  sin muestras       0.4 s

@@ -1,0 +1,8 @@
+ronda pantalla                   fotog mediana  p90  máx tirones tir/s
+    1 Panel                        100      33   52   63       2  1.16
+    2 Panel                         99      32   55   64       2  1.18
+    3 Panel                        104      33   55   60       1  0.56
+
+Total por pantalla (3 rondas)
+  Panel                      mediana   32  máx   64  tirones/s  0.96  (de render 0.19)
+  TODAS                      mediana   32  máx   64  tirones/s  0.96  (de render 0.19)

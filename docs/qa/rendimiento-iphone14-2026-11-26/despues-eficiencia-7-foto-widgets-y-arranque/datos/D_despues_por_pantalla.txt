@@ -1,0 +1,24 @@
+ronda pantalla                   fotog mediana  p90  máx tirones tir/s
+    1 Panel                         92      39   54   63       5  3.16
+    1 Estadisticas-Resumen          92      34   50   62       3  1.90
+    1 Estadisticas-Tendencias       94      34   56   62       4  2.49
+    1 Estadisticas-Distribucion     93      35   44   49       4  2.51
+    1 Pagos-planificados            94      34   47   49       1  0.63
+    2 Panel                         95      31   49   61       8  4.99
+    2 Estadisticas-Resumen          94      19   21   22       3  1.88
+    2 Estadisticas-Tendencias       92      34   56   62       3  1.89
+    2 Estadisticas-Distribucion     93      34   44   50       4  2.53
+    2 Pagos-planificados            94      34   48   50       2  1.25
+    3 Panel                         91      30   48   58       7  4.43
+    3 Estadisticas-Resumen          93      19   21   24       2  1.26
+    3 Estadisticas-Tendencias       94      35   56   63       3  1.87
+    3 Estadisticas-Distribucion     91      35   45   49       2  1.28
+    3 Pagos-planificados            97      34   47   49       3  1.81
+
+Total por pantalla (3 rondas)
+  Panel                      mediana   32  máx   63  tirones/s  4.20  (de render 0.42)
+  Estadisticas-Resumen       mediana   20  máx   62  tirones/s  1.68  (de render 0.63)
+  Estadisticas-Tendencias    mediana   34  máx   63  tirones/s  2.08  (de render 0.63)
+  Estadisticas-Distribucion  mediana   35  máx   50  tirones/s  2.11  (de render 0.00)
+  Pagos-planificados         mediana   34  máx   50  tirones/s  1.23  (de render 0.41)
+  TODAS                      mediana   33  máx   63  tirones/s  2.26  (de render 0.42)
