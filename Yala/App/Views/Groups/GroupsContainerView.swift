@@ -74,6 +74,8 @@ struct GroupsContainerView: View {
     @State private var compartidoChip: CompartidoChip = .groups
     /// Compartido (lote 2): la persona abierta desde su tarjeta.
     @State private var openedPerson: CompartidoPersonasLogic.Person?
+    /// Compartido lote 3: dar de alta a una persona («Añadir persona», «¿Con quién?») y lo que sigue al crearla.
+    @State private var personFlow = CompartidoPersonFlowState()
     @State private var showsSettledPeople = false
     /// El veredicto de App Attest de ESTE teléfono, y **solo el veredicto**. Es un `@State` porque
     /// `GroupsAttestStreakStore.isTerminal()` lee `UserDefaults` —que no repinta ninguna vista— y además depende
@@ -136,6 +138,11 @@ struct GroupsContainerView: View {
                         // (`.identity`): el título grande vive en el scroll de la lista, y fundirla lo fundiría con ella.
                         .transition(.loadingPlaceholder)
                         .zIndex(1)
+                } else if viewModel.activeGroups.isEmpty && viewModel.archivedGroups.isEmpty && showsFullEmptyView {
+                    // Compartido lote 3 (maqueta v2, punto 6): sin grupos, la vista completa desde el primer día —chips,
+                    // fila de captura y un vacío por chip—. La cuenta se pide al crear, no al entrar.
+                    compartidoEmptyFullView
+                        .transition(.identity)
                 } else if viewModel.activeGroups.isEmpty && viewModel.archivedGroups.isEmpty {
                     // L12-2: la tarjeta con los pasos es más alta que el estado vacío de antes; con el texto grande o en
                     // un SE no cabe sin desplazarse. Cuando cabe, queda centrada y sin scroll.
@@ -378,6 +385,15 @@ struct GroupsContainerView: View {
                     expenseComposerPayload = ExpenseComposerPayload(groups: [group], initialGroup: group, receiptSplit: nil)
                 }
             )
+            .modifier(CompartidoPersonFlowPresentations(
+                flow: personFlow,
+                knownGroups: viewModel.eligibleGroupsForExpense(),
+                memberCount: { viewModel.memberCount(for: $0) },
+                onCreate: { name, purpose in Task { await createPerson(name, then: purpose) } },
+                onPick: { group, purpose in continueAfterPerson(group, purpose) },
+                onInviteReady: { groupReadyToInvite = $0 }))
+            .onChange(of: sessionRevision) { _, _ in resumePendingPerson() }
+            .onChange(of: consentRevision) { _, _ in resumePendingPerson() }
             .navigationDestination(item: $viewModel.selectedGroup) { group in
                 // En ventana ancha el grupo va en la columna de detalle, junto a la lista y sin tapar la barra de
                 // navigación; en compacta, empujado como siempre.
@@ -406,6 +422,9 @@ struct GroupsContainerView: View {
                 // salía vacío ~0,15 s la primera vez que se entraba tras abrir la app. Solo esa animación: una
                 // transacción sin animaciones viajaba a los `onChange` que presentan la hoja de invitar o empujan el
                 // grupo pendiente (review del 2026-11-02). La carga tardía sigue fundiéndose.
+                #if DEBUG
+                CompartidoUITestSeed.plantIfRequested(context: modelContext)
+                #endif
                 let hadLoaded = viewModel.hasLoadedOnce
                 viewModel.setContext(modelContext)
                 if GroupsFirstLoadLogic.arrivedWithoutWaiting(
@@ -600,14 +619,8 @@ struct GroupsContainerView: View {
         // ni al conectar la cuenta.
         let _ = consentRevision
         let _ = sessionRevision
-        let kind = GroupsEmptyStateLogic.decide(
-            flagOn: CloudSyncFlags.groupsBackendEnabled,
-            hasSeenEducational: hasSeenGroupsEducational,
-            hadSessionEver: GroupsSessionHistoryMarker.hadSessionEver(),
-            hasSession: CloudAuthService.shared.hasSession,
-            isConsented: GroupsConsentState.isAccepted,
-            hasAssociatedAccount: GroupsAccountAssociation.shared.hasAssociation
-        )
+        // Una sola decisión del vacío, compartida con la vista completa de Compartido (lote 3).
+        let kind = currentEmptyKind
         // L12-2: los cinco estados comparten la tarjeta; los del camino hacia el primer grupo marcan su paso.
         let card = GroupsEmptyStepsLogic.card(
             for: kind,
@@ -868,6 +881,13 @@ struct GroupsContainerView: View {
                 return
             }
         }
+        // Compartido lote 3: «Apuntarlo con una persona» de la hoja del + sin grupos llega aquí sin nadie elegible. Con
+        // la lista ya cargada y nada pendiente de aprobar, «¿Con quién?» en vez de esperar a un grupo que no va a llegar.
+        if wantedGroup == nil, eligibles.isEmpty, viewModel.hasLoadedOnce {
+            navigation.pendingNewGroupExpense = false
+            personFlow.ask(.newExpense)
+            return
+        }
         guard let initial = wantedGroup ?? lastUsedOrFirst(of: eligibles) else { return }
         navigation.pendingNewGroupExpense = false
         navigation.pendingNewGroupExpenseGroupID = nil
@@ -1002,12 +1022,142 @@ struct GroupsContainerView: View {
     /// la pestaña es la de hoy y se porta como el chip Grupos.
     private var shownCompartidoChip: CompartidoChip {
         CompartidoChipLogic.shown(
-            selected: compartidoChip, hasLoaded: viewModel.hasLoadedOnce, hasActiveGroups: !viewModel.activeGroups.isEmpty)
+            selected: compartidoChip, hasLoaded: viewModel.hasLoadedOnce,
+            hasActiveGroups: !viewModel.activeGroups.isEmpty || showsFullEmptyView)
     }
 
-    /// «Añadir persona». Mientras una persona no sea un grupo de dos (lotes 2 y 3), abre el alta de grupo de hoy.
+    /// «Añadir persona» (lote 3): el nombre y, al crearla, la hoja de invitar con su texto de persona.
     private func addPerson() {
-        Task { await requestCreateGroup() }
+        personFlow.showAddPerson = true
+    }
+
+    // MARK: - Compartido (lote 3): persona nueva y entrada sin grupo
+
+    /// La vista completa sin grupos: lo decide `CompartidoEntradaLogic` con el mismo estado que la tarjeta de pasos.
+    private var showsFullEmptyView: Bool {
+        let _ = consentRevision
+        let _ = sessionRevision
+        return CompartidoEntradaLogic.showsFullView(
+            kind: currentEmptyKind,
+            flagOn: CloudSyncFlags.groupsBackendEnabled,
+            joinOnTheWay: GroupsJoinOnTheWayLogic.showsOnTheWay(phase: GroupJoinIntentTracker.shared.phase))
+    }
+
+    private var currentEmptyKind: GroupsEmptyStateLogic.Kind {
+        GroupsEmptyStateLogic.decide(
+            flagOn: CloudSyncFlags.groupsBackendEnabled,
+            hasSeenEducational: hasSeenGroupsEducational,
+            hadSessionEver: GroupsSessionHistoryMarker.hadSessionEver(),
+            hasSession: CloudAuthService.shared.hasSession,
+            isConsented: GroupsConsentState.isAccepted,
+            hasAssociatedAccount: GroupsAccountAssociation.shared.hasAssociation
+        )
+    }
+
+    /// Sin grupos ni personas: chips, la fila de captura de siempre y el vacío del chip elegido (maqueta v2, punto 6).
+    private var compartidoEmptyFullView: some View {
+        ScrollView {
+            VStack(spacing: DS.Spacing.xxl) {
+                GroupQuickActionsRow(identifierPrefix: "groups", onNewExpense: startNewExpense, onReceipt: startReceiptSplit)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                if compartidoChip == .people {
+                    CompartidoEmptyChipCard(
+                        systemImage: "person.fill", tint: .incomeFill,
+                        title: L10n.Compartido.emptyPeopleTitle, message: L10n.Compartido.emptyPeopleMessage,
+                        actionTitle: L10n.Compartido.emptyPeopleAction, actionIdentifier: "compartido_empty_people_action",
+                        action: startNewExpense)
+                } else {
+                    let kind = currentEmptyKind
+                    CompartidoEmptyChipCard(
+                        systemImage: "person.2.fill", tint: .electricIndigo,
+                        title: L10n.Compartido.emptyGroupsTitle, message: L10n.Compartido.emptyGroupsMessage,
+                        actionTitle: L10n.Compartido.emptyGroupsAction,
+                        actionIdentifier: CompartidoEntradaLogic.groupsCardIdentifier(kind: kind),
+                        action: { emptyGroupsAction(kind: kind) })
+                    #if DEBUG
+                    // Seam de la card nve0 (como en la tarjeta de pasos): el reloj de la sesión que llega tarde arranca
+                    // con «Crea tu cuenta» delante.
+                    .onAppear { if kind == .createAccount { CloudAuthService.shared.armUITestDelayedFakeSession() } }
+                    #endif
+                }
+            }
+            .padding(.top, DS.Spacing.sm)
+            .padding(.bottom, DS.Spacing.safeBottom)
+        }
+        .scrollViewGlassEdges()
+        .navigationChipsInset { CompartidoChipsBar(selection: $compartidoChip) }
+        .accessibilityIdentifier("compartido_empty_full")
+    }
+
+    /// «Crear grupo» del vacío: el mismo camino que «Nuevo grupo» (cuenta y consentimiento si faltan); sin haber visto
+    /// nunca qué es un grupo, primero eso, como la tarjeta de antes.
+    private func emptyGroupsAction(kind: GroupsEmptyStateLogic.Kind) {
+        if kind == .needsEducational {
+            showGroupsOnboarding = true
+        } else {
+            Task { await requestCreateGroup() }
+        }
+    }
+
+    /// Da de alta a la persona. Con la cuenta y el consentimiento ya, la crea; si falta algo, lo pide (las mismas hojas
+    /// que «Nuevo grupo») y la crea al volver (`resumePendingPerson`). Si dice que no, no se guarda nada.
+    private func createPerson(_ name: String, then purpose: CompartidoPersonFlowState.Purpose) async {
+        if !SwiftDataConfiguration.isUITesting {
+            await RemoteConfigClient.shared.refreshIfDue(force: true)
+        }
+        switch CompartidoPersonaAltaLogic.route(
+            flagOn: CloudSyncFlags.groupsBackendEnabled,
+            hasSession: CloudAuthService.shared.hasSession,
+            consentAccepted: GroupsConsentState.isAccepted
+        ) {
+        case .backend:
+            personFlow.pendingAfterIdentity = nil
+            personFlow.isCreating = true
+            defer { personFlow.isCreating = false }
+            do {
+                let person = try await CompartidoPersonaAlta.crear(
+                    nombre: name, moneda: appPreferences.defaultCurrencyCode.rawValue, contexto: modelContext)
+                viewModel.loadData()
+                DS.Haptic.success()
+                if !personFlow.deferIfSheetOpen(person, purpose: purpose) { continueAfterPerson(person, purpose) }
+            } catch {
+                #if DEBUG
+                print("GroupsContainerView: Error creating person: \(error)")
+                #endif
+                DS.Haptic.error()
+                personFlow.errorMessage = GroupActionErrorLogic.message(for: error)
+            }
+        case .channelOff:
+            DS.Haptic.error()
+            personFlow.showAddPerson = false
+            showChannelOffAlert = true
+        case .needsConsent:
+            personFlow.waitForIdentity(name: name, purpose: purpose)
+            requestGroupsConsent()
+        case .needsSignIn:
+            personFlow.waitForIdentity(name: name, purpose: purpose)
+            requestGroupsSignIn()
+        }
+    }
+
+    /// Al volver de crear la cuenta o aceptar el consentimiento, la persona que se estaba añadiendo (si no caducó).
+    private func resumePendingPerson() {
+        guard let pending = personFlow.takePendingIfFresh() else { return }
+        Task { await createPerson(pending.name, then: pending.purpose) }
+    }
+
+    /// Lo que sigue a tener a la persona: invitarla, o el gasto (Nuevo gasto, Voz, Foto o Yala IA) con ella.
+    private func continueAfterPerson(_ person: SplitGroup, _ purpose: CompartidoPersonFlowState.Purpose) {
+        switch purpose {
+        case .invite:
+            groupReadyToInvite = person
+        case .newExpense:
+            var eligibles = viewModel.eligibleGroupsForExpense()
+            if !eligibles.contains(where: { $0.id == person.id }) { eligibles.append(person) }
+            expenseComposerPayload = ExpenseComposerPayload(groups: eligibles, initialGroup: person)
+        case .receipt(let source):
+            receiptRequest = GroupReceiptRequest(groups: [person], preselected: person, source: source)
+        }
     }
 
     // MARK: - Archived Groups
@@ -1356,18 +1506,10 @@ struct GroupsContainerView: View {
     /// en la barra de arriba; sin grupo donde apuntar, la fila es solo «Nuevo grupo», como antes.
     @ViewBuilder
     private var topActions: some View {
+        // Compartido lote 3: la fila de captura siempre, también sin grupo donde apuntar: «Nuevo gasto» pregunta
+        // «¿Con quién?» y deja escribir un nombre. «Nuevo grupo» sigue en la barra de arriba.
         Group {
-            if viewModel.eligibleGroupsForExpense().isEmpty {
-                TopPrimaryActionPill(
-                    title: L10n.Groups.newGroup,
-                    systemImage: "person.2.fill",
-                    accessibilityIdentifier: "groups_action_new_group"
-                ) {
-                    Task { await requestCreateGroup() }
-                }
-            } else {
-                GroupQuickActionsRow(identifierPrefix: "groups", onNewExpense: startNewExpense, onReceipt: startReceiptSplit)
-            }
+            GroupQuickActionsRow(identifierPrefix: "groups", onNewExpense: startNewExpense, onReceipt: startReceiptSplit)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         // Sin margen propio (card rj3b, 2026-10-28): el del scroll ya lo pone; con los dos, «Nuevo gasto» y «Nuevo grupo»
@@ -1378,6 +1520,11 @@ struct GroupsContainerView: View {
     /// «Nuevo gasto», de arriba o del flotante: el composer con los grupos donde se puede apuntar.
     private func startNewExpense() {
         let eligibles = viewModel.eligibleGroupsForExpense()
+        // Compartido lote 3: sin nadie con quien apuntar, «¿Con quién?» primero (con «Escribir un nombre»).
+        if CompartidoEntradaLogic.start(eligibleCount: eligibles.count) == .askWho {
+            personFlow.ask(.newExpense)
+            return
+        }
         if let initial = lastUsedOrFirst(of: eligibles) {
             expenseComposerPayload = ExpenseComposerPayload(groups: eligibles, initialGroup: initial)
         }
@@ -1386,6 +1533,10 @@ struct GroupsContainerView: View {
     /// Voz o Foto de arriba: con un solo grupo elegible, directo a él; con varios, «¿En qué grupo?» con el último marcado.
     private func startReceiptSplit(_ source: GroupReceiptEntryKind) {
         let eligibles = viewModel.eligibleGroupsForExpense()
+        if CompartidoEntradaLogic.start(eligibleCount: eligibles.count) == .askWho {
+            personFlow.ask(.receipt(source))
+            return
+        }
         guard let initial = lastUsedOrFirst(of: eligibles) else { return }
         receiptRequest = GroupReceiptRequest(groups: eligibles, preselected: initial, source: source)
     }

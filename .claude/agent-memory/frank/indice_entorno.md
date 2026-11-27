@@ -59,3 +59,4 @@ Subíndice de `MEMORY.md` (2026-11-05).
 - [DerivedData fuera del worktree](feedback_deriveddata_fuera_del_worktree.md) — dentro, el sello del gate hashea 26.000 ficheros y se cuelga; info/exclude del worktree no vale.
 - [Sentry: commits entre máquinas](reference_sentry_commits_entre_maquinas.md) — archivar en otra máquina rompe set-commits; los dSYM suben igual.
 - [Probar el reenvío de Gmail](reference_probar_el_reenvio_de_gmail.md) — correo a staging desde el Gmail de Jürgen, leer Email Routing por GraphQL; la página de Reenvío engaña recién cargada.
+- [astro check se cuelga: usa build](reference_astro_check_se_cuelga_usa_build.md) — en Web/ espera instalar @astrojs/check sin CPU; `npx astro build` valida en 2 s.

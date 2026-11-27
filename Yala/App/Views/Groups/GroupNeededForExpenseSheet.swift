@@ -6,6 +6,9 @@
 //  con su estado vacío, sin decir por qué: la persona había tocado «Grupo» para apuntar un gasto. Ahora esta hoja explica
 //  el paso que falta y ofrece «Crear grupo»; al crearlo, el gasto sigue, avisado («Ahora apunta el gasto»).
 //
+//  Compartido (lote 3, 26-nov-2026): ya no corta el camino. Lo primero es «Apuntarlo con una persona», que lleva a
+//  Compartido y abre «¿Con quién?» (escribir un nombre, sin crear un grupo); «Crear grupo» queda como segunda opción.
+//
 
 import SwiftUI
 
@@ -14,6 +17,7 @@ struct GroupNeededForExpenseSheet: View {
     var onCreateGroup: () -> Void
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(SceneNavigation.self) private var navigation
 
     var body: some View {
         NavigationStack {
@@ -36,10 +40,25 @@ struct GroupNeededForExpenseSheet: View {
                     .accessibilityAddTraits(.isHeader)
                     .accessibilityIdentifier("group_needed_title")
 
-                YalaPrimaryButton(L10n.Groups.Empty.action, icon: "plus") {
-                    onCreateGroup()
+                Text(L10n.Compartido.neededMessage)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                VStack(spacing: DS.Spacing.sm) {
+                    YalaPrimaryButton(L10n.Compartido.neededWithPerson, icon: "person.fill") {
+                        // Compartido abre «¿Con quién?» al llegar: `pendingNewGroupExpense` sin nadie elegible.
+                        dismiss()
+                        navigation.navigateToGroupsAndComposeExpense()
+                    }
+                    .accessibilityIdentifier("group_needed_with_person")
+
+                    YalaSecondaryButton(L10n.Groups.Empty.action) {
+                        onCreateGroup()
+                    }
+                    .accessibilityIdentifier("group_needed_create")
                 }
-                .accessibilityIdentifier("group_needed_create")
             }
             .padding(.horizontal, DS.Spacing.xl)
             .padding(.vertical, DS.Spacing.lg)

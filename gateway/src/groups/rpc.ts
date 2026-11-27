@@ -3,7 +3,7 @@
  * sync (`/groups/push|pull|merkle`); convive con `/sync/*` y `/account/*` sin tocarlos.
  *
  * Invariantes de seguridad (espejo del canal de sync de grupos):
- * - `fn` DEBE estar en la ALLOWLIST estática (13 RPCs: 11 de membresía + los 2 del consent C1) —
+ * - `fn` DEBE estar en la ALLOWLIST estática (14 RPCs: 12 de membresía + los 2 del consent C1) —
  *   cualquier otra ruta (p.ej.
  *   apply_group_delta, que solo va por /groups/push) → 404. Evita que el gateway sea un proxy RPC
  *   genérico contra PostgREST.
@@ -50,6 +50,19 @@ export const PARAM_ALLOWLIST: Record<string, Set<string>> = {
     "p_show_debts_in_single_currency",
     "p_members_can_invite",
   ]),
+  // Compartido lote 3 (g38_01): una persona es un grupo de dos que nace con su sitio reservado (el nombre que le pone
+  // quien la crea, `user_id` null). Mismos params que `create_group` menos los de reparto, más la clave del sitio, que
+  // acuña el teléfono. Escribe columnas † (nombre del grupo y de los dos miembros) → RPC_NEEDS_ENC_KEY. ENTRADA: la
+  // corta el kill-switch, como `create_group`.
+  create_person_group: new Set([
+    "p_group_id",
+    "p_name",
+    "p_currency_code",
+    "p_icon_name",
+    "p_color_hex",
+    "p_display_name",
+    "p_person_member_key",
+  ]),
   create_group_invite: new Set(["p_group_id", "p_ttl_seconds", "p_max_uses"]),
   join_group: new Set(["p_token", "p_display_name", "p_legacy_member_key"]),
   approve_member: new Set(["p_group_id", "p_member_key"]),
@@ -80,6 +93,7 @@ export const PARAM_ALLOWLIST: Record<string, Set<string>> = {
 // set_member_role NO escriben † → sin llave.
 const RPC_NEEDS_ENC_KEY = new Set([
   "create_group",
+  "create_person_group",
   "join_group",
   "update_member_display_name",
   "groups_forget_user",
@@ -251,6 +265,16 @@ export function notifyMembershipChange(
   // `join_group` → avisa a QUIEN PUEDE APROBAR, y sólo si de verdad quedó pendiente. Un `rebound` o
   // un re-tap del enlace de alguien ya activo no es noticia para nadie.
   if (fn === "join_group") {
+    // g38_01 · una PERSONA (grupo de dos, Compartido) no pide aprobación: quien abre el enlace entra activo. Lo que sí
+    // es noticia es para quien la creó: «ya está dentro». Va a los ADMINS (en una persona, solo su creador) con el
+    // mismo texto neutro de un cambio de membresía, y solo con una transición real (`changed`).
+    if (body.is_person === true) {
+      if (status !== "active" || body.changed !== true) return;
+      waitUntil(
+        fanOutGroupPush(c.env, auth, [groupId], null, { kind: "admins" }, "notifications.groups.remoteMembershipUpdate"),
+      );
+      return;
+    }
     if (status !== "pendingApproval") return;
     // **El `status` NO basta, y creerlo costó ruido en producción** (`rejoin-tap-renotifies-admins`).
     // Vale `pendingApproval` en dos situaciones que el filtro de arriba no distingue: la de quien

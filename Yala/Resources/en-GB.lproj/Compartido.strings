@@ -47,3 +47,32 @@
 "compartido.detail.stats.theyOwe" = "owes you %@";
 "compartido.detail.stats.youOwe" = "you owe %@";
 "compartido.detail.openHint" = "Opens what you share with this person";
+
+/* Lote 3: invitar a una persona y entrar sin grupo («¿Con quién?», persona añadida, la invitación a Yala). */
+"compartido.who.title" = "Who with?";
+"compartido.who.personSubtitle" = "Person";
+"compartido.who.writeName" = "Type a name";
+"compartido.who.namePlaceholder" = "Name";
+"compartido.who.add" = "Add";
+"compartido.who.hint" = "They don't need Yala yet: you can send them an invite later.";
+"compartido.addPerson.message" = "Type their name. You'll be able to log expenses with this person and send them an invite whenever you like.";
+"compartido.empty.groups.title" = "No groups yet";
+"compartido.empty.groups.message" = "For trips, home or the office: everyone sees the expenses as they happen.";
+"compartido.empty.groups.action" = "Create group";
+"compartido.empty.people.title" = "Log an expense with someone";
+"compartido.empty.people.message" = "A shared lunch or a taxi. Type their name and Yala keeps track: no need to create a group.";
+"compartido.empty.people.action" = "New expense";
+"compartido.added.title" = "%@ is now in Shared";
+"compartido.added.message" = "Invite %@ so they can see what they owe you and log expenses with you. They get a link and join with one tap.";
+"compartido.share.message" = "%@ is inviting you to Yala to keep track of the expenses you share. Tap the link to join; if you don't have Yala, download it and tap the link again.";
+"compartido.share.messageNoInviter" = "You're invited to Yala to keep track of the expenses you share. Tap the link to join; if you don't have Yala, download it and tap the link again.";
+"compartido.invite.cardTitle" = "%@ is inviting you to Yala";
+"compartido.invite.cardTitleNoName" = "You're invited to Yala";
+"compartido.invite.cardSubtitle" = "To keep track of the expenses you share";
+"compartido.invite.message" = "You're being invited to join Yala to keep track of your shared expenses here.";
+"compartido.invite.join" = "Join Yala";
+"compartido.invite.readyTitle" = "You're now connected with %@";
+"compartido.invite.readyTitleNoName" = "You're in Yala";
+"compartido.invite.readyMessage" = "Whatever you log together, you both see it, up to date.";
+"compartido.needed.withPerson" = "Log it with a person";
+"compartido.needed.message" = "Type who it's with and Yala keeps track. For a trip or home, create a group.";

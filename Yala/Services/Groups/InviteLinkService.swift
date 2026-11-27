@@ -130,6 +130,12 @@ enum InviteLinkService {
             URLQueryItem(name: "m", value: memberNames),
             URLQueryItem(name: "u", value: String(inviterName.prefix(30))),
         ]
+        // Compartido lote 3: `k=p` marca la invitación a una PERSONA (`SplitGroup.isPerson`). La app y la web enseñan
+        // «X te invita a Yala» en vez de la tarjeta del grupo. Es cosmético como el resto: quien decide que no hay
+        // aprobación es el servidor (`join_group`, g38_01). `n` lleva el nombre que le puso quien invita.
+        if group.isPerson {
+            components.queryItems?.append(URLQueryItem(name: "k", value: "p"))
+        }
         return components.url
     }
 
@@ -208,6 +214,9 @@ enum InviteLinkService {
         /// L12-17 · quién invita (`u` del enlace): «Lucía te invita» en la tarjeta del grupo. Opcional Codable back-compat:
         /// una marca persistida antes no lo trae y decodifica a `nil`, que pinta «Te invitaron a este grupo».
         var inviter: String? = nil
+        /// Compartido lote 3 · `k=p` del enlace: la invitación es a una persona, no a un grupo. Opcional Codable
+        /// back-compat (una marca persistida antes decodifica a `nil`, que es «grupo»).
+        var isPerson: Bool? = nil
 
         nonisolated static let empty = BrandedMetadata(name: nil, icon: nil, color: nil, members: nil)
 
@@ -237,7 +246,8 @@ enum InviteLinkService {
             icon: items.first(where: { $0.name == "i" })?.value,
             color: items.first(where: { $0.name == "c" })?.value,
             members: membersRaw?.split(separator: ",").map(String.init),
-            inviter: items.first(where: { $0.name == "u" })?.value
+            inviter: items.first(where: { $0.name == "u" })?.value,
+            isPerson: items.first(where: { $0.name == "k" })?.value == "p" ? true : nil
         )
     }
 

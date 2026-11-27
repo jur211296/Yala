@@ -116,6 +116,63 @@ extension L10n {
             static var openHint: String { s("openHint") }
         }
 
+        // MARK: Lote 3 · invitar a una persona y entrar sin grupo
+
+        /// «¿Con quién?» (el selector de Nuevo gasto, Voz, Foto e Yala IA)
+        static var whoTitle: String { s("who.title") }
+        /// «Persona» (debajo del nombre de una persona en «¿Con quién?»)
+        static var personSubtitle: String { s("who.personSubtitle") }
+        /// «Escribir un nombre»
+        static var writeName: String { s("who.writeName") }
+        /// «Nombre»
+        static var namePlaceholder: String { s("who.namePlaceholder") }
+        /// «Añadir»
+        static var addAction: String { s("who.add") }
+        /// «No hace falta que tenga Yala: le puedes mandar la invitación después.»
+        static var newPersonHint: String { s("who.hint") }
+        /// «Escribe su nombre. Podrás apuntar gastos con esta persona…» (hoja de «Añadir persona»)
+        static var addPersonMessage: String { s("addPerson.message") }
+        /// «Aún no tienes grupos»
+        static var emptyGroupsTitle: String { s("empty.groups.title") }
+        /// «Para viajes, la casa o la oficina: todos ven los gastos al día.»
+        static var emptyGroupsMessage: String { s("empty.groups.message") }
+        /// «Crear grupo»
+        static var emptyGroupsAction: String { s("empty.groups.action") }
+        /// «Apunta un gasto con alguien»
+        static var emptyPeopleTitle: String { s("empty.people.title") }
+        /// «Un almuerzo a medias o un taxi…»
+        static var emptyPeopleMessage: String { s("empty.people.message") }
+        /// «Nuevo gasto»
+        static var emptyPeopleAction: String { s("empty.people.action") }
+        /// «Marta ya está en Compartido»
+        static func addedTitle(_ name: String) -> String { f("added.title", name) }
+        /// «Invita a Marta para que vea lo que te debe y apunte gastos contigo…»
+        static func addedMessage(_ name: String) -> String { f("added.message", name) }
+        /// «Jürgen te invita a Yala para llevar juntos los gastos que comparten…» (texto que viaja con el enlace)
+        static func shareMessage(inviter: String) -> String { f("share.message", inviter) }
+        /// «Te invitan a Yala para llevar juntos los gastos que comparten…»
+        static var shareMessageNoInviter: String { s("share.messageNoInviter") }
+        /// «Jürgen te invita a Yala» (tarjeta de quien abre el enlace)
+        static func inviteCardTitle(_ inviter: String) -> String { f("invite.cardTitle", inviter) }
+        /// «Te invitan a Yala»
+        static var inviteCardTitleNoName: String { s("invite.cardTitleNoName") }
+        /// «Para seguir juntos los gastos que comparten»
+        static var inviteCardSubtitle: String { s("invite.cardSubtitle") }
+        /// «Te están invitando a unirte a Yala para seguir tus gastos compartidos aquí.»
+        static var inviteMessage: String { s("invite.message") }
+        /// «Unirme a Yala»
+        static var inviteJoin: String { s("invite.join") }
+        /// «Ya estás conectado con Jürgen»
+        static func readyTitle(_ inviter: String) -> String { f("invite.readyTitle", inviter) }
+        /// «Ya estás en Yala»
+        static var readyTitleNoName: String { s("invite.readyTitleNoName") }
+        /// «Lo que apunten juntos lo ven los dos, al día.»
+        static var readyMessage: String { s("invite.readyMessage") }
+        /// «Apúntalo con una persona» (hoja de «Grupo» del + sin grupos)
+        static var neededWithPerson: String { s("needed.withPerson") }
+        /// «Escribe con quién y Yala lleva la cuenta. Para un viaje o la casa, crea un grupo.»
+        static var neededMessage: String { s("needed.message") }
+
         /// Los nombres de los grupos, separados por « · » como la línea de la tarjeta de grupo.
         static func joinedGroups(_ groups: [String]) -> String { groups.joined(separator: " · ") }
     }

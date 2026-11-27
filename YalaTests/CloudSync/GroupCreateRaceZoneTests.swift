@@ -440,8 +440,15 @@ struct GroupCreateRaceZoneTests {
                 "el insert del grupo dejó de estar detrás de la comprobación de la zona")
         #expect(source.contains("if memberRows.isEmpty {"),
                 "el insert del owner dejó de estar detrás de la comprobación por member_key")
-        // Dos inserts en todo el fichero, y ninguno más: un tercero sería una materialización sin resolver.
-        #expect(source.components(separatedBy: "context.insert(").count - 1 == 2,
+        // Compartido lote 3: `createPersonGroup` materializa con el mismo molde (grupo, dueño y sitio reservado), cada
+        // insert detrás de su comprobación leída ANTES del primer insert.
+        #expect(source.contains("if zoneRows.isEmpty { context.insert(group) }"),
+                "el insert de la persona dejó de estar detrás de la comprobación de la zona")
+        #expect(source.contains("if ownerRows.isEmpty {") && source.contains("if seatRows.isEmpty {"),
+                "un insert de la persona dejó de estar detrás de su comprobación por member_key")
+        // Dos inserts de `createGroup` y tres de `createPersonGroup`, y ninguno más: otro sería una materialización
+        // sin resolver.
+        #expect(source.components(separatedBy: "context.insert(").count - 1 == 5,
                 "apareció un context.insert nuevo en el service: ¿resuelve su identidad antes?")
     }
 
@@ -481,8 +488,9 @@ struct GroupCreateRaceZoneTests {
         let save = try #require(adoptBody.range(of: "if changed { try context.save() }"))
         #expect(author.upperBound < save.lowerBound,
                 "la adopción guarda antes de ponerse el autor del outbox: el drain re-emitiría lo adoptado")
-        #expect(source.components(separatedBy: "try saveUnderOutboxAuthor(context)").count - 1 == 1,
-                "createGroup dejó de materializar en un solo bloque autorizado")
+        // Uno de `createGroup` y uno de `createPersonGroup` (Compartido lote 3): cada alta en un solo bloque autorizado.
+        #expect(source.components(separatedBy: "try saveUnderOutboxAuthor(context)").count - 1 == 2,
+                "un alta dejó de materializar en un solo bloque autorizado")
     }
 }
 

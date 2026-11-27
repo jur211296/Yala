@@ -104,6 +104,7 @@ struct GroupInviteOnboardingView: View {
         }
         .onAppear {
             seedNameFromProfileIfNeeded()
+            seedPersonNameFromLinkIfNeeded()
             joinIfGroupCardWasAccepted()
         }
         .onChange(of: tracker.phase) { _, newPhase in
@@ -131,9 +132,9 @@ struct GroupInviteOnboardingView: View {
         VStack(spacing: DS.Spacing.xl) {
             Spacer()
 
-            groupCard
+            if isPersonInvite { personCard } else { groupCard }
 
-            Text(L10n.Groups.Invite.subtitle)
+            Text(isPersonInvite ? L10n.Compartido.inviteMessage : L10n.Groups.Invite.subtitle)
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -156,7 +157,7 @@ struct GroupInviteOnboardingView: View {
             Spacer()
 
             VStack(spacing: DS.Spacing.sm) {
-                YalaPrimaryButton(L10n.Groups.Invite.joinButton) {
+                YalaPrimaryButton(isPersonInvite ? L10n.Compartido.inviteJoin : L10n.Groups.Invite.joinButton) {
                     handleJoinTap()
                 }
                 .accessibilityIdentifier("invite_join_button")
@@ -240,6 +241,60 @@ struct GroupInviteOnboardingView: View {
         .accessibilityIdentifier("invite_group_card")
     }
 
+    // MARK: - Compartido (lote 3): la invitación a una persona
+
+    /// La invitación es a una PERSONA (`k=p` del enlace, `SplitGroup.isPerson` del lado de quien invita): te invitan a
+    /// Yala, no a un grupo. El resto del recorrido es el de siempre; la aprobación no llega a pedirse (el servidor deja
+    /// entrar activa a la persona, g38_01).
+    private var isPersonInvite: Bool {
+        if inviteMetadata?.isPerson == true { return true }
+        #if DEBUG
+        return ProcessInfo.processInfo.arguments.contains("-uitest-invite-person")
+        #else
+        return false
+        #endif
+    }
+
+    /// Quien invita, limpio. `nil` si el enlace no lo dice.
+    private var inviterName: String? {
+        let name = inviteMetadata?.inviter?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return name.isEmpty ? nil : name
+    }
+
+    /// «Jürgen te invita a Yala · Para seguir juntos los gastos que comparten», con la inicial de quien invita. Molde de
+    /// la tarjeta del grupo (mismo cristal, mismo tamaño).
+    private var personCard: some View {
+        VStack(spacing: DS.Spacing.md) {
+            ZStack {
+                Circle()
+                    .fill(theme.accent)
+                    .frame(width: 72, height: 72) // A11Y-DT: decorative hero icon, fixed size
+                Text(DividirBoletaImageBuilder.initials(inviterName ?? "Yala"))
+                    .font(.system(size: 30, weight: .semibold)) // A11Y-DT: decorative initials inside circle
+                    .foregroundStyle(theme.onAccent)
+            }
+            .glassEffect(.regular, in: Circle())
+            .accessibilityHidden(true)
+
+            VStack(spacing: DS.Spacing.xs) {
+                Text(personCardTitle)
+                    .font(DS.Typography.title2)
+                    .multilineTextAlignment(.center)
+                    .accessibilityAddTraits(.isHeader)
+                    .accessibilityIdentifier("invite_person_title")
+                Text(L10n.Compartido.inviteCardSubtitle)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+        }
+        .padding(DS.Spacing.xl)
+        .frame(maxWidth: .infinity)
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("invite_person_card")
+    }
+
     // MARK: - Step 3: Pending Approval
 
     private var pendingApprovalStep: some View {
@@ -312,6 +367,19 @@ struct GroupInviteOnboardingView: View {
         guard hasCompletedOnboarding else { return }
         guard userName.isEmpty else { return }
         userName = profileName.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Compartido (lote 3): en la invitación a una persona, el nombre que le puso quien invita (`n` del enlace) es el de
+    /// ESTA persona, no el del dueño del teléfono: sirve de punto de partida, y lo puede cambiar. Corre después de la
+    /// siembra del perfil y solo sobre vacío.
+    private func seedPersonNameFromLinkIfNeeded() {
+        guard isPersonInvite, userName.isEmpty,
+              let name = inviteMetadata?.name?.trimmingCharacters(in: .whitespacesAndNewlines), !name.isEmpty else { return }
+        userName = name
+        #if DEBUG
+        // El seam de XCUITest trae la marca de un grupo («Depa Miraflores»); la de una persona trae su nombre.
+        if ProcessInfo.processInfo.arguments.contains("-uitest-invite-person") { userName = "Marta" }
+        #endif
     }
 
     // MARK: - Join handler (A3)
@@ -578,13 +646,13 @@ struct GroupInviteOnboardingView: View {
                 .accessibilityHidden(true)
 
             VStack(spacing: DS.Spacing.sm) {
-                Text(readyTitle(joined))
+                Text(isPersonInvite ? personReadyTitle : readyTitle(joined))
                     .font(DS.Typography.title2)
                     .multilineTextAlignment(.center)
                     .accessibilityAddTraits(.isHeader)
                     .accessibilityIdentifier("invite_ready_title")
 
-                if let membersLine = joinedMembersLine(joined) {
+                if let membersLine = isPersonInvite ? L10n.Compartido.readyMessage : joinedMembersLine(joined) {
                     Text(membersLine)
                         .font(DS.Typography.subheadline)
                         .foregroundStyle(.secondary)
@@ -604,10 +672,18 @@ struct GroupInviteOnboardingView: View {
                 }
                 .accessibilityIdentifier("invite_ready_add_expense")
 
-                YalaSecondaryButton(L10n.UXD14.readyViewGroup) {
-                    finishJoined(addExpense: false, group: joined)
+                if isPersonInvite {
+                    // Una persona no tiene «grupo» que ver: la pestaña Compartido ya la enseña en Personas.
+                    YalaSecondaryButton(L10n.Action.continueAction) {
+                        complete(.joined)
+                    }
+                    .accessibilityIdentifier("invite_ready_continue")
+                } else {
+                    YalaSecondaryButton(L10n.UXD14.readyViewGroup) {
+                        finishJoined(addExpense: false, group: joined)
+                    }
+                    .accessibilityIdentifier("invite_ready_view_group")
                 }
-                .accessibilityIdentifier("invite_ready_view_group")
             }
             .padding(.bottom, DS.Spacing.xxl)
         }
@@ -617,6 +693,18 @@ struct GroupInviteOnboardingView: View {
     private var joinedGroup: SplitGroup? {
         guard let zone = tracker.zoneName ?? pendingJoinZone else { return nil }
         return GroupService.shared.group(for: zone)
+    }
+
+    /// «Ya estás conectado con Jürgen»: el molde de «Ya estás en», con quien invita en vez del grupo.
+    private var personReadyTitle: String {
+        if let inviterName { return L10n.Compartido.readyTitle(inviterName) }
+        return L10n.Compartido.readyTitleNoName
+    }
+
+    /// «Jürgen te invita a Yala», o «Te invitan a Yala» si el enlace no dice quién.
+    private var personCardTitle: String {
+        if let inviterName { return L10n.Compartido.inviteCardTitle(inviterName) }
+        return L10n.Compartido.inviteCardTitleNoName
     }
 
     private func readyTitle(_ group: SplitGroup?) -> String {

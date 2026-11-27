@@ -148,17 +148,20 @@ struct GroupCreateRoutingWiringTests {
 
     // MARK: - El choke-point: las SIETE entradas pasan por él
 
-    @Test("MUTACIÓN (c): las siete entradas de creación pasan por `requestCreateGroup`")
+    @Test("MUTACIÓN (c): las seis entradas de creación pasan por `requestCreateGroup`")
     func allEntryPointsGoThroughTheGate() throws {
         let code = try Self.code(Self.containerView)
 
         // Empty state, «Nuevo grupo» de arriba (card kzhe, 2026-10-26; desde el 2026-11-14 solo sin grupos donde
         // apuntar), el de la barra (2026-11-14), FAB simple, FAB expandible, el `pendingNewGroupForm` del Welcome y
-        // «Añadir persona» del chip Personas de Compartido (lote 1, 2026-11-26: hasta el lote 3 abre el alta de grupo). El conteo
+        // «Añadir persona» del chip Personas de Compartido (lote 1, 2026-11-26: hasta el lote 3 abre el alta de grupo).
+        // Desde el lote 3 (2026-11-26) son SEIS: «Añadir persona» abre la hoja del nombre (alta de persona, con la misma
+        // puerta `GroupCreateRoutingLogic` vía `CompartidoPersonaAltaLogic.route`), la fila de arriba es siempre la de
+        // captura («Nuevo gasto» pregunta «¿Con quién?») y entra «Crear grupo» del vacío de la vista completa. El conteo
         // esperado es lo que impide que una entrada nueva se cuelgue del form sin pasar por el gate —
         // y lo que hace caer este test si alguien borra una llamada en vez de re-cablearla.
         let calls = code.components(separatedBy: "await requestCreateGroup()").count - 1
-        #expect(calls == 7, "se esperaban 7 entradas por el choke-point, encontradas: \(calls)")
+        #expect(calls == 6, "se esperaban 6 entradas por el choke-point, encontradas: \(calls)")
 
         // El gate es el ÚNICO que decide en esta vista: nadie puede leer la tabla por su cuenta y
         // saltarse el refresh forzado.
@@ -198,7 +201,8 @@ struct GroupCreateRoutingWiringTests {
             "DevSeedGroupSplitLines.swift",          // #if DEBUG entero, y nace con isBackendGroup = true
             "DevSeedGroupsAccountCard.swift",        // #if DEBUG entero, y nace con isBackendGroup = true
             "DevSeedGroupBridgeLeftovers.swift",     // #if DEBUG entero, y nace con isBackendGroup = true
-            "DevSeedReusarGrupo.swift"               // #if DEBUG entero, y nace con isBackendGroup = true
+            "DevSeedReusarGrupo.swift",              // #if DEBUG entero, y nace con isBackendGroup = true
+            "CompartidoUITestSeed.swift"             // #if DEBUG entero (persona de XCUITest), nace con isBackendGroup = true
         ]
         // `DevSeedTransactions.swift` entra por el MISMO criterio que `DevSeedGroups.swift`: el
         // fichero está entero bajo `#if DEBUG` (`:8` … `:676`, que es su última línea), así que no

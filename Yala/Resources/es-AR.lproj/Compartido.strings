@@ -47,3 +47,32 @@
 "compartido.detail.stats.theyOwe" = "te debe %@";
 "compartido.detail.stats.youOwe" = "le debés %@";
 "compartido.detail.openHint" = "Abre lo que compartís con esta persona";
+
+/* Lote 3: invitar a una persona y entrar sin grupo («¿Con quién?», persona añadida, la invitación a Yala). */
+"compartido.who.title" = "¿Con quién?";
+"compartido.who.personSubtitle" = "Persona";
+"compartido.who.writeName" = "Escribir un nombre";
+"compartido.who.namePlaceholder" = "Nombre";
+"compartido.who.add" = "Agregar";
+"compartido.who.hint" = "No hace falta que tenga Yala: le podés mandar la invitación después.";
+"compartido.addPerson.message" = "Escribí su nombre. Vas a poder anotar gastos con esta persona y mandarle una invitación cuando quieras.";
+"compartido.empty.groups.title" = "Todavía no tenés grupos";
+"compartido.empty.groups.message" = "Para viajes, la casa o la oficina: todos ven los gastos al día.";
+"compartido.empty.groups.action" = "Crear grupo";
+"compartido.empty.people.title" = "Anotá un gasto con alguien";
+"compartido.empty.people.message" = "Un almuerzo a medias o un taxi. Escribí su nombre y Yala lleva la cuenta: no hace falta crear un grupo.";
+"compartido.empty.people.action" = "Nuevo gasto";
+"compartido.added.title" = "%@ ya está en Compartido";
+"compartido.added.message" = "Invitá a %@ para que vea lo que te debe y anote gastos con vos. Le llega un enlace y entra con un toque.";
+"compartido.share.message" = "%@ te invita a Yala para llevar juntos los gastos que comparten. Tocá el enlace para entrar; si no tenés Yala, descargala y volvé a tocarlo.";
+"compartido.share.messageNoInviter" = "Te invitan a Yala para llevar juntos los gastos que comparten. Tocá el enlace para entrar; si no tenés Yala, descargala y volvé a tocarlo.";
+"compartido.invite.cardTitle" = "%@ te invita a Yala";
+"compartido.invite.cardTitleNoName" = "Te invitan a Yala";
+"compartido.invite.cardSubtitle" = "Para seguir juntos los gastos que comparten";
+"compartido.invite.message" = "Te están invitando a sumarte a Yala para seguir tus gastos compartidos acá.";
+"compartido.invite.join" = "Sumarme a Yala";
+"compartido.invite.readyTitle" = "Ya estás conectado con %@";
+"compartido.invite.readyTitleNoName" = "Ya estás en Yala";
+"compartido.invite.readyMessage" = "Lo que anoten juntos lo ven los dos, al día.";
+"compartido.needed.withPerson" = "Anotarlo con una persona";
+"compartido.needed.message" = "Escribí con quién y Yala lleva la cuenta. Para un viaje o la casa, creá un grupo.";

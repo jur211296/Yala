@@ -48,7 +48,14 @@ const SUPA = "https://enckey-unit.local";
 
 // Los 4 RPCs de membresía que escriben columnas † (espejo de RPC_NEEDS_ENC_KEY en src/groups/rpc.ts) y los
 // 9 que NO. Juntos son la allowlist completa: si crece una, este test obliga a clasificar la nueva.
-const NEEDS_KEY = ["create_group", "join_group", "update_member_display_name", "groups_forget_user"];
+const NEEDS_KEY = [
+  "create_group",
+  // Compartido lote 3 (g38_01): cifra el nombre de la persona y el de su sitio reservado.
+  "create_person_group",
+  "join_group",
+  "update_member_display_name",
+  "groups_forget_user",
+];
 const NO_KEY = [
   "create_group_invite",
   "approve_member",

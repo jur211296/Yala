@@ -326,7 +326,9 @@ final class GroupsMembershipClient {
     ///   record_groups_consent        | SÍ               | PK (user_id, text_version) + ON CONFLICT DO NOTHING
     ///                                |                  | → un ack perdido post-COMMIT no duplica ni re-fecha
     ///   groups_consent_state         | SÍ               | lectura pura
-    private static let neverRetryTransient: Set<String> = ["create_group", "create_group_invite"]
+    ///   create_person_group          | NUNCA            | como create_group (Compartido lote 3, g38_01): la zona
+    ///                                |                  | repetida da yala_group_exists; one-shot user-facing.
+    private static let neverRetryTransient: Set<String> = ["create_group", "create_person_group", "create_group_invite"]
 
     /// Envuelve `call` con retry SOLO de `.transient` ([R5]): delays fijos `[1s, 3s]` (3 intentos máx).
     /// JAMÁS reintenta `sessionExpired`/`permanentRejected`/`channelDisabled`/los `yala_*` mapeados/
@@ -488,7 +490,7 @@ final class GroupsMembershipClient {
         }
     }
 
-    // MARK: - Métodos tipados (13)
+    // MARK: - Métodos tipados (14)
 
     func createGroup(
         groupID: String,
@@ -513,6 +515,30 @@ final class GroupsMembershipClient {
             "p_simplify_debts": simplifyDebts,
             "p_show_debts_in_single_currency": showDebtsInSingleCurrency,
             "p_members_can_invite": membersCanInvite,
+        ])
+        return try decode(CreateGroupResult.self, from: data)
+    }
+
+    /// Compartido lote 3 (g38_01): crea una persona —un grupo de dos con `is_person`— con su sitio reservado
+    /// (`personMemberKey`, sin cuenta hasta que la persona abra el enlace). Va por `callWithRetry` → `call`, que pone el
+    /// header de App Attest como al resto: lo fija `CompartidoAltaPersonaTransporteTests`.
+    func createPersonGroup(
+        groupID: String,
+        name: String,
+        currencyCode: String,
+        iconName: String,
+        colorHex: String,
+        displayName: String,
+        personMemberKey: String
+    ) async throws -> CreateGroupResult {
+        let data = try await callWithRetry(fn: "create_person_group", args: [
+            "p_group_id": groupID,
+            "p_name": name,
+            "p_currency_code": currencyCode,
+            "p_icon_name": iconName,
+            "p_color_hex": colorHex,
+            "p_display_name": displayName,
+            "p_person_member_key": personMemberKey,
         ])
         return try decode(CreateGroupResult.self, from: data)
     }

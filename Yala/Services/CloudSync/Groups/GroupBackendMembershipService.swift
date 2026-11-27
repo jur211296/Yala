@@ -251,6 +251,124 @@ final class GroupBackendMembershipService {
         return created
     }
 
+    // MARK: - create_person_group (Compartido lote 3, SERVER-FIRST)
+
+    /// Crea una PERSONA: un grupo de dos (`isPerson`) con su sitio reservado, el miembro sin cuenta con el nombre que le
+    /// pone quien la crea (g38_01). Mismo molde que `createGroup`: el RPC primero, y SOLO a éxito se materializan el
+    /// grupo, el miembro propio y el sitio, resolviendo por identidad DESPUÉS del `await` (un pull pudo traerlos ya).
+    /// El sitio no se puede añadir de otra forma: `group_members` es solo de bajada para la app (manifest `pull_only`).
+    ///
+    /// - Returns: la persona y el `id` local del sitio reservado (el miembro con quien se reparte el gasto).
+    func createPersonGroup(
+        personName: String,
+        currencyCode: String,
+        displayName: String,
+        colorHex: String,
+        context: ModelContext
+    ) async throws -> (group: SplitGroup, personMemberID: UUID) {
+        try ensureEligible()
+
+        let group = SplitGroup(
+            name: personName,
+            iconName: "person.fill",
+            colorHex: colorHex,
+            currencyCode: currencyCode,
+            simplifyDebts: false,
+            isOwner: true,
+            showDebtsInSingleCurrency: false,
+            defaultSplitType: "equal",
+            membersCanInvite: false
+        )
+        group.isBackendGroup = true
+        group.isPerson = true
+        let zoneID = group.cloudKitZoneID
+        let personKey = UUID().uuidString.lowercased()
+
+        // Card 5d22 · el intento se apunta antes del RPC: si el servidor la guarda y la respuesta se pierde, el pull la
+        // adopta como dueño. Sin reusar zona (a diferencia de `createGroup`): el sitio reservado lleva una clave nueva
+        // en cada intento, y reusar la zona dejaría al teléfono sin saber cuál es.
+        let creatorID = currentUserID()
+        if let creatorID { PendingGroupCreationStore.record(zoneID: zoneID, userID: creatorID, name: personName) }
+
+        let result: CreateGroupResult
+        do {
+            result = try await client.createPersonGroup(
+                groupID: zoneID,
+                name: personName,
+                currencyCode: currencyCode,
+                iconName: group.iconName,
+                colorHex: colorHex,
+                displayName: displayName,
+                personMemberKey: personKey
+            )
+        } catch {
+            if Self.createMayHaveCommitted(error) {
+                Self.adoptPendingCreations(context: context, currentUserID: creatorID)
+            } else {
+                PendingGroupCreationStore.remove(zoneID: zoneID)
+            }
+            throw error
+        }
+
+        let personMemberID = GroupBackendIdentityLogic.deterministicMemberID(groupID: zoneID, memberKey: personKey)
+        let created = try saveUnderOutboxAuthor(context) {
+            // Las tres lecturas ANTES del primer insert (regla «leer antes de escribir» del drain): si una lanza, el
+            // contexto compartido no se queda con medio alta sucia que otro `save()` subiría con otro autor.
+            let zoneRows = try Self.groupRows(zoneID: zoneID, context: context)
+            let ownerRows = try Self.memberRows(zoneID: zoneID, memberKey: result.memberKey, context: context)
+            let seatRows = try Self.memberRows(zoneID: zoneID, memberKey: personKey, context: context)
+
+            if zoneRows.isEmpty { context.insert(group) }
+            let groupRows = zoneRows.isEmpty ? [group] : zoneRows
+            for row in groupRows {
+                row.isOwner = true
+                row.isBackendGroup = true
+                row.isPerson = true
+                row.initialMemberImportStartedAt = nil
+            }
+
+            if ownerRows.isEmpty {
+                let owner = SplitMember(
+                    groupZoneID: zoneID,
+                    displayName: displayName,
+                    cloudKitUserRecordID: "",
+                    role: "admin",
+                    status: .active,
+                    isGroupOwner: true,
+                    isCurrentUser: true
+                )
+                owner.id = GroupBackendIdentityLogic.deterministicMemberID(groupID: zoneID, memberKey: result.memberKey)
+                owner.memberKey = result.memberKey
+                owner.userID = result.memberKey
+                context.insert(owner)
+            } else {
+                for row in ownerRows {
+                    row.isCurrentUser = true
+                    row.isGroupOwner = true
+                }
+            }
+
+            // El sitio reservado: sin cuenta (`userID` nil) hasta que la persona abra el enlace y lo ocupe.
+            if seatRows.isEmpty {
+                let seat = SplitMember(
+                    groupZoneID: zoneID,
+                    displayName: personName,
+                    cloudKitUserRecordID: "",
+                    role: "member",
+                    status: .active,
+                    isGroupOwner: false,
+                    isCurrentUser: false
+                )
+                seat.id = personMemberID
+                seat.memberKey = personKey
+                context.insert(seat)
+            }
+            return zoneRows.first ?? group
+        }
+        PendingGroupCreationStore.remove(zoneID: zoneID)
+        return (created, personMemberID)
+    }
+
     // MARK: - Card 5d22 · la creación que se guardó sin respuesta
 
     /// ¿Puede el servidor haber guardado el grupo aunque el RPC haya fallado? Solo con los errores que no dicen nada de
