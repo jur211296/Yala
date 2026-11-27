@@ -16,3 +16,34 @@
 "compartido.people.noGroup" = "Sem grupo";
 "compartido.people.emptyTitle" = "Ainda não partilhas despesas com ninguém";
 "compartido.people.emptyMessage" = "Quando registares uma despesa com alguém num grupo, vês aqui quanto essa pessoa te deve ou quanto lhe deves, somando todos os teus grupos.";
+
+/* Lote 2: el detalle de una persona (cifra con filtro de grupo, Saldar todo, Estadísticas). */
+"compartido.detail.filter.all" = "Todos os grupos";
+"compartido.detail.filter.label" = "Filtrar por grupo";
+"compartido.detail.hero.with.owed" = "%@ deve-te";
+"compartido.detail.hero.with.owe" = "Deves a %@";
+"compartido.detail.hero.with.settled" = "Com %@ estão quites";
+"compartido.detail.hero.in.owed" = "Em %@ devem-te";
+"compartido.detail.hero.in.owe" = "Em %@ deves";
+"compartido.detail.hero.in.settled" = "Em %@ estás quite";
+"compartido.detail.hero.youOweNothing" = "Não lhe deves nada.";
+"compartido.detail.hero.theyOweNothing" = "Não te deve nada.";
+"compartido.detail.hero.alsoYouOwe" = "E tu deves-lhe %@.";
+"compartido.detail.hero.alsoTheyOwe" = "E deve-te %@.";
+"compartido.detail.hero.onlyThisGroup" = "Só este grupo.";
+"compartido.detail.hero.onlyNoGroup" = "Só o que não está num grupo.";
+"compartido.detail.settle.all" = "Acertar tudo";
+"compartido.detail.settle.allNote" = "É registado um pagamento por grupo e moeda.";
+"compartido.detail.settle.pickGroupHint" = "Para confirmar um pagamento ou ver os pagamentos de um grupo, escolhe-o acima.";
+"compartido.detail.settle.sheetTitle" = "Acertar tudo com %@";
+"compartido.detail.settle.sheetMessage" = "Vão ser registados %d pagamentos, um por grupo e moeda, como se acertasses cada um.";
+"compartido.detail.settle.rowTheyPay" = "%1$@ paga-te %2$@";
+"compartido.detail.settle.rowYouPay" = "Pagas %2$@ a %1$@";
+"compartido.detail.settle.confirm" = "Registar %d pagamentos";
+"compartido.detail.settle.savedNotice" = "Registaste %d pagamentos com %@. Estão quites.";
+"compartido.detail.settle.failed" = "Não foi possível registar todos os pagamentos. Verifica cada grupo.";
+"compartido.detail.stats.totalTogether" = "Total gasto em conjunto";
+"compartido.detail.stats.byGroup" = "Por grupo";
+"compartido.detail.stats.theyOwe" = "deve-te %@";
+"compartido.detail.stats.youOwe" = "deves %@";
+"compartido.detail.openHint" = "Abre o que partilhas com esta pessoa";

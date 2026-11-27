@@ -16,3 +16,34 @@
 "compartido.people.noGroup" = "No group";
 "compartido.people.emptyTitle" = "You don't share expenses with anyone yet";
 "compartido.people.emptyMessage" = "When you add an expense with someone in a group, you'll see here what they owe you or what you owe them, across all your groups.";
+
+/* Lote 2: el detalle de una persona (cifra con filtro de grupo, Saldar todo, Estadísticas). */
+"compartido.detail.filter.all" = "All groups";
+"compartido.detail.filter.label" = "Filter by group";
+"compartido.detail.hero.with.owed" = "%@ owes you";
+"compartido.detail.hero.with.owe" = "You owe %@";
+"compartido.detail.hero.with.settled" = "You and %@ are settled up";
+"compartido.detail.hero.in.owed" = "In %@ you're owed";
+"compartido.detail.hero.in.owe" = "In %@ you owe";
+"compartido.detail.hero.in.settled" = "In %@ you're settled up";
+"compartido.detail.hero.youOweNothing" = "You don't owe them anything.";
+"compartido.detail.hero.theyOweNothing" = "They don't owe you anything.";
+"compartido.detail.hero.alsoYouOwe" = "And you owe them %@.";
+"compartido.detail.hero.alsoTheyOwe" = "And they owe you %@.";
+"compartido.detail.hero.onlyThisGroup" = "This group only.";
+"compartido.detail.hero.onlyNoGroup" = "Only what isn't in a group.";
+"compartido.detail.settle.all" = "Settle all";
+"compartido.detail.settle.allNote" = "One payment is recorded per group and currency.";
+"compartido.detail.settle.pickGroupHint" = "To confirm a payment or see a group's payments, pick it above.";
+"compartido.detail.settle.sheetTitle" = "Settle all with %@";
+"compartido.detail.settle.sheetMessage" = "%d payments will be recorded, one per group and currency, just as if you settled each one.";
+"compartido.detail.settle.rowTheyPay" = "%1$@ pays you %2$@";
+"compartido.detail.settle.rowYouPay" = "You pay %1$@ %2$@";
+"compartido.detail.settle.confirm" = "Record %d payments";
+"compartido.detail.settle.savedNotice" = "You recorded %d payments with %@. You're settled up.";
+"compartido.detail.settle.failed" = "Not all payments could be recorded. Check each group.";
+"compartido.detail.stats.totalTogether" = "Total spent together";
+"compartido.detail.stats.byGroup" = "By group";
+"compartido.detail.stats.theyOwe" = "owes you %@";
+"compartido.detail.stats.youOwe" = "you owe %@";
+"compartido.detail.openHint" = "Opens what you share with this person";

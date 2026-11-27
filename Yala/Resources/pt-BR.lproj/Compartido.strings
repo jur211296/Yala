@@ -16,3 +16,34 @@
 "compartido.people.noGroup" = "Sem grupo";
 "compartido.people.emptyTitle" = "Você ainda não divide gastos com ninguém";
 "compartido.people.emptyMessage" = "Quando você anotar um gasto com alguém em um grupo, vai ver aqui quanto essa pessoa te deve ou quanto você deve a ela, somando todos os seus grupos.";
+
+/* Lote 2: el detalle de una persona (cifra con filtro de grupo, Saldar todo, Estadísticas). */
+"compartido.detail.filter.all" = "Todos os grupos";
+"compartido.detail.filter.label" = "Filtrar por grupo";
+"compartido.detail.hero.with.owed" = "%@ deve a você";
+"compartido.detail.hero.with.owe" = "Você deve a %@";
+"compartido.detail.hero.with.settled" = "Com %@ vocês estão quites";
+"compartido.detail.hero.in.owed" = "Em %@ devem a você";
+"compartido.detail.hero.in.owe" = "Em %@ você deve";
+"compartido.detail.hero.in.settled" = "Em %@ você está quite";
+"compartido.detail.hero.youOweNothing" = "Você não deve nada a essa pessoa.";
+"compartido.detail.hero.theyOweNothing" = "Essa pessoa não deve nada a você.";
+"compartido.detail.hero.alsoYouOwe" = "E você deve %@.";
+"compartido.detail.hero.alsoTheyOwe" = "E essa pessoa deve %@ a você.";
+"compartido.detail.hero.onlyThisGroup" = "Só este grupo.";
+"compartido.detail.hero.onlyNoGroup" = "Só o que não está em um grupo.";
+"compartido.detail.settle.all" = "Acertar tudo";
+"compartido.detail.settle.allNote" = "É registrado um pagamento por grupo e moeda.";
+"compartido.detail.settle.pickGroupHint" = "Para confirmar um pagamento ou ver os pagamentos de um grupo, escolha-o acima.";
+"compartido.detail.settle.sheetTitle" = "Acertar tudo com %@";
+"compartido.detail.settle.sheetMessage" = "Serão registrados %d pagamentos, um por grupo e moeda, como se você acertasse cada um.";
+"compartido.detail.settle.rowTheyPay" = "%1$@ paga %2$@ a você";
+"compartido.detail.settle.rowYouPay" = "Você paga %2$@ a %1$@";
+"compartido.detail.settle.confirm" = "Registrar %d pagamentos";
+"compartido.detail.settle.savedNotice" = "Você registrou %d pagamentos com %@. Vocês estão quites.";
+"compartido.detail.settle.failed" = "Não foi possível registrar todos os pagamentos. Confira cada grupo.";
+"compartido.detail.stats.totalTogether" = "Total gasto juntos";
+"compartido.detail.stats.byGroup" = "Por grupo";
+"compartido.detail.stats.theyOwe" = "deve %@ a você";
+"compartido.detail.stats.youOwe" = "você deve %@";
+"compartido.detail.openHint" = "Abre o que você compartilha com esta pessoa";

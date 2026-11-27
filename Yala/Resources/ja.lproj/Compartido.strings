@@ -16,3 +16,34 @@
 "compartido.people.noGroup" = "グループなし";
 "compartido.people.emptyTitle" = "まだ誰とも支出を共有していません";
 "compartido.people.emptyMessage" = "グループで誰かと支出を記録すると、すべてのグループを合計して、相手があなたに借りている金額やあなたが借りている金額がここに表示されます。";
+
+/* Lote 2: el detalle de una persona (cifra con filtro de grupo, Saldar todo, Estadísticas). */
+"compartido.detail.filter.all" = "すべてのグループ";
+"compartido.detail.filter.label" = "グループで絞り込む";
+"compartido.detail.hero.with.owed" = "%@から受け取る額";
+"compartido.detail.hero.with.owe" = "%@に支払う額";
+"compartido.detail.hero.with.settled" = "%@とは精算済み";
+"compartido.detail.hero.in.owed" = "%@で受け取る額";
+"compartido.detail.hero.in.owe" = "%@で支払う額";
+"compartido.detail.hero.in.settled" = "%@は精算済み";
+"compartido.detail.hero.youOweNothing" = "あなたの支払いはありません。";
+"compartido.detail.hero.theyOweNothing" = "相手からの支払いはありません。";
+"compartido.detail.hero.alsoYouOwe" = "あなたも%@支払います。";
+"compartido.detail.hero.alsoTheyOwe" = "相手からも%@受け取ります。";
+"compartido.detail.hero.onlyThisGroup" = "このグループのみ。";
+"compartido.detail.hero.onlyNoGroup" = "グループ外の分のみ。";
+"compartido.detail.settle.all" = "すべて精算";
+"compartido.detail.settle.allNote" = "グループと通貨ごとに1件の支払いを記録します。";
+"compartido.detail.settle.pickGroupHint" = "支払いを確認したりグループの支払いを見るには、上でグループを選んでください。";
+"compartido.detail.settle.sheetTitle" = "%@とすべて精算";
+"compartido.detail.settle.sheetMessage" = "グループと通貨ごとに%d件の支払いを記録します。1件ずつ精算するのと同じです。";
+"compartido.detail.settle.rowTheyPay" = "%1$@からあなたへ%2$@";
+"compartido.detail.settle.rowYouPay" = "あなたから%1$@へ%2$@";
+"compartido.detail.settle.confirm" = "%d件の支払いを記録";
+"compartido.detail.settle.savedNotice" = "%2$@との支払いを%1$d件記録しました。精算済みです。";
+"compartido.detail.settle.failed" = "一部の支払いを記録できませんでした。各グループを確認してください。";
+"compartido.detail.stats.totalTogether" = "一緒に使った合計";
+"compartido.detail.stats.byGroup" = "グループ別";
+"compartido.detail.stats.theyOwe" = "あなたに%@";
+"compartido.detail.stats.youOwe" = "あなたから%@";
+"compartido.detail.openHint" = "この相手と共有している内容を開きます";

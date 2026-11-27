@@ -55,6 +55,14 @@ struct GroupRecordsView: View {
     /// El «+» flotante del detalle: `true` cuando el scroll se lleva la fila de «Nuevo gasto» (la pieza de Panel,
     /// Registros, Presupuestos y Pagos). Sin gastos no hay scroll y se queda apagado. nil → nadie lo enseña.
     var showsFloatingNew: Binding<Bool>?
+    /// Compartido · detalle de persona (lote 2): la cabecera propia (la cifra con el filtro de grupo) en el sitio de la
+    /// del grupo. `nil` en el detalle de grupo.
+    var header: AnyView?
+    /// Compartido · detalle de persona: los gastos vienen de varios grupos y tu fila de miembro cambia en cada uno.
+    /// `nil` → `currentMemberID` (un grupo).
+    var currentMemberIDForExpense: ((SplitExpense) -> String?)?
+    /// Compartido · detalle de persona: el grupo de cada fila («Viaje a Cusco», «Sin grupo»), por id de gasto o de pago.
+    var rowTag: ((UUID) -> GroupRecordRowTag?)?
 
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
@@ -69,6 +77,11 @@ struct GroupRecordsView: View {
             if items.isEmpty {
                 // Un grupo recién creado es justo donde se apunta el primero: la fila también aquí.
                 VStack(spacing: DS.Spacing.none) {
+                    if let header {
+                        header
+                            .padding(.horizontal, DS.Spacing.lg)
+                            .padding(.top, DS.Spacing.sm)
+                    }
                     quickActions
                         .padding(.horizontal, DS.Spacing.lg)
                         .padding(.top, DS.Spacing.sm)
@@ -106,7 +119,11 @@ struct GroupRecordsView: View {
             LazyVStack(spacing: DS.Spacing.sm, pinnedViews: .sectionHeaders) {
                 // La cifra grande del grupo (3A), la misma que en Saldos: primer elemento del scroll, se va con
                 // los registros (no fija). Tocarla lleva a Saldos.
-                if let headerBalance, let onTapBalance {
+                if let header {
+                    header
+                        .padding(.bottom, DS.Spacing.sm)
+                        .transaction { $0.animation = nil }
+                } else if let headerBalance, let onTapBalance {
                     GroupBalanceHero(
                         balance: headerBalance,
                         scope: .group,
@@ -346,6 +363,7 @@ struct GroupRecordsView: View {
                     .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
+                rowTagView(settlement.id)
             }
         } trailing: {
             Text(amountStr)
@@ -359,7 +377,8 @@ struct GroupRecordsView: View {
 
     private func normalExpenseRow(_ expense: SplitExpense) -> some View {
         let amountStr = appPreferences.currency(expense.amount, currencyCode: expense.currencyCode)
-        let isPayer = expense.paidByMemberID == currentMemberID
+        let me = currentMemberIDForExpense?(expense) ?? currentMemberID
+        let isPayer = expense.paidByMemberID == me
         let payerLabel: String = {
             if isPayer { return L10n.Groups.Expense.youPaid(amountStr) }
             let name = memberNameLookup[expense.paidByMemberID] ?? "?"
@@ -368,7 +387,7 @@ struct GroupRecordsView: View {
         let status = GroupExpenseAmountResolver.resolve(
             expense: expense,
             share: mySharesByExpense[expense.id],
-            currentMemberID: currentMemberID
+            currentMemberID: me
         )
 
         return AdaptiveRowStack(spacing: DS.ListRow.spacing, stackedSpacing: DS.Spacing.sm) {
@@ -385,6 +404,7 @@ struct GroupRecordsView: View {
                     .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
+                rowTagView(expense.id)
             }
         } trailing: {
             GroupExpenseAmountView(status: status, currencyCode: expense.currencyCode)
@@ -450,6 +470,31 @@ struct GroupRecordsView: View {
         return filledIcon(icon, fill: theme.accent, foreground: theme.onAccent)
     }
 
+    // MARK: - Etiqueta de grupo (Compartido · detalle de persona)
+
+    /// El grupo de la fila, en una cápsula pequeña bajo quién pagó. Sin `rowTag` (detalle de grupo), nada.
+    @ViewBuilder
+    private func rowTagView(_ id: UUID) -> some View {
+        if let tag = rowTag?(id) {
+            HStack(spacing: DS.Spacing.xxs) {
+                if let colorHex = tag.colorHex {
+                    Circle()
+                        .fill(Color(hex: colorHex))
+                        .frame(width: DS.Spacing.xs, height: DS.Spacing.xs)
+                        .accessibilityHidden(true)
+                }
+                Text(tag.name)
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            .padding(.horizontal, DS.Spacing.sm)
+            .padding(.vertical, DS.Spacing.xxs)
+            .background(Capsule().fill(Color(.tertiarySystemFill)))
+            .accessibilityIdentifier("compartido_row_group_tag")
+        }
+    }
+
     // MARK: - Grouping
 
     /// Feed mixto: gastos + liquidaciones confirmadas (filtro en `GroupFeedItem.feedItems`).
@@ -483,4 +528,11 @@ private struct FloatingNewReveal: ViewModifier {
             content
         }
     }
+}
+
+/// El grupo de una fila de gastos cuando la lista junta varios (Compartido · detalle de persona, lote 2).
+struct GroupRecordRowTag: Equatable {
+    let name: String
+    /// El color del grupo; `nil` para lo sin grupo.
+    let colorHex: String?
 }

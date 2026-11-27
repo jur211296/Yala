@@ -170,7 +170,14 @@ final class GroupsNecesarias23Lote06UITests: XCTestCase {
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
         let card = app.buttons.matching(identifier: "group_card")
             .matching(NSPredicate(format: "label BEGINSWITH %@", name)).firstMatch
-        XCTAssertTrue(card.waitForExistence(timeout: 15), "No apareció la tarjeta de «\(name)».")
+        // Con los chips de Compartido (lote 1) y texto AX3, la tarjeta queda bajo el borde y la lista perezosa no la
+        // monta: se baja hasta ella sobre la app (el primer scroll es la fila de chips, no la lista).
+        var swipes = 0
+        while !card.waitForExistence(timeout: swipes == 0 ? 15 : 2), swipes < 4 {
+            app.swipeUp(velocity: .slow)
+            swipes += 1
+        }
+        XCTAssertTrue(card.exists, "No apareció la tarjeta de «\(name)».")
         card.tap()
         if tab != "records" { selectTab(app, tab) }
         return app

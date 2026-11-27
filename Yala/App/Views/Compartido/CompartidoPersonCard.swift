@@ -5,7 +5,8 @@
 //  La tarjeta de una persona en el chip «Personas» de Compartido (lote 1, 26-nov-2026). Copia la de grupo
 //  (`GroupCardView`): círculo, nombre y, donde el grupo dice «3 miembros activos», dónde compartes con ella; debajo, una
 //  fila por moneda con el neto, en los mismos textos y colores que la tarjeta de grupo («Ana te debe» en verde, «Le debes
-//  a Ana» en el rosa de marca). Una liquidada lleva solo la cabecera. No se toca: el detalle de persona es el lote 2.
+//  a Ana» en el rosa de marca). Una liquidada lleva solo la cabecera. Tocarla abre el detalle de la persona (lote 2), con
+//  el molde de botón de la tarjeta de grupo.
 //
 
 import SwiftUI
@@ -13,11 +14,28 @@ import SwiftUI
 struct CompartidoPersonCard: View {
 
     let person: CompartidoPersonasLogic.Person
+    /// Abre el detalle de la persona (lote 2). `nil`: la tarjeta no se toca.
+    var onOpen: (() -> Void)?
 
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
+        if let onOpen {
+            Button(action: onOpen) { card }
+                .buttonStyle(.plain)
+                .contentShape(Rectangle())
+                .pointerHighlight(cornerRadius: DS.Radius.card)
+                .accessibilityLabel(accessibilityText)
+                .accessibilityHint(L10n.Compartido.Detail.openHint)
+        } else {
+            card
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(accessibilityText)
+        }
+    }
+
+    private var card: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.lg) {
             header
             if !person.isSettled {
@@ -25,8 +43,6 @@ struct CompartidoPersonCard: View {
             }
         }
         .listRowCard()
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(accessibilityText)
     }
 
     private var header: some View {

@@ -16,3 +16,34 @@
 "compartido.people.noGroup" = "Zonder groep";
 "compartido.people.emptyTitle" = "Je deelt nog geen uitgaven";
 "compartido.people.emptyMessage" = "Zodra je in een groep een uitgave met iemand toevoegt, zie je hier wat die persoon jou schuldig is of jij hem, over al je groepen samen.";
+
+/* Lote 2: el detalle de una persona (cifra con filtro de grupo, Saldar todo, Estadísticas). */
+"compartido.detail.filter.all" = "Alle groepen";
+"compartido.detail.filter.label" = "Filteren op groep";
+"compartido.detail.hero.with.owed" = "%@ is je geld schuldig";
+"compartido.detail.hero.with.owe" = "Je bent %@ geld schuldig";
+"compartido.detail.hero.with.settled" = "Met %@ sta je quitte";
+"compartido.detail.hero.in.owed" = "In %@ krijg je geld";
+"compartido.detail.hero.in.owe" = "In %@ ben je geld schuldig";
+"compartido.detail.hero.in.settled" = "In %@ sta je quitte";
+"compartido.detail.hero.youOweNothing" = "Je bent niets schuldig.";
+"compartido.detail.hero.theyOweNothing" = "Je krijgt niets.";
+"compartido.detail.hero.alsoYouOwe" = "En jij bent %@ schuldig.";
+"compartido.detail.hero.alsoTheyOwe" = "En je krijgt %@.";
+"compartido.detail.hero.onlyThisGroup" = "Alleen deze groep.";
+"compartido.detail.hero.onlyNoGroup" = "Alleen wat niet in een groep zit.";
+"compartido.detail.settle.all" = "Alles verrekenen";
+"compartido.detail.settle.allNote" = "Er wordt één betaling per groep en valuta vastgelegd.";
+"compartido.detail.settle.pickGroupHint" = "Kies hierboven een groep om een betaling te bevestigen of de betalingen ervan te zien.";
+"compartido.detail.settle.sheetTitle" = "Alles verrekenen met %@";
+"compartido.detail.settle.sheetMessage" = "Er worden %d betalingen vastgelegd, één per groep en valuta, alsof je ze één voor één verrekent.";
+"compartido.detail.settle.rowTheyPay" = "%1$@ betaalt je %2$@";
+"compartido.detail.settle.rowYouPay" = "Je betaalt %1$@ %2$@";
+"compartido.detail.settle.confirm" = "%d betalingen vastleggen";
+"compartido.detail.settle.savedNotice" = "Je hebt %d betalingen met %@ vastgelegd. Jullie staan quitte.";
+"compartido.detail.settle.failed" = "Niet alle betalingen konden worden vastgelegd. Controleer elke groep.";
+"compartido.detail.stats.totalTogether" = "Samen uitgegeven";
+"compartido.detail.stats.byGroup" = "Per groep";
+"compartido.detail.stats.theyOwe" = "is je %@ schuldig";
+"compartido.detail.stats.youOwe" = "je bent %@ schuldig";
+"compartido.detail.openHint" = "Opent wat je met deze persoon deelt";
