@@ -1,0 +1,3 @@
+reposo en el Panel           CPU  0.02  GPU -0.00  pantalla  2.00  (impacto medio por segundo, 45 muestras)
+10 s tras volver             CPU  1.71  GPU -0.00  pantalla  1.60  (impacto medio por segundo, 30 muestras)
+fuera (otra app delante)     CPU  0.34  GPU -0.00  pantalla  0.09  (impacto medio por segundo, 44 muestras)

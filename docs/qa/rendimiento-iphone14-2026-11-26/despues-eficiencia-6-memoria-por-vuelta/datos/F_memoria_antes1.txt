@@ -1,0 +1,12 @@
+Yala (3477): 178 muestras, de 109 a 116 MiB, máx 129
+ciclo, MiB al volver, MiB al irse (siguiente sale), máx en la vuelta
+  1      108      114      127
+  2      108      114      125
+  3      108      114      123
+  4      108      115      128
+  5      109      115      124
+  6      109      115      129
+  7      109      115      126
+  8      109      115      128
+  9      109      115      123
+ 10      110      116      128

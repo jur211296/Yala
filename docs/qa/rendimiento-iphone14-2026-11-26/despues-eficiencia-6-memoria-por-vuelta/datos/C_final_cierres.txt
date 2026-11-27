@@ -1,0 +1,10 @@
+Cierres al volver y salir rápido (guion del lote 3, scripts/cierres.sh), 26-nov 23:57-23:59 Lima, build final.
+Arranque en frío con consola, 40 s, y 10 ciclos: vuelve → 1 s → tira para actualizar → sale a los 2-5 s → 3 s fuera.
+
+- La consola sigue el MISMO proceso de principio a fin: ningún cierre (la última línea, al volver del final, es del mismo pid).
+- `devicectl device info files --domain-type systemCrashLogs`: ningún `Yala-*.ips` ni `Yala.cpu_resource-*.ips` con hora
+  de esta sesión (23:05-00:30). Los últimos son de las 16:18 (pruebas de frío del lote 3) y un `cpu_resource` a las 20:02 y
+  otro a las 21:21 (durante las mediciones del lote 5, sobre una base sin el lote 4).
+- Cada vuelta: «volver al Panel → sin cambios, no recarga» y «tirar para actualizar → sin cambios, no recarga».
+- Antes (informe): iOS cerró Yala en segundo plano dos veces en una mañana (`0x8BADF00D`, 09:38:44 y 10:04:32); el lote 3
+  midió 4 de 5 cierres al abrir en frío y salir a los 3 s.

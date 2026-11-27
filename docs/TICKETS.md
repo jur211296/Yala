@@ -1585,3 +1585,5 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | 2026-11-26-eficiencia-3-no-morir-en-segundo-plano | done | tickets/done/2026-11-26-eficiencia-3-no-morir-en-segundo-plano.md |
 | 2026-11-26-eficiencia-4-recalculo-del-panel-sin-bloquear | done | tickets/done/2026-11-26-eficiencia-4-recalculo-del-panel-sin-bloquear.md |
 | 2026-11-26-eficiencia-5-render-del-scroll | done | tickets/done/2026-11-26-eficiencia-5-render-del-scroll.md |
+| 2026-11-26-eficiencia-6-memoria-por-vuelta | done | tickets/done/2026-11-26-eficiencia-6-memoria-por-vuelta.md |
+| 2026-11-27-foto-widget-por-etapas-rojo-en-la-suite-completa | backlog | tickets/backlog/2026-11-27-foto-widget-por-etapas-rojo-en-la-suite-completa.md |
