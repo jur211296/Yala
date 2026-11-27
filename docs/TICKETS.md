@@ -43,9 +43,19 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (178)
+## Index (188)
 
 | id | status | path |
+| 2026-11-26-deuda-gate-y-docs-2-3 | done | tickets/done/2026-11-26-deuda-gate-y-docs-2-3.md |
+| 2026-11-26-maquetas-compartido-grupos-personas-v2 | done | tickets/done/2026-11-26-maquetas-compartido-grupos-personas-v2.md |
+| 2026-11-26-grupos-pulido-division-y-detalle-gasto | done | tickets/done/2026-11-26-grupos-pulido-division-y-detalle-gasto.md |
+| 2026-11-25-observar-iphone14-en-vivo | done | tickets/done/2026-11-25-observar-iphone14-en-vivo.md |
+| 2026-11-25-analisis-tandas-ui-rojo-espera-ci | done | tickets/done/2026-11-25-analisis-tandas-ui-rojo-espera-ci.md |
+| 2026-11-24-bandeja-red-al-aprobar-mas-menos-un-dia | done | tickets/done/2026-11-24-bandeja-red-al-aprobar-mas-menos-un-dia.md |
+| 2026-11-22-gateway-worker-exporta-connector-drafts | done | tickets/done/2026-11-22-gateway-worker-exporta-connector-drafts.md |
+| 2026-11-21-privacidad-web-sentry | done | tickets/done/2026-11-21-privacidad-web-sentry.md |
+| 2026-11-21-auditoria-decisiones-vs-2-3 | done | tickets/done/2026-11-21-auditoria-decisiones-vs-2-3.md |
+| 2026-11-20-hero-estadisticas-limpio | done | tickets/done/2026-11-20-hero-estadisticas-limpio.md |
 | 2026-11-26-compartido-3-invitar-persona-y-entrada-sin-grupo | done | tickets/done/2026-11-26-compartido-3-invitar-persona-y-entrada-sin-grupo.md |
 | 2026-11-26-prueba-de-voz-no-monta-el-panel-de-escucha | backlog | tickets/backlog/2026-11-26-prueba-de-voz-no-monta-el-panel-de-escucha.md |
 | 2026-11-26-compartido-2-detalle-de-persona | done | tickets/done/2026-11-26-compartido-2-detalle-de-persona.md |

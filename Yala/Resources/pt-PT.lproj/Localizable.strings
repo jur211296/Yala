@@ -9135,12 +9135,10 @@
 /* Recurrente desde un registro (encargo 15-nov): menú y detalle del registro, Bandeja y Planificación */
 "rfr.action.makeRecurring" = "Tornar recorrente";
 "rfr.inbox.approveAndMakeRecurring" = "Guardar e tornar recorrente";
-"rfr.planning.fromRecord" = "A partir de um registo";
 "rfr.picker.title" = "Escolhe um registo";
 "rfr.picker.searchPrompt" = "Pesquisar por descrição ou categoria";
 "rfr.picker.empty" = "Não há registos que possam passar a recorrentes.";
 "rfr.picker.noResults" = "Nenhum registo corresponde a “%@”";
-"rfr.picker.footer" = "Registos dos últimos 6 meses. Não aparecem os de um grupo, as transferências nem os que já pertencem a um recorrente.";
 "rfr.choice.headline" = "Já tens um recorrente parecido";
 "rfr.choice.body" = "Se este registo é um pagamento desse recorrente, associa-o: conta como pago e não é criado outro.";
 "rfr.choice.link" = "Associar a “%@”";
