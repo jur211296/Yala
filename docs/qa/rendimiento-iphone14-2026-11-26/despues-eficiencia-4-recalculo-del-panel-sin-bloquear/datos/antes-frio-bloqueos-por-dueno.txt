@@ -1,0 +1,2 @@
+antes-frio · Panel: 6 bloqueos · 16.7 s · máx 3657 ms
+antes-frio · Widgets: 13 bloqueos · 7.5 s · máx 1564 ms

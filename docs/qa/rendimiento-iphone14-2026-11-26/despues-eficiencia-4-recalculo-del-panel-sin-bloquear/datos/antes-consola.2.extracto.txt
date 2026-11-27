@@ -1,0 +1,3 @@
+1795734757301 PERF panel-calculo completo total 9453 ms · tendencia 0 ms · tendencia.contexto 624 ms · tendencia.grafica 1631 ms · tendencia.widgets 688 ms · tendencia.saldo 1278 ms · presupuestos 1864 ms · salud 2892 ms · gastosPorCuenta 476 ms · hero 0 ms
+1795734757720 2026-11-26 18:12:37.721075-0500 Yala[3189:1684568] [carga] PERF arranque 11707.6 ms
+1795734774288 PERF panel-calculo completo total 7755 ms · tendencia 0 ms · tendencia.contexto 570 ms · tendencia.grafica 1638 ms · tendencia.widgets 691 ms · tendencia.saldo 343 ms · presupuestos 1667 ms · salud 2660 ms · gastosPorCuenta 186 ms · hero 0 ms

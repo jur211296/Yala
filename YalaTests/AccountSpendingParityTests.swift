@@ -157,12 +157,16 @@ struct AccountSpendingParityTests {
         let lines = source.split(separator: "\n", omittingEmptySubsequences: false)
             .map { $0.trimmingCharacters(in: .whitespaces) }
             .filter { !$0.isEmpty && !$0.hasPrefix("//") }
-        let start = try #require(lines.firstIndex(of: "private func calculateAccountPeriodExpenses() {"))
+        // Desde el lote 4 de eficiencia (26-nov-2026) recibe los movimientos del período por el índice por fecha, en su
+        // orden; sin índice, todos. La regla sigue siendo `spentByAccount` con el intervalo del Panel.
+        let start = try #require(lines.firstIndex(
+            of: "private func calculateAccountPeriodExpenses(indice: IndiceFechasMovimientos<TransactionItem>? = nil) {"
+        ))
         let end = try #require(lines[start...].firstIndex(of: "}"))
         #expect(lines[start...end].joined(separator: " ") == [
-            "private func calculateAccountPeriodExpenses() {",
+            "private func calculateAccountPeriodExpenses(indice: IndiceFechasMovimientos<TransactionItem>? = nil) {",
             "let newExpenses = AccountSpendingLogic.spentByAccount(",
-            "transactions,",
+            "indice?.elementos(en: panelDateInterval) ?? transactions,",
             "accounts: accounts.map(\\.persistentModelID),",
             "in: panelDateInterval,",
             "key: \\.persistentModelID",
