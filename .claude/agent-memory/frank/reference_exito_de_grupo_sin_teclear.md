@@ -11,8 +11,9 @@ Guardar la primera vez solo enseña «Elige de qué cuenta salió»: entonces `g
 Guardar → pantalla de éxito. Todo por toques: sin `type_text`/`axe type`, que dejan el simulador en «teclado físico» y
 tumban los XCUITest siguientes ([[axe-no-ve-las-hojas]]: dentro de la hoja, `snapshot_ui` + `tap` de XcodeBuildMCP).
 
-En Estadísticas › Distribución › Gráficas el «?» de la torta no está en el árbol de accesibilidad y el toque no abre
-nada (medido el 2026-11-27); el Panel con seed `minimal` no trae las tortas. Para la hoja de ayuda, no cuentes con
-capturarla por ahí.
+En Estadísticas › Distribución › Gráficas el «?» de la torta SÍ abre su hoja: corregido el mismo 27-nov. Lo de «no
+está en el árbol y no responde» salió de buscarlo por su id (lo pisaba el de la página, ya arreglado: ahora es
+`widget_info_categoriesPie`) y de tocar con `axe tap`, que ese día no llegaba a nada en el simulador de la Mini; con el
+`tap` de XcodeBuildMCP abre. El Panel por defecto (también con `realista`) no trae la torta de categorías.
 
 Y en zsh, `touch $F` con varias rutas en una variable no la parte: toca un fichero llamado con todas. Lista literal.
