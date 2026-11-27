@@ -9886,12 +9886,10 @@
 /* Recurrente desde un registro (encargo 15-nov): menú y detalle del registro, Bandeja y Planificación */
 "rfr.action.makeRecurring" = "Als wiederkehrend anlegen";
 "rfr.inbox.approveAndMakeRecurring" = "Speichern und wiederkehrend machen";
-"rfr.planning.fromRecord" = "Aus einem Eintrag";
 "rfr.picker.title" = "Eintrag auswählen";
 "rfr.picker.searchPrompt" = "Nach Beschreibung oder Kategorie suchen";
 "rfr.picker.empty" = "Es gibt keine Einträge, die wiederkehrend werden können.";
 "rfr.picker.noResults" = "Kein Eintrag passt zu „%@“";
-"rfr.picker.footer" = "Einträge der letzten 6 Monate. Gruppeneinträge, Überweisungen und Einträge, die schon zu einer wiederkehrenden Zahlung gehören, erscheinen nicht.";
 "rfr.choice.headline" = "Du hast schon eine ähnliche wiederkehrende Zahlung";
 "rfr.choice.body" = "Wenn dieser Eintrag eine Zahlung davon ist, verknüpfe ihn: Er zählt als bezahlt und es wird keine neue angelegt.";
 "rfr.choice.link" = "Mit „%@“ verknüpfen";

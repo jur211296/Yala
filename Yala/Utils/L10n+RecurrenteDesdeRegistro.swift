@@ -29,8 +29,6 @@ extension L10n {
         static var makeRecurring: String { rfr("rfr.action.makeRecurring") }
         /// «Guardar y hacer recurrente», bajo «Guardar» (aprobar) en el borrador de la Bandeja.
         static var approveAndMakeRecurring: String { rfr("rfr.inbox.approveAndMakeRecurring") }
-        /// «Desde un registro», junto a «Nuevo pago planificado».
-        static var fromRecord: String { rfr("rfr.planning.fromRecord") }
 
         // MARK: Selector de registros
 
@@ -39,7 +37,6 @@ extension L10n {
         static var pickerEmpty: String { rfr("rfr.picker.empty") }
         /// «Ningún registro coincide con «x»». %@ = lo escrito en el buscador.
         static func pickerNoResults(_ query: String) -> String { String(format: rfr("rfr.picker.noResults"), query) }
-        static var pickerFooter: String { rfr("rfr.picker.footer") }
 
         // MARK: Ya hay uno parecido
 
