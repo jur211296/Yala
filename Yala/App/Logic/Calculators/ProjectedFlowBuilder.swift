@@ -136,6 +136,19 @@ enum ProjectedFlowBuilder {
     // MARK: - Entrada
 
     static func build(_ inputs: Inputs, context: ModelContext?) -> Result {
+        build(inputs, context: context, motor: nil)
+    }
+
+    /// Lo mismo, con la conversión de los movimientos del motor del mes hecha por tramos que ceden el hilo principal
+    /// (lote 7 de eficiencia): es lo que el Panel calcula dentro de su recálculo por etapas.
+    static func build(_ inputs: Inputs, context: ModelContext?, cesion: CesionDelHilo) async throws -> Result {
+        let precalculo = PrecalculoMotor(inputs, context: context)
+        while !precalculo.avanzar() { try await cesion.ceder() }
+        return build(inputs, context: context, motor: precalculo.resultado)
+    }
+
+    /// `motor`: los movimientos del motor del mes ya convertidos (`PrecalculoMotor`); `nil` los convierte aquí, de una vez.
+    static func build(_ inputs: Inputs, context: ModelContext?, motor: MovimientosMotor?) -> Result {
         guard !inputs.days.isEmpty else {
             return Result(flows: [:], incomeSource: .scheduledOnly, expenseSource: .scheduledOnly, isApproximate: false)
         }
@@ -166,7 +179,7 @@ enum ProjectedFlowBuilder {
             remaining = plan
             incomeSource = .plan
             expenseSource = .plan
-        } else if let others = othersRemaining(inputs, occurrences: occurrences) {
+        } else if let others = othersRemaining(inputs, occurrences: occurrences, motor: motor) {
             remaining = others
             // El gasto estimado se sigue nombrando «tu ritmo de gasto»: la mediana es lo que gastas en un mes normal. Los
             // ingresos fijos detectados no tienen rótulo propio todavía (card aparte): el de ingresos no cambia.
@@ -329,7 +342,9 @@ enum ProjectedFlowBuilder {
     /// de todos los movimientos, como con plan, para que Panel, Tendencias y el widget den la misma cifra; con filtros,
     /// de los filtrados («Solo Comida» proyecta lo de comida). `nil` si no hay nada que estimar (sin un mes completo de
     /// historia, o sin gasto variable ni fijos).
-    static func othersRemaining(_ inputs: Inputs, occurrences: [Occurrence]) -> PlanRemaining? {
+    static func othersRemaining(
+        _ inputs: Inputs, occurrences: [Occurrence], motor: MovimientosMotor? = nil
+    ) -> PlanRemaining? {
         let calendar = inputs.calendar
         guard let currentMonth = calendar.dateInterval(of: .month, for: inputs.today),
               let lastDay = inputs.days.last,
@@ -342,11 +357,11 @@ enum ProjectedFlowBuilder {
             cursor = next
         }
         let startOfTomorrow = LiveBalanceCalculator.TodayCutoff(asOf: inputs.today, calendar: calendar).startOfTomorrow
-        let contados = FlujoMotorMesEntrada.movimientos(
+        let contados = motor?.contados ?? FlujoMotorMesEntrada.movimientos(
             inputs.countedTransactions, currencyCode: inputs.currencyCode, adjustment: inputs.adjustment,
             converter: inputs.converter, startOfTomorrow: startOfTomorrow, calendar: calendar
         )
-        let historia = inputs.hasSessionFilters ? contados.movimientos : FlujoMotorMesEntrada.movimientos(
+        let historia = inputs.hasSessionFilters ? contados.movimientos : motor?.historia ?? FlujoMotorMesEntrada.movimientos(
             inputs.allTransactions, currencyCode: inputs.currencyCode, adjustment: inputs.adjustment,
             converter: inputs.converter, startOfTomorrow: startOfTomorrow, calendar: calendar
         ).movimientos
@@ -380,6 +395,97 @@ enum ProjectedFlowBuilder {
             isApproximate: contados.aproximado,
             byDayOfMonth: byDay
         )
+    }
+
+    // MARK: - Los movimientos del motor, por tramos (lote 7 de eficiencia, 27-nov-2026)
+
+    /// Lo que `othersRemaining` pasa al motor del mes: los movimientos que cuentan y la historia, ya convertidos.
+    struct MovimientosMotor {
+        let contados: (movimientos: [FlujoMotorMes.Movimiento], aproximado: Bool)
+        /// Sin filtros de sesión, todos los movimientos; con filtros no se usa (la historia son los contados).
+        let historia: [FlujoMotorMes.Movimiento]
+    }
+
+    /// Convierte los movimientos del motor por tramos (`FlujoMotorMesEntrada.movimientos` sobre trozos del arreglo). Con
+    /// 16.004 movimientos en el iPhone 14 esa conversión era el 80 % de la proyección del saldo, ~0,9 s de una vez en el
+    /// hilo principal (lote 4, `docs/qa/rendimiento-iphone14-2026-11-26/`). El motor convierte movimiento a movimiento y
+    /// en orden, así que la conversión por trozos, unida, es la misma que la de una vez: el mes de cada uno sale de su
+    /// fecha (la caché de meses es solo caché) y «aproximado» es si alguno lo fue.
+    ///
+    /// Solo se convierte lo que `build` va a usar: si hay plan y no hay filtros, manda el plan (`planRemaining`), que no
+    /// pasa por aquí, y no se convierte nada. Si el plan no se puede leer, `othersRemaining` lo hace de una vez.
+    @MainActor
+    final class PrecalculoMotor {
+        /// Movimientos por trozo: cada trozo es una llamada al motor.
+        nonisolated static let tamanoTrozo = 256
+
+        private let inputs: Inputs
+        private let startOfTomorrow: Date
+        private let necesario: Bool
+        private var contados: [FlujoMotorMes.Movimiento] = []
+        private var aproximado = false
+        private var historia: [FlujoMotorMes.Movimiento] = []
+        private var fase = 0
+        private var recorrido: RecorridoConReloj?
+
+        init(_ inputs: Inputs, context: ModelContext?) {
+            self.inputs = inputs
+            startOfTomorrow = LiveBalanceCalculator.TodayCutoff(
+                asOf: inputs.today, calendar: inputs.calendar).startOfTomorrow
+            necesario = !inputs.days.isEmpty && (inputs.hasSessionFilters || !ProjectedFlowBuilder.hayPlan(context))
+        }
+
+        /// Convierte trozos hasta agotar el tramo. `true` si terminó.
+        func avanzar() -> Bool {
+            guard necesario else { return true }
+            while fase < 2 {
+                // Con filtros, la historia son los contados: la segunda pasada no hace falta.
+                if fase == 1, inputs.hasSessionFilters { fase = 2; break }
+                let fuente = fase == 0 ? inputs.countedTransactions : inputs.allTransactions
+                let trozos = (fuente.count + Self.tamanoTrozo - 1) / Self.tamanoTrozo
+                let recorrido = self.recorrido ?? RecorridoConReloj(total: trozos, cadaCuantos: 1)
+                self.recorrido = recorrido
+                let terminada = recorrido.avanzar { indice in
+                    let desde = indice * Self.tamanoTrozo
+                    let trozo = Array(fuente[desde..<min(desde + Self.tamanoTrozo, fuente.count)])
+                    let convertido = FlujoMotorMesEntrada.movimientos(
+                        trozo, currencyCode: inputs.currencyCode, adjustment: inputs.adjustment,
+                        converter: inputs.converter, startOfTomorrow: startOfTomorrow, calendar: inputs.calendar
+                    )
+                    if fase == 0 {
+                        contados.append(contentsOf: convertido.movimientos)
+                        if convertido.aproximado { aproximado = true }
+                    } else {
+                        historia.append(contentsOf: convertido.movimientos)
+                    }
+                }
+                guard terminada else { return false }
+                self.recorrido = nil
+                fase += 1
+            }
+            return true
+        }
+
+        /// `nil` si no hacía falta (manda el plan) o aún no terminó.
+        var resultado: MovimientosMotor? {
+            guard necesario, fase >= 2 else { return nil }
+            return MovimientosMotor(contados: (contados, aproximado), historia: historia)
+        }
+    }
+
+    /// ¿Hay plan de flujo de caja? La misma lectura que `planRemaining`; si falla, como allí: sin plan.
+    static func hayPlan(_ context: ModelContext?) -> Bool {
+        guard let context else { return false }
+        var descriptor = FetchDescriptor<CashFlowPlan>()
+        descriptor.fetchLimit = 1
+        do {
+            return try context.fetch(descriptor).first != nil
+        } catch {
+            #if DEBUG
+            print("ProjectedFlowBuilder: Error loading cash flow plan: \(error)")
+            #endif
+            return false
+        }
     }
 
     // MARK: - Plan de flujo de caja

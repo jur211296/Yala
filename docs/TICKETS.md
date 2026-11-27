@@ -1597,6 +1597,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | 2026-11-26-eficiencia-4-recalculo-del-panel-sin-bloquear | done | tickets/done/2026-11-26-eficiencia-4-recalculo-del-panel-sin-bloquear.md |
 | 2026-11-26-eficiencia-5-render-del-scroll | done | tickets/done/2026-11-26-eficiencia-5-render-del-scroll.md |
 | 2026-11-26-eficiencia-6-memoria-por-vuelta | done | tickets/done/2026-11-26-eficiencia-6-memoria-por-vuelta.md |
-| 2026-11-27-foto-widget-por-etapas-rojo-en-la-suite-completa | backlog | tickets/backlog/2026-11-27-foto-widget-por-etapas-rojo-en-la-suite-completa.md |
+| 2026-11-27-foto-widget-por-etapas-rojo-en-la-suite-completa | done | tickets/done/2026-11-27-foto-widget-por-etapas-rojo-en-la-suite-completa.md |
+| 2026-11-27-eficiencia-7-foto-widgets-y-arranque | done | tickets/done/2026-11-27-eficiencia-7-foto-widgets-y-arranque.md |
+| 2026-11-27-tendencias-enlace-al-plan-queda-bajo-la-barra | backlog | tickets/backlog/2026-11-27-tendencias-enlace-al-plan-queda-bajo-la-barra.md |
 | 2026-11-26-flujo-de-caja-duplicado-y-promedios | done | tickets/done/2026-11-26-flujo-de-caja-duplicado-y-promedios.md |
 | 2026-11-27-trabas-flujo-proyeccion-y-convertir-a-compartido | done | tickets/done/2026-11-27-trabas-flujo-proyeccion-y-convertir-a-compartido.md |

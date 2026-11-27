@@ -1,0 +1,3 @@
+muestras de la foto en el hilo principal: 0 ms
+bloques > 100 ms (inicio s, ms):
+hojas más frecuentes:

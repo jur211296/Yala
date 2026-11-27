@@ -516,9 +516,11 @@ struct ApproximateMarkSecondarySurfacesWiringTests {
         // El widget delega en el helper desde el 2026-10-11
         // (`widgets-sum-stored-amounts-from-other-preferred-currencies`), y su numerador sale de esa
         // MISMA resolución, como el hero.
-        (fichero: "Yala/Services/WidgetDataCache.swift",
-         desde: "static func buildPeriodSummary(", hasta: "var balanceApproximateMagnitude",
-         accessor: "let resolved = CashFlowCalculator.resolvedAmount("),
+        // Desde el lote 7 de eficiencia (2026-11-27) la foto resuelve cada fila UNA vez al leerla
+        // (`FilaFotoWidget`) y los períodos suman esa resolución (`tx.resuelto`).
+        (fichero: "Yala/App/Logic/FotoWidgetsArranque/FilaFotoWidget.swift",
+         desde: "func leer(_ tx: TransactionItem) -> FilaFotoWidget {", hasta: "let cuenta = tx.account",
+         accessor: "resuelto = CashFlowCalculator.resolvedAmount("),
         (fichero: "Yala/Services/WidgetDataCache.swift",
          desde: "static func buildPeriodSummary(", hasta: "var balanceApproximateMagnitude",
          accessor: "let approximate = resolved.approximateMagnitude"),
@@ -554,13 +556,25 @@ struct ApproximateMarkSecondarySurfacesWiringTests {
         let cache = try Self.code("Yala/Services/WidgetDataCache.swift")
 
         let saldo = try Self.scope(
-            cache, from: "if let allTx = allTransactionsForBalance {",
+            cache, from: "if let allTx = filasParaSaldo {",
             to: "let categorySlices = categoryExpenseSlices("
         )
-        #expect(saldo.contains("LiveBalanceCalculator.addNative(tx, to: &native)"), """
+        // Desde el lote 7 de eficiencia (2026-11-27) el saldo suma filas leídas una vez (`FilaFotoWidget`):
+        // `sumarNativo` es lo que `LiveBalanceCalculator.addNative` haría con el movimiento.
+        #expect(saldo.contains("tx.entraEnSaldo"))
+        #expect(saldo.contains("tx.sumarNativo(a: &native)"), """
             El saldo del período suma la fila ENTERA —los saldos reflejan montos reales, no «mi
             parte»—, en su divisa nativa: la regla del saldo vivo.
             """)
+        let fila = try Self.code("Yala/App/Logic/FotoWidgetsArranque/FilaFotoWidget.swift")
+        let vivo = try Self.code("Yala/App/Logic/Calculators/LiveBalanceCalculator.swift")
+        #expect(vivo.contains("nativeBalances[transaction.currencyCode, default: 0] += Decimal(transaction.amount)"), """
+            `addNative` cambió: `FilaFotoWidget.sumarNativo` es su espejo y tiene que cambiar con él.
+            """)
+        #expect(fila.contains("saldos[monedaNativa, default: 0] += montoNativo"))
+        #expect(fila.contains("monedaNativa: tx.currencyCode,"))
+        #expect(fila.contains("montoNativo: Decimal(tx.amount),"))
+        #expect(fila.contains("entraEnSaldo: LiveBalanceCalculator.entersBalance(tx),"))
         #expect(saldo.contains("let converted = valuation.value(native, at: closing)"), """
             Y se valora al cierre del período con `BalanceValuation`: la tasa de ese día, o la regla del saldo vivo si
             el período llega a hoy.

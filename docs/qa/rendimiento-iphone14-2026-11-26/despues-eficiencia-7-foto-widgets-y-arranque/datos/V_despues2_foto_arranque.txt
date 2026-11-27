@@ -1,0 +1,31 @@
+muestras de la foto en el hilo principal: 2945 ms
+  otro                               1863 ms
+  fetch                               254 ms
+  liveBalance                         203 ms
+  calculateBudgetSpent                203 ms
+  batchCalculateBalances              170 ms
+  GroupBridgeStatsAdjustment          152 ms
+  buildPeriodSummary                   82 ms
+  saveSnapshot                         17 ms
+  buildPaymentsMonth                    1 ms
+bloques > 100 ms (inicio s, ms):
+     6.34    208
+     7.06    216
+     7.44    171
+    11.31    197
+hojas más frecuentes:
+     114  swift::RefCounts<swift::RefCountBitsT<(swift::RefCountInlinedness)1>>::incrementSlow(swift::RefCountBitsT<(swi
+     107  bool swift::RefCounts<swift::RefCountBitsT<(swift::RefCountInlinedness)1>>::doDecrementSlow<(swift::PerformDei
+     102  swift_getTypeByMangledName
+      80  tryCast(swift::OpaqueValue*, swift::TargetMetadata<swift::InProcess> const*, swift::OpaqueValue*, swift::Targe
+      77  _platform_memmove
+      66  swift_conformsToProtocolMaybeInstantiateSuperclasses(swift::TargetMetadata<swift::InProcess> const*, swift::Ta
+      63  <deduplicated_symbol>
+      49  swift::Demangle::__runtime::Demangler::demangleType(__swift::__runtime::llvm::StringRef, std::__1::function<sw
+      48  swift_beginAccess
+      47  specialized _pop<A>(from:as:count:)
+      47  swift::MetadataResponse performOnMetadataCache<swift::MetadataResponse, swift_checkMetadataState::CheckStateCa
+      42  0x1a1633098
+      41  Hasher._combine(_:)
+      39  specialized static AnyKeyPath.== infix(_:_:)
+      36  objc_msgSend

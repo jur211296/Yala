@@ -1,0 +1,8 @@
+1795785440296 PanelViewModel: volver al Panel → recarga
+1795785440497 PanelViewModel: volver al Panel → recarga
+1795785440505 PERFTEMP pedido a mitad reload=true enCalculo=false pila=$s4Yala9PanelViewV4bodyQrvgy7SwiftUI10ScenePhaseO_AGtcfU5_yyYbScMYccfU0_ < $s4Yala18VueltaAPrimerPlanoO8alVolver_13paginaVisible11soltarFreno9comprobar0E12QuedarOcultaySS_SbyyYbScMYccyyYbScMYccyyYbScMYcctFZyyYbScMYccfU_yyYaYbScMYccfU_TY0_ < $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRyt_Tg5TATQ0_ < $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRSS_TG5TQ0_ < $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRyt_Tg5TATQ0_ < C1F170C0-B349-32B9-8F2D-079D53B04C77
+1795785440632 PanelViewModel: empujón del final del arranque sin datos nuevos → no recarga
+1795785441535 PanelViewModel: performCalculation #1
+1795785450531 PERF panel-calculo completo total 8996 ms · tramo máx 656 ms · cesiones 72 · indice 26 ms · tendencia 0 ms · tendencia.contexto 3071 ms · tendencia.grafica 343 ms · tendencia.grafica.curva 354 ms · tendencia.grafica.inicio 375 ms · tendencia.grafica.proyeccion 2067 ms · tendencia.widgets 663 ms · tendencia.saldo 478 ms · presupuestos 729 ms · salud 863 ms · gastosPorCuenta 25 ms · hero 0 ms
+1795785450554 2026-11-27 08:17:30.531524-0500 Yala[3850:2055943] [carga] PERF arranque 10685.6 ms
+1795785451509 PERF widgets-foto total 9739 ms · tramos 93 · tramo máx 212 ms

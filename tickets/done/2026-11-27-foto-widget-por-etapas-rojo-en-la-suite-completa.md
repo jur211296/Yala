@@ -1,6 +1,6 @@
 ---
 id: 2026-11-27-foto-widget-por-etapas-rojo-en-la-suite-completa
-status: backlog
+status: done
 priority: medium
 area: "tests, widgets"
 created: 2026-11-27
@@ -33,3 +33,7 @@ un aviso de más reinicia la foto dos veces y el `== restarted + 1` cae.
 2. Si se confirma: que `WidgetDataCache` reciba un centro de avisos inyectable y el test postee en uno propio, o que el
    caso afirme `>= restarted + 1` (lo que importa es que la foto vieja no se publique y la nueva sí).
 3. Mismo repaso para el caso hermano `unGuardadoAMitad_*`, que cuenta reinicios igual.
+
+## Cierre (2026-11-27)
+
+Repetido: lo resolvió el PR 1204 (deuda de 2.3, «aislar()» en `FotoWidgetPorEtapasTests`). Cerrado por el lote 7 de eficiencia.

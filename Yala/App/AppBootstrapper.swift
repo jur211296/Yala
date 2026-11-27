@@ -803,7 +803,9 @@ final class AppBootstrapper {
         // montada (tab inicial de "Solo Grupos") pudo hacer su primer `loadData()` con el contexto
         // aún nil y quedar vacía. Un bump de dataVersion dispara su `.onChange` → recarga con éxito,
         // sin que el usuario tenga que cambiar de tab.
-        SessionState.shared.incrementDataVersion()
+        // Es un empujón, no un cambio de datos: el Panel no recalcula por él si nada cambió desde su carga
+        // (`EmpujonFinDeArranque`, lote 7 de eficiencia; antes, dos cálculos completos en cada arranque en frío).
+        EmpujonFinDeArranque.subir(SessionState.shared)
 
         #if DEBUG
         if uiTestActive { await applyUITestSeed(context: context) }

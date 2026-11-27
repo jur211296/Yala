@@ -63,7 +63,8 @@ struct PanelDataFilterObservers: ViewModifier {
     func body(content: Content) -> some View {
         content
             .onChange(of: sessionState.dataVersion) { _, _ in
-                viewModel.reloadAndRecalculate()
+                // Recarga, salvo el empujón del final del arranque sin datos nuevos (lote 7 de eficiencia).
+                viewModel.dataVersionDidChange()
             }
             .onChange(of: viewModel.trendType) { _, _ in
                 viewModel.syncToSessionState(sessionState)

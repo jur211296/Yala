@@ -1,0 +1,16 @@
+ciclo  fuera  cpu20s  cpu36s  bloque≥90%  cuelgues(n, máx ms)  tirones>250ms(n, máx ms)
+    1     8s    1409    2587          0 s    0,     0              0,     0
+    2    22s    1456    2886          0 s    0,     0              0,     0
+    3    12s    1431    1432          0 s    0,     0              0,     0
+    4    30s    2646    2914          0 s    0,     0              0,     0
+    5     5s    1442    2856          0 s    0,     0              0,     0
+    6    18s    1415    2049          0 s    0,     0              0,     0
+    7    25s    1751    2840          0 s    0,     0              0,     0
+    8    10s    1419    2839          0 s    0,     0              0,     0
+    9    15s    1422    1425          0 s    0,     0              0,     0
+   10    28s    1142    1142          0 s    0,     0              0,     0
+
+Ciclos 2-10: cpu20s mediana 1431 ms (min 1142, máx 2646), bloque ≥90 % máx 0 s, cuelgues 0, tirones>250ms 0
+
+Estado térmico (intervalos): [('Fair', 1)]
+  t=    0.0s  Fair

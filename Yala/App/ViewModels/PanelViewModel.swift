@@ -287,6 +287,16 @@ final class PanelViewModel {
     @ObservationIgnored
     private var lastLoadStamp: PanelDataStamp?
 
+    /// La firma de la última carga y la de la carga en marcha, para reconocer el empujón del final del arranque
+    /// (`EmpujonFinDeArranque`, lote 7 de eficiencia). `stampCargaEnCurso` es la firma que se guardará en `lastLoadStamp`
+    /// cuando la carga por tramos termine; absorber el empujón la pone al día.
+    @ObservationIgnored
+    private var firmaUltimaCarga: EmpujonFinDeArranque.Firma?
+    @ObservationIgnored
+    private var firmaCargaEnCurso: EmpujonFinDeArranque.Firma?
+    @ObservationIgnored
+    private var stampCargaEnCurso: PanelDataStamp?
+
     /// Un recálculo pedido que se canceló sin correr (salir del Panel en su espera): la próxima vuelta lo hace.
     @ObservationIgnored
     private(set) var hasInterruptedWork = false
@@ -545,6 +555,9 @@ final class PanelViewModel {
     private func loadData(stamp: PanelDataStamp, preloadedTransactions: [TransactionItem]?) {
         guard let context = modelContext else { return }
         lastLoadStamp = stamp
+        firmaUltimaCarga = firmaCargaEnCurso ?? firma(de: stamp)
+        firmaCargaEnCurso = nil
+        stampCargaEnCurso = nil
 
         // Equality checks prevent unnecessary @Observable notifications, which break the
         // loadData → onChange(of: transactions) → recalculateData → loadData feedback loop.
@@ -1654,11 +1667,12 @@ final class PanelViewModel {
             }
             try await cesion.cederSiToca()
             marcasEnCurso?.etapa("tendencia.grafica.proyeccion")
-            newTrendProjection = calculateTrendProjection(
+            newTrendProjection = try await calculateTrendProjection(
                 context: calcContext,
                 realPoints: result.rawPoints,
                 liveAnchorValue: result.liveAnchor?.value,
-                modelContext: context
+                modelContext: context,
+                cesion: cesion
             )
         }
 
@@ -2011,8 +2025,9 @@ final class PanelViewModel {
         realPoints: [BarPoint],
         liveAnchorValue: Double?,
         modelContext: ModelContext,
+        cesion: CesionDelHilo,
         now: Date = .now
-    ) -> ProjectedFlowCalculator.Projection? {
+    ) async throws -> ProjectedFlowCalculator.Projection? {
         let calendar = Calendar.current
         let interval = calcContext.effectiveInterval
         let horizon = ProjectedFlowCalculator.horizon(for: calcContext.period, interval: interval, calendar: calendar)
@@ -2032,7 +2047,7 @@ final class PanelViewModel {
             let criteria = buildFilterCriteria()
             let includeGroupTxs = (UserDefaults.standard.object(
                 forKey: AppPreferences.Keys.includeGroupTransactionsInStats) as? Bool) ?? true
-            counted = calcContext.transactions.filter { transaction in
+            counted = try await cesion.porTrozos(calcContext.transactions) { $0.filter { transaction in
                 guard let account = transaction.account,
                       calcContext.eligibleAccountIDs.contains(account.persistentModelID) else { return false }
                 guard BridgedTransactionFilter.shouldInclude(
@@ -2041,7 +2056,7 @@ final class PanelViewModel {
                     includeGroupsToggle: includeGroupTxs
                 ) else { return false }
                 return FilterService.matchesCriteria(transaction, criteria: criteria)
-            }
+            } }
             narrows = ProjectedFlowBuilder.filtersNarrowData(criteria)
             paymentFilter = ProjectedFlowBuilder.paymentFilter(from: criteria)
         }
@@ -2060,7 +2075,9 @@ final class PanelViewModel {
             adjustment: statsAdjustment,
             converter: calcContext.converter
         )
-        let built = ProjectedFlowBuilder.build(inputs, context: modelContext)
+        // La conversión de los movimientos del motor del mes, por tramos que ceden el hilo (lote 7 de eficiencia): de una
+        // vez eran ~0,9 s con 16 k movimientos en el iPhone 14, el tramo más largo del recálculo.
+        let built = try await ProjectedFlowBuilder.build(inputs, context: modelContext, cesion: cesion)
         return ProjectedFlowBuilder.chartProjection(
             metric: trendType,
             grouping: calcContext.trendGrouping,
@@ -3046,6 +3063,8 @@ final class PanelViewModel {
     /// Cancel any pending recalculation
     func cancelRecalculation() {
         if recalculateTask != nil || heroSliceTask != nil { hasInterruptedWork = true }
+        firmaCargaEnCurso = nil
+        stampCargaEnCurso = nil
         heroSliceTask?.cancel()
         heroSliceTask = nil
         recalculateTask?.cancel()
@@ -3098,6 +3117,53 @@ final class PanelViewModel {
             calendar: .current
         )
     }
+
+    /// `dataVersion` cambió (`PanelDataObservers`): recarga y recalcula, salvo que sea solo el empujón del final del
+    /// arranque y nada haya cambiado desde que empezó la carga en marcha o la última (`EmpujonFinDeArranque`, lote 7 de
+    /// eficiencia). Entonces lo que se ve ya es lo que hay: la firma se pone al día y no se pide otro cálculo completo.
+    func dataVersionDidChange() {
+        let enCurso = firmaCargaEnCurso
+        let ahora = firma(de: currentDataStamp())
+        if !hasInterruptedWork,
+           EmpujonFinDeArranque.esSoloElEmpujon(
+               desde: enCurso ?? firmaUltimaCarga, ahora: ahora,
+               hayCambiosSinGuardar: modelContext?.hasChanges ?? true) {
+            if enCurso != nil {
+                firmaCargaEnCurso = ahora
+                if let stamp = stampCargaEnCurso {
+                    stampCargaEnCurso = PanelDataStamp(dataVersion: ahora.dataVersion, storeSaves: stamp.storeSaves, day: stamp.day)
+                }
+            } else {
+                firmaUltimaCarga = ahora
+                if let stamp = lastLoadStamp {
+                    lastLoadStamp = PanelDataStamp(dataVersion: ahora.dataVersion, storeSaves: stamp.storeSaves, day: stamp.day)
+                }
+            }
+            #if DEBUG
+            debugEmpujonesAbsorbidos += 1
+            print("PanelViewModel: empujón del final del arranque sin datos nuevos → no recarga")
+            #endif
+            return
+        }
+        reloadAndRecalculate()
+    }
+
+    /// La firma de `stamp` con los cambios de la nube de ahora.
+    private func firma(de stamp: PanelDataStamp) -> EmpujonFinDeArranque.Firma {
+        EmpujonFinDeArranque.Firma(
+            dataVersion: stamp.dataVersion,
+            guardados: stamp.storeSaves,
+            cambiosRemotos: StoreRemoteChangeCounter.shared.count,
+            dia: stamp.day
+        )
+    }
+
+    #if DEBUG
+    /// Empujones del final del arranque que no pidieron otro cálculo. Solo para los tests.
+    @ObservationIgnored private(set) var debugEmpujonesAbsorbidos = 0
+    /// Hay una carga por tramos en marcha (firma tomada, filas aún sin cargar). Solo para los tests.
+    var debugHayCargaEnCurso: Bool { firmaCargaEnCurso != nil }
+    #endif
 
     /// Debounced recalculation (150ms) — coalesces rapid onChange cascades.
     /// Does NOT reload from SwiftData — filter changes only need recalculation.
@@ -3167,8 +3233,13 @@ final class PanelViewModel {
                 // YALA-IOS-K: los movimientos se leen por tramos y la app atiende toques entre tramo y tramo. Mientras
                 // tanto `recalculateTask` sigue puesto: lo que se pida se suma a este cálculo (un recálculo lo cubre el
                 // cálculo de abajo, que lee los filtros de ese momento; una recarga, la vuelta que se pide al final).
+                // La firma de la carga en marcha: el empujón del final del arranque la pone al día si llega mientras se
+                // lee (`dataVersionDidChange`, lote 7 de eficiencia).
+                stampCargaEnCurso = currentDataStamp()
+                firmaCargaEnCurso = stampCargaEnCurso.map(firma(de:))
                 let stamp = currentDataStamp()
                 let loaded = await fetchTransactionsInSlices()
+                let stampCargado = stampCargaEnCurso ?? stamp
                 // Cancelado (fondo, salir del Panel): quien canceló ya soltó la tarea; no se toca nada.
                 guard !Task.isCancelled else { return }
                 guard !boundStore.isDetached else {
@@ -3177,11 +3248,11 @@ final class PanelViewModel {
                 }
                 guard let loaded else {
                     // La lectura por tramos no pudo ir (lectura fallida): la de siempre, de una vez, con su `catch`.
-                    loadData(stamp: stamp, preloadedTransactions: nil)
+                    loadData(stamp: stampCargado, preloadedTransactions: nil)
                     await finishRecalculation()
                     return
                 }
-                loadData(stamp: stamp, preloadedTransactions: loaded)
+                loadData(stamp: stampCargado, preloadedTransactions: loaded)
             }
             await finishRecalculation()
         }
@@ -3261,54 +3332,11 @@ final class PanelViewModel {
     /// con «Deshacer» que vence, una página de la nube) se descarta al final: leer un `@Model` borrado aborta en el iPhone.
     func fetchTransactionsInSlices() async -> [TransactionItem]? {
         guard let context = modelContext else { return nil }
-        let size = Self.transactionSliceSize
-        var result: [TransactionItem] = []
-        var seen = Set<PersistentIdentifier>()
-        var boundary: (date: Date, createdAt: Date)?
-        var slices = 0
-        defer { lastLoadSlices = slices }
-        while true {
-            var descriptor = Self.allTransactionsDescriptor
-            if let boundary {
-                let date = boundary.date
-                let createdAt = boundary.createdAt
-                descriptor.predicate = #Predicate<TransactionItem> {
-                    $0.date < date || ($0.date == date && $0.createdAt <= createdAt)
-                }
-            }
-            descriptor.fetchLimit = size
-            let slice: [TransactionItem]
-            do {
-                slice = try context.fetch(descriptor)
-            } catch {
-                #if DEBUG
-                print("PanelViewModel: Error loading transactions (tramo \(slices + 1)): \(error)")
-                #endif
-                return nil
-            }
-            slices += 1
-            var added = 0
-            for tx in slice where seen.insert(tx.persistentModelID).inserted {
-                result.append(tx)
-                added += 1
-            }
-            guard let last = slice.last, added > 0 || slice.count >= size else { return Self.alive(result) }
-            guard added > 0 else {
-                // Un tramo entero con la misma clave: no se puede avanzar por clave. El resto, de una vez.
-                let date = last.date
-                let createdAt = last.createdAt
-                var rest = Self.allTransactionsDescriptor
-                rest.predicate = #Predicate<TransactionItem> {
-                    $0.date < date || ($0.date == date && $0.createdAt <= createdAt)
-                }
-                do {
-                    for tx in try context.fetch(rest) where seen.insert(tx.persistentModelID).inserted { result.append(tx) }
-                } catch {
-                    return nil
-                }
-                return Self.alive(result)
-            }
-            boundary = (last.date, last.createdAt)
+        // La lectura vive en `LecturaMovimientosPorTramos` desde el lote 7 de eficiencia: la usa también la foto de los
+        // widgets. Aquí, entre tramo y tramo se cede el hilo y se comprueba que el cálculo sigue.
+        let lectura = LecturaMovimientosPorTramos(context: context, tamano: Self.transactionSliceSize)
+        defer { lastLoadSlices = lectura.tramos }
+        while !lectura.leerTramo() {
             // Un milisegundo y no `Task.yield()`: el `yield` solo deja pasar a otras tareas del hilo principal, y lo que
             // hace falta es que el run loop atienda los toques entre tramo y tramo.
             do { try await Task.sleep(for: .milliseconds(1)) } catch { return nil }
@@ -3316,11 +3344,13 @@ final class PanelViewModel {
                 return nil
             }
         }
-    }
-
-    /// Lo leído sin lo que se borró mientras se leía.
-    private static func alive(_ transactions: [TransactionItem]) -> [TransactionItem] {
-        transactions.filter { !$0.isDeleted && $0.modelContext != nil }
+        if lectura.fallo != nil {
+            #if DEBUG
+            print("PanelViewModel: Error loading transactions (tramo \(lectura.tramos + 1)): \(String(describing: lectura.fallo))")
+            #endif
+            return nil
+        }
+        return lectura.vivos
     }
 
     /// Runs all widget calculations from cached data (no SwiftData fetch).

@@ -426,31 +426,48 @@ enum WidgetDataCache {
         stagedBuildIsRunning = true
         requestedDuringStagedBuild = false
         defer { stagedBuildIsRunning = false }
-        var stages: [@MainActor () -> Void] = []
-        let finish = buildSnapshot(context: context, now: .now, stages: &stages)
-        for (index, stage) in stages.enumerated() {
-            if index > 0 {
-                // Un milisegundo y no `Task.yield()`: lo que hace falta es que el run loop atienda los toques.
-                do { try await Task.sleep(for: stagePause) } catch { return }
-                // Cancelada: quien canceló (el paso a segundo plano, el cambio de almacén) ya se hizo cargo.
-                guard !Task.isCancelled else { return }
-                // Lo que funde el espejo de iCloud no pasa por `ModelContext.didSave`: cuenta aparte.
-                guard StoreSaveCounter.shared.count == savesAtStart,
-                      StoreRemoteChangeCounter.shared.count == remoteChangesAtStart,
-                      pendingContext === context else {
-                    #if DEBUG
-                    debugStagedBuildsRestarted += 1
-                    #endif
-                    pendingRebuild = nil
-                    if let latest = pendingContext { updateCache(context: latest) }
-                    return
+        MarcasFotoWidgets.empezar()
+        let (stages, finish) = buildSnapshot(etapasDe: context, now: .now)
+        let reloj = ContinuousClock()
+        var tramos = 0
+        var tramoMasLargo: Duration = .zero
+        var primero = true
+        for stage in stages {
+            // Una etapa reanudable (lote 7 de eficiencia) se llama hasta que termina, cediendo entre tramo y tramo.
+            var terminada = false
+            while !terminada {
+                if !primero {
+                    // Un milisegundo y no `Task.yield()`: lo que hace falta es que el run loop atienda los toques.
+                    do { try await Task.sleep(for: stagePause) } catch { return }
+                    // Cancelada: quien canceló (el paso a segundo plano, el cambio de almacén) ya se hizo cargo.
+                    guard !Task.isCancelled else { return }
+                    // Lo que funde el espejo de iCloud no pasa por `ModelContext.didSave`: cuenta aparte. Se mira también
+                    // entre los tramos de una etapa: un borrado a mitad de la lectura de filas dejaría un `@Model` borrado
+                    // en la mano, y leerlo aborta en el iPhone (card f8rj).
+                    guard StoreSaveCounter.shared.count == savesAtStart,
+                          StoreRemoteChangeCounter.shared.count == remoteChangesAtStart,
+                          pendingContext === context else {
+                        #if DEBUG
+                        debugStagedBuildsRestarted += 1
+                        #endif
+                        pendingRebuild = nil
+                        if let latest = pendingContext { updateCache(context: latest) }
+                        return
+                    }
                 }
+                primero = false
+                let inicio = reloj.now
+                terminada = stage()
+                tramoMasLargo = max(tramoMasLargo, reloj.now - inicio)
+                tramos += 1
             }
-            stage()
         }
         #if DEBUG
         debugLastStagedBuildStages = stages.count
+        debugLastStagedBuildSlices = tramos
+        debugLastStagedBuildLongestSlice = tramoMasLargo
         #endif
+        MarcasFotoWidgets.tramos(tramos, masLargo: tramoMasLargo)
         let requestedAgain = requestedDuringStagedBuild
         stagedSnapshot = (context: ObjectIdentifier(context), saves: savesAtStart, remoteChanges: remoteChangesAtStart,
                           built: finish())
@@ -472,6 +489,9 @@ enum WidgetDataCache {
     /// Lo que se cede entre dos etapas de la foto.
     static let stagePause: Duration = .milliseconds(1)
 
+    /// Movimientos por tramo de la lectura de la foto: los del Panel (YALA-IOS-K), ~0,04 s cada uno en el iPhone 14.
+    static let lecturaPorTramo = PanelViewModel.transactionSliceSize
+
     private static var stagedBuildIsRunning = false
     private static var requestedDuringStagedBuild = false
     private static var stagedSnapshot: (context: ObjectIdentifier, saves: Int, remoteChanges: Int,
@@ -481,6 +501,9 @@ enum WidgetDataCache {
     /// Etapas de la última foto hecha por etapas, y fotos a medias tiradas porque algo se guardó. Solo para los tests.
     private(set) static var debugLastStagedBuildStages = 0
     private(set) static var debugStagedBuildsRestarted = 0
+    /// Tramos de la última foto por etapas (cada llamada a una etapa reanudable cuenta uno) y el más largo sin ceder.
+    private(set) static var debugLastStagedBuildSlices = 0
+    private(set) static var debugLastStagedBuildLongestSlice: Duration = .zero
     /// `true` mientras una foto se hace por etapas.
     static var debugIsStagedBuildRunning: Bool { stagedBuildIsRunning }
     #endif
@@ -698,37 +721,47 @@ enum WidgetDataCache {
     /// widgets miden los períodos a la hora de la foto (`lastUpdated`), así que un segundo reloj para ella haría que una
     /// foto empezada a las 23:59:59 del último día del mes y guardada pasada la medianoche leyera «Este mes» como el
     /// siguiente. Solo los tests lo fijan.
+    ///
+    /// **Etapas reanudables** (lote 7 de eficiencia, 27-nov-2026). Con 16.004 movimientos en el iPhone 14 la foto seguía
+    /// ocupando 5,7 s de hilo principal en el arranque, en bloques de hasta 1,3 s: cada etapa era de una vez, y cada uno
+    /// de los ocho períodos volvía a leer de SwiftData los 16 mil movimientos (Sentry YALA-IOS-16). Ahora los movimientos
+    /// se leen UNA vez a filas (`FilaFotoWidget`), y las etapas largas —leer las filas, los presupuestos, la curva y la
+    /// conversión de la proyección— devuelven `false` cuando su tramo pasa de ~20 ms (`RecorridoConReloj`) y siguen donde
+    /// se quedaron en la llamada siguiente. La foto de una vez las llama hasta que terminan; la foto por etapas cede el
+    /// hilo entre una llamada y otra. Cada etapa hace el mismo trabajo, en el mismo orden, se parta o no.
+    typealias EtapaFoto = @MainActor () -> Bool
+
     static func buildSnapshot(
-        context: ModelContext, now: Date = .now, stages: inout [@MainActor () -> Void]
-    ) -> @MainActor () -> (widget: WidgetDataSnapshot, siri: SiriFinanceSnapshot) {
-        // Fetch ALL transactions for correct balance calculation
-        let allTransactionsDescriptor = FetchDescriptor<TransactionItem>(
-            sortBy: [SortDescriptor(\.date, order: .reverse), SortDescriptor(\.createdAt, order: .reverse)]
-        )
+        etapasDe context: ModelContext, now: Date = .now
+    ) -> (etapas: [EtapaFoto], terminar: @MainActor () -> (widget: WidgetDataSnapshot, siri: SiriFinanceSnapshot)) {
+        var stages: [EtapaFoto] = []
+        // Una etapa de una vez: termina en la primera llamada.
+        func unaVez(_ cuerpo: @escaping @MainActor () -> Void) -> EtapaFoto { { cuerpo(); return true } }
 
+        // Fetch ALL transactions for correct balance calculation, por tramos (`LecturaMovimientosPorTramos`, la lectura
+        // del Panel): de una vez eran ~0,41 s con 16.004 movimientos en el iPhone 14 (lote 7 de eficiencia).
         var allTransactions: [TransactionItem] = []
-        var recentTransactions: [TransactionItem] = []
+        var lectura: LecturaMovimientosPorTramos?
         stages.append {
-            do {
-                // Lo que espera su borrado con «Deshacer» no cuenta en los widgets (`RecordPendingDeletion`).
-                allTransactions = RecordPendingDeletion.shared.visible(try context.fetch(allTransactionsDescriptor))
-            } catch {
+            let actual = lectura ?? LecturaMovimientosPorTramos(context: context, tamano: lecturaPorTramo)
+            lectura = actual
+            guard actual.leerTramo() else { return false }
+            if actual.fallo != nil {
                 #if DEBUG
-                print("WidgetDataCache: Error fetching transactions: \(error)")
+                print("WidgetDataCache: Error fetching transactions: \(String(describing: actual.fallo))")
                 #endif
+            } else {
+                // Lo que espera su borrado con «Deshacer» no cuenta en los widgets (`RecordPendingDeletion`).
+                allTransactions = RecordPendingDeletion.shared.visible(actual.vivos)
             }
-
-            // Filter to last 90 days for widget display (max 500)
-            let ninetyDaysAgo = Calendar.current.date(byAdding: .day, value: -90, to: Date.now) ?? Date.now
-            recentTransactions = Array(allTransactions.filter { $0.date >= ninetyDaysAgo }.prefix(500))
+            return true
         }
 
         var budgets: [Budget] = []
         var scheduledPayments: [ScheduledPayment] = []
         var accounts: [Account] = []
-        var eligibleTransactions: [TransactionItem] = []
-        var eligibleRecentTransactions: [TransactionItem] = []
-        stages.append {
+        var excludedAccountIDs: Set<PersistentIdentifier> = []
+        stages.append(unaVez {
             // Fetch active budgets
             let budgetDescriptor = FetchDescriptor<Budget>(
                 predicate: #Predicate { $0.isActive },
@@ -771,24 +804,19 @@ enum WidgetDataCache {
                 #endif
             }
 
-            // Pre-filter: fuera los movimientos de las cuentas que ocultan su historial (`Account.keepsHistory`). Los de una
-            // cuenta archivada se quedan en ingresos y gastos; el saldo y su curva la dejan fuera
-            // (`LiveBalanceCalculator.entersBalance`, decisión 6 de 2.3).
-            let excludedAccountIDs = Set(
+            // Fuera los movimientos de las cuentas que ocultan su historial (`Account.keepsHistory`). Los de una cuenta
+            // archivada se quedan en ingresos y gastos; el saldo y su curva la dejan fuera (`LiveBalanceCalculator
+            // .entersBalance`, decisión 6 de 2.3). El filtro (`countsForWidgets`) se aplica sobre las filas.
+            excludedAccountIDs = Set(
                 accounts.filter { !$0.keepsHistory }.map { $0.persistentModelID }
             )
-            let isEligible: (TransactionItem) -> Bool = { tx in
-                countsForWidgets(tx, excludedAccountIDs: excludedAccountIDs)
-            }
-            eligibleTransactions = allTransactions.filter(isEligible)
-            eligibleRecentTransactions = recentTransactions.filter(isEligible)
-        }
+        })
 
         // Netea los gastos de grupo bridgeados a "mi parte" en las superficies de stats.
         // Se construye del set MÁS AMPLIO (`allTransactions`, antes del filtro de elegibilidad)
         // para garantizar AMBAS hermanas del bridge; el consumo usa el subset elegible.
         var adjustment: GroupBridgeStatsAdjustment = .none
-        stages.append { adjustment = GroupBridgeStatsAdjustment.build(from: allTransactions, context: context) }
+        stages.append(unaVez { adjustment = GroupBridgeStatsAdjustment.build(from: allTransactions, context: context) })
 
         // La divisa principal, con la regla de toda la app si falta (`CurrencyDefaults.preferred`, card 2jj6). Hasta el
         // 2026-10-30 caía a dólares y reconvertía todo el histórico mientras la app pintaba soles.
@@ -798,9 +826,52 @@ enum WidgetDataCache {
         // saldo, curva) y cada conversión del converter compartido lee sus tasas del store.
         let converter: CurrencyConverting = SnapshotMemoizedConverter(base: CurrencyConverter.shared)
 
+        // Cada movimiento, leído una vez (`FilaFotoWidget`), por tramos.
+        var filas: [FilaFotoWidget] = []
+        var lector: LectorFilasFotoWidget?
+        var lecturaFilas: RecorridoConReloj?
+        stages.append {
+            let lectorActual = lector ?? LectorFilasFotoWidget(
+                currencyCode: preferredCurrency, adjustment: adjustment, converter: converter)
+            lector = lectorActual
+            let recorrido = lecturaFilas ?? RecorridoConReloj(total: allTransactions.count)
+            if lecturaFilas == nil { filas.reserveCapacity(allTransactions.count) }
+            lecturaFilas = recorrido
+            return recorrido.avanzar { indice in filas.append(lectorActual.leer(allTransactions[indice])) }
+        }
+
+        // Los últimos 90 días (máx. 500) y lo que entra en los widgets, sobre las filas: sin volver a leer fechas ni
+        // cuentas de SwiftData. `countsForWidgets` sobre la fila: con cuenta, y de una cuenta que no oculta su historial.
+        var recentTransactions: [TransactionItem] = []
+        var eligibleTransactions: [TransactionItem] = []
+        var eligibleRecentTransactions: [TransactionItem] = []
+        var filasElegibles: [FilaFotoWidget] = []
+        stages.append(unaVez {
+            let ninetyDaysAgo = Calendar.current.date(byAdding: .day, value: -90, to: Date.now) ?? Date.now
+            var recentIndices: [Int] = []
+            for indice in filas.indices where filas[indice].fecha >= ninetyDaysAgo {
+                recentIndices.append(indice)
+                if recentIndices.count == 500 { break }
+            }
+            let excluded = excludedAccountIDs
+            let isEligible: (FilaFotoWidget) -> Bool = { fila in
+                countsForWidgets(accountID: fila.cuentaID, excludedAccountIDs: excluded)
+            }
+            recentTransactions = recentIndices.map { allTransactions[$0] }
+            eligibleRecentTransactions = recentIndices.filter { isEligible(filas[$0]) }.map { allTransactions[$0] }
+            var elegibles: [TransactionItem] = []
+            elegibles.reserveCapacity(allTransactions.count)
+            filasElegibles.reserveCapacity(filas.count)
+            for indice in filas.indices where isEligible(filas[indice]) {
+                elegibles.append(allTransactions[indice])
+                filasElegibles.append(filas[indice])
+            }
+            eligibleTransactions = elegibles
+        })
+
         var totalBalance: Double = 0
         var widgetTransactions: [WidgetTransaction] = []
-        stages.append {
+        stages.append(unaVez {
             // Total balance: TC actual sobre saldo nativo (LiveBalanceCalculator).
             // El widget consume este Double ya convertido — el calculator NO se
             // expone al target widget extension.
@@ -814,14 +885,18 @@ enum WidgetDataCache {
             widgetTransactions = Array(eligibleRecentTransactions.prefix(10)).map { tx in
                 widgetTransaction(tx, currencyCode: preferredCurrency, converter: converter)
             }
-        }
+        })
 
         var widgetBudgets: [WidgetBudget] = []
         var widgetPayments: [WidgetScheduledPayment] = []
+        var recorridoBudgets: RecorridoConReloj?
         stages.append {
-            // Build widget budgets with spent calculation
+            // Build widget budgets with spent calculation, uno a uno.
             // For yearly/unique budgets, use allTransactions (90-day window is insufficient)
-            widgetBudgets = budgets.map { budget in
+            let recorrido = recorridoBudgets ?? RecorridoConReloj(total: budgets.count, cadaCuantos: 1)
+            recorridoBudgets = recorrido
+            let terminados = recorrido.avanzar { indice in
+                let budget = budgets[indice]
                 let transactionsForBudget: [TransactionItem]
                 let periodType = BudgetPeriodType(rawValue: budget.periodType)
                 if periodType == .yearly || periodType == .unique {
@@ -834,7 +909,7 @@ enum WidgetDataCache {
                 // CSV mirror SSOT con fallback M2M para legacy budgets pre-deploy.
                 let (icon, color) = Budget.computeDisplayProperties(for: budget, in: context)
 
-                return WidgetBudget(
+                widgetBudgets.append(WidgetBudget(
                     id: budget.id.uuidString,
                     name: budget.name,
                     limitAmount: budget.limitAmount,
@@ -844,8 +919,9 @@ enum WidgetDataCache {
                     percentUsed: percentUsed,
                     iconName: icon,
                     colorHex: color
-                )
+                ))
             }
+            guard terminados else { return false }
 
             // Build widget scheduled payments
             let today = Calendar.current.startOfDay(for: Date.now)
@@ -869,17 +945,16 @@ enum WidgetDataCache {
                         hasSubcategory: payment.subcategory != nil, isVariableAmount: payment.isVariableAmount)
                 )
             }
+            return true
         }
 
-        // Build trend data with multiple granularities (uses eligible transactions)
-        var trendData: WidgetTrendData?
+        // Build trend data with multiple granularities (uses eligible transactions), por tramos.
+        var tendencia: TendenciaFoto?
         stages.append {
-            trendData = buildTrendData(
-                transactions: eligibleTransactions,
-                totalBalance: totalBalance,
-                currencyCode: preferredCurrency,
-                converter: converter
-            )
+            let actual = tendencia ?? TendenciaFoto(
+                filas: filasElegibles, totalBalance: totalBalance, currencyCode: preferredCurrency, converter: converter)
+            tendencia = actual
+            return actual.avanzar()
         }
 
         // Build account balances for widgets (only visible accounts shown as cards).
@@ -887,7 +962,7 @@ enum WidgetDataCache {
         // pasada O(N+M) sobre transactions vía batchCalculateBalances.
         var nativeBalancesByAccount: [PersistentIdentifier: Decimal] = [:]
         var widgetAccountBalances: [WidgetAccountBalance] = []
-        stages.append {
+        stages.append(unaVez {
             let visibleAccounts = filterVisibleAccountsForWidget(accounts)
             nativeBalancesByAccount = AccountBalanceCalculator.batchCalculateBalances(
                 accounts: visibleAccounts, transactions: allTransactions
@@ -902,7 +977,7 @@ enum WidgetDataCache {
                     isExcludedFromStats: account.excludeFromStatistics
                 )
             }
-        }
+        })
 
         // Get currency display format preference
         let currencyDisplayFormat = UserDefaults.standard.string(forKey: "currencyDisplayFormat") ?? "symbol"
@@ -920,27 +995,26 @@ enum WidgetDataCache {
         // Un solo «ahora» para los ocho períodos y para la foto de Siri, que guarda el inicio de cada uno: con dos
         // relojes, un cálculo a caballo de medianoche del día 1 etiquetaría los totales de septiembre como de octubre.
         let periodsNow = now
-        // Un período por etapa: cada uno recorre el historial entero.
+        // Un período por etapa, sobre las filas ya leídas: cada uno las recorre sin volver a SwiftData.
         for period in widgetPeriods {
-            stages.append {
+            stages.append(unaVez {
                 let interval = period.dateInterval(now: periodsNow)
                 let summary = buildPeriodSummary(
-                    transactions: eligibleTransactions,
+                    filas: filasElegibles,
                     periodStart: interval.start,
                     periodEnd: interval.end,
                     currencyCode: preferredCurrency,
-                    allTransactionsForBalance: eligibleTransactions,
-                    adjustment: adjustment,
+                    filasParaSaldo: filasElegibles,
                     converter: converter
                 )
                 periodSummaries[period.rawValue] = summary
-            }
+            })
         }
 
         // El mes de los pagos para el calendario del extragrande vertical de «Pagos planificados». Mismo «ahora» que
         // los períodos: a caballo de medianoche del día 1 no puede salir el calendario de un mes y los totales de otro.
         var paymentsMonth: WidgetPaymentsMonth?
-        stages.append {
+        stages.append(unaVez {
             paymentsMonth = buildPaymentsMonth(
                 payments: scheduledPayments,
                 paid: ScheduledPaymentPaidStatusHelper.loadPaidAmounts(
@@ -950,11 +1024,14 @@ enum WidgetDataCache {
                 currencyCode: preferredCurrency,
                 converter: converter
             )
-        }
+        })
 
+        // La proyección: los movimientos del motor del mes se convierten por tramos (`ProjectedFlowBuilder
+        // .PrecalculoMotor`) y el resto se arma de una vez.
         var projectedFlow: WidgetProjectedFlow?
+        var proyeccion: ProyeccionFoto?
         stages.append {
-            projectedFlow = buildProjectedFlow(
+            let actual = proyeccion ?? ProyeccionFoto(
                 allTransactions: allTransactions,
                 eligibleTransactions: eligibleTransactions,
                 scheduledPayments: scheduledPayments,
@@ -964,9 +1041,13 @@ enum WidgetDataCache {
                 context: context,
                 now: periodsNow
             )
+            proyeccion = actual
+            guard actual.avanzar() else { return false }
+            projectedFlow = actual.resultado()
+            return true
         }
 
-        return {
+        return (stages, {
             // Legacy fields for backwards compatibility
             let thisMonthSummary = periodSummaries[DetailPeriod.thisMonth.rawValue] ?? buildPeriodSummary(
                 transactions: eligibleRecentTransactions,
@@ -995,7 +1076,7 @@ enum WidgetDataCache {
                 transactions: widgetTransactions,
                 budgets: widgetBudgets,
                 scheduledPayments: widgetPayments,
-                trendData: trendData ?? buildTrendData(
+                trendData: tendencia?.resultado ?? buildTrendData(
                     transactions: eligibleTransactions, totalBalance: totalBalance,
                     currencyCode: preferredCurrency, converter: converter
                 ),
@@ -1032,7 +1113,19 @@ enum WidgetDataCache {
                 calendar: userConfiguredCalendar()
             )
             return (widgetSnapshot, siriSnapshot)
+        })
+    }
+
+    /// Las etapas como las ven los tests y la foto de una vez: cada una corre hasta el final.
+    static func buildSnapshot(
+        context: ModelContext, now: Date = .now, stages: inout [@MainActor () -> Void]
+    ) -> @MainActor () -> (widget: WidgetDataSnapshot, siri: SiriFinanceSnapshot) {
+        let (etapas, terminar) = buildSnapshot(etapasDe: context, now: now)
+        for etapa in etapas {
+            let corrida: @MainActor () -> Void = { while !etapa() {} }
+            stages.append(corrida)
         }
+        return terminar
     }
 
     /// La foto de una vez: todas las etapas seguidas, en el mismo tramo del hilo principal. La usan el paso a segundo
@@ -1040,10 +1133,9 @@ enum WidgetDataCache {
     static func buildSnapshot(
         context: ModelContext, now: Date = .now
     ) -> (widget: WidgetDataSnapshot, siri: SiriFinanceSnapshot) {
-        var stages: [@MainActor () -> Void] = []
-        let finish = buildSnapshot(context: context, now: now, stages: &stages)
-        for stage in stages { stage() }
-        return finish()
+        let (etapas, terminar) = buildSnapshot(etapasDe: context, now: now)
+        for etapa in etapas { while !etapa() {} }
+        return terminar()
     }
 
     /// Spent del budget vía SSOT `BudgetsViewModel.calculateSpending`.
@@ -1095,45 +1187,102 @@ enum WidgetDataCache {
         context: ModelContext,
         now: Date
     ) -> WidgetProjectedFlow? {
-        let calendar = Calendar.current
-        guard let month = calendar.dateInterval(of: .month, for: now),
-              let year = calendar.dateInterval(of: .year, for: now),
-              let weekAhead = calendar.date(byAdding: .day, value: 8, to: calendar.startOfDay(for: now)) else { return nil }
-        let horizon = DateInterval(start: month.start, end: max(year.end, weekAhead).addingTimeInterval(-1))
-        let days = ProjectedFlowCalculator.futureDays(in: horizon, today: now, calendar: calendar)
-        guard !days.isEmpty else { return nil }
-        let inputs = ProjectedFlowBuilder.Inputs(
-            today: now,
-            calendar: calendar,
-            overdueWindowStart: month.start,
-            days: days,
-            allTransactions: allTransactions,
-            // Sin las cuentas archivadas por la persona: no se van a mover, y el widget de Saldo acumula este ritmo sobre
-            // su cifra, que ya las deja fuera (decisión 6 de 2.3). Es lo que hace la proyección del saldo del Panel.
-            countedTransactions: eligibleTransactions.filter { $0.account?.isArchivedByThePerson != true },
-            hasSessionFilters: false,
-            scheduledPayments: scheduledPayments,
-            paymentFilter: .none,
-            currencyCode: currencyCode,
-            adjustment: adjustment,
-            converter: converter
+        let proyeccion = ProyeccionFoto(
+            allTransactions: allTransactions, eligibleTransactions: eligibleTransactions,
+            scheduledPayments: scheduledPayments, currencyCode: currencyCode, adjustment: adjustment,
+            converter: converter, context: context, now: now
         )
-        let built = ProjectedFlowBuilder.build(inputs, context: context)
-        return WidgetProjectedFlow(
-            days: days.map { day in
-                let flow = built.flows[day] ?? ProjectedFlowCalculator.DayFlow()
-                return WidgetProjectedDay(date: day, income: flow.income, expense: flow.expense)
-            },
-            isApproximate: built.isApproximate
-        )
+        while !proyeccion.avanzar() {}
+        return proyeccion.resultado()
+    }
+
+    /// `buildProjectedFlow`, reanudable (lote 7 de eficiencia): la conversión de los movimientos del motor del mes va por
+    /// tramos (`ProjectedFlowBuilder.PrecalculoMotor`) y el resto se arma de una vez en `resultado()`.
+    @MainActor
+    final class ProyeccionFoto {
+        private let days: [Date]
+        private let inputs: ProjectedFlowBuilder.Inputs?
+        private let context: ModelContext
+        private let precalculo: ProjectedFlowBuilder.PrecalculoMotor?
+
+        init(
+            allTransactions: [TransactionItem],
+            eligibleTransactions: [TransactionItem],
+            scheduledPayments: [ScheduledPayment],
+            currencyCode: String,
+            adjustment: GroupBridgeStatsAdjustment,
+            converter: any CurrencyConverting,
+            context: ModelContext,
+            now: Date
+        ) {
+            self.context = context
+            let calendar = Calendar.current
+            guard let month = calendar.dateInterval(of: .month, for: now),
+                  let year = calendar.dateInterval(of: .year, for: now),
+                  let weekAhead = calendar.date(byAdding: .day, value: 8, to: calendar.startOfDay(for: now)) else {
+                days = []
+                inputs = nil
+                precalculo = nil
+                return
+            }
+            let horizon = DateInterval(start: month.start, end: max(year.end, weekAhead).addingTimeInterval(-1))
+            let days = ProjectedFlowCalculator.futureDays(in: horizon, today: now, calendar: calendar)
+            self.days = days
+            guard !days.isEmpty else {
+                inputs = nil
+                precalculo = nil
+                return
+            }
+            let inputs = ProjectedFlowBuilder.Inputs(
+                today: now,
+                calendar: calendar,
+                overdueWindowStart: month.start,
+                days: days,
+                allTransactions: allTransactions,
+                // Sin las cuentas archivadas por la persona: no se van a mover, y el widget de Saldo acumula este ritmo
+                // sobre su cifra, que ya las deja fuera (decisión 6 de 2.3). Es lo que hace la proyección del saldo del
+                // Panel.
+                countedTransactions: eligibleTransactions.filter { $0.account?.isArchivedByThePerson != true },
+                hasSessionFilters: false,
+                scheduledPayments: scheduledPayments,
+                paymentFilter: .none,
+                currencyCode: currencyCode,
+                adjustment: adjustment,
+                converter: converter
+            )
+            self.inputs = inputs
+            precalculo = ProjectedFlowBuilder.PrecalculoMotor(inputs, context: context)
+        }
+
+        /// `true` si ya se puede armar.
+        func avanzar() -> Bool {
+            precalculo?.avanzar() ?? true
+        }
+
+        func resultado() -> WidgetProjectedFlow? {
+            guard let inputs else { return nil }
+            let built = ProjectedFlowBuilder.build(inputs, context: context, motor: precalculo?.resultado)
+            return WidgetProjectedFlow(
+                days: days.map { day in
+                    let flow = built.flows[day] ?? ProjectedFlowCalculator.DayFlow()
+                    return WidgetProjectedDay(date: day, income: flow.income, expense: flow.expense)
+                },
+                isApproximate: built.isApproximate
+            )
+        }
     }
 
     /// Si un movimiento entra en los widgets de inicio: con cuenta, y de una cuenta cuyo historial se ve. Es el
     /// filtro de cuentas elegibles de la app (Panel, Registros, Estadísticas), que deja fuera los movimientos sin cuenta.
     /// Hasta el 2026-10-23 los widgets sí los contaban y su «Este mes» no coincidía con el de la app.
     static func countsForWidgets(_ tx: TransactionItem, excludedAccountIDs: Set<PersistentIdentifier>) -> Bool {
-        guard let account = tx.account else { return false }
-        return !excludedAccountIDs.contains(account.persistentModelID)
+        countsForWidgets(accountID: tx.account?.persistentModelID, excludedAccountIDs: excludedAccountIDs)
+    }
+
+    /// La misma regla sobre la cuenta ya leída: la usa la foto sobre sus filas (`FilaFotoWidget.cuentaID`).
+    static func countsForWidgets(accountID: PersistentIdentifier?, excludedAccountIDs: Set<PersistentIdentifier>) -> Bool {
+        guard let accountID else { return false }
+        return !excludedAccountIDs.contains(accountID)
     }
 
     /// Ingreso o gasto con la regla de toda la app (`TransactionClassificationLogic`: la categoría manda; sin
@@ -1205,70 +1354,115 @@ enum WidgetDataCache {
         currencyCode: String,
         converter: CurrencyConverting = CurrencyConverter.shared
     ) -> WidgetTrendData {
-        let calendar = Calendar.current
+        // La tendencia no lee importes convertidos ni el ajuste de grupos: solo fecha, cuenta y nativo.
+        let filas = LectorFilasFotoWidget(currencyCode: currencyCode, adjustment: .none, converter: converter,
+                                          resuelveImportes: false).leer(transactions)
+        let tendencia = TendenciaFoto(filas: filas, totalBalance: totalBalance, currencyCode: currencyCode,
+                                      converter: converter)
+        while !tendencia.avanzar() {}
+        return tendencia.resultado
+    }
 
-        // Lo que cambió cada día, en divisa NATIVA. Cada punto es el saldo al cierre de su día (o de su semana o
-        // mes) valorado con el tipo de cambio de esa fecha, la regla de la curva de la app (`BalanceValuation`,
-        // `panel-balance-chart-contradicts-its-own-figure`). El punto de hoy es `totalBalance`, el saldo vivo.
-        var nativeByDay: [Date: [String: Decimal]] = [:]
-        var totalNative: [String: Decimal] = [:]
-        // Solo las filas que entran en un saldo, como el saldo vivo (`LiveBalanceCalculator.entersBalance`): si no, el
-        // punto de hoy —que es ese saldo— y los de antes contarían filas distintas y la curva pintaría un escalón en hoy.
-        for tx in transactions where LiveBalanceCalculator.entersBalance(tx) {
-            let day = calendar.startOfDay(for: tx.date)
-            LiveBalanceCalculator.addNative(tx, to: &nativeByDay[day, default: [:]])
-            LiveBalanceCalculator.addNative(tx, to: &totalNative)
+    /// La curva de saldo de los widgets, reanudable (lote 7 de eficiencia): con 16 k movimientos cada punto recorre los
+    /// días con datos (~3.600), y los ~300 puntos de las tres curvas ocupaban ~0,5 s de una vez. `avanzar` calcula puntos
+    /// hasta que el tramo pasa de `RecorridoConReloj.limitePorDefecto`; la foto de una vez lo llama hasta el final. El
+    /// cálculo de cada punto es el de siempre, con la misma suma en el mismo orden.
+    @MainActor
+    final class TendenciaFoto {
+        private let calendar = Calendar.current
+        private let totalBalance: Double
+        private var nativeByDay: [Date: [String: Decimal]] = [:]
+        private var totalNative: [String: Decimal] = [:]
+        private let closings: [[(date: Date, closing: Date)]]
+        private let valuation: BalanceValuation
+        private var points: [[WidgetTrendPoint]] = [[], [], []]
+        private var serie = 0
+        private var recorrido: RecorridoConReloj?
+
+        init(filas: [FilaFotoWidget], totalBalance: Double, currencyCode: String, converter: CurrencyConverting) {
+            self.totalBalance = totalBalance
+            let calendar = self.calendar
+
+            // Lo que cambió cada día, en divisa NATIVA. Cada punto es el saldo al cierre de su día (o de su semana o
+            // mes) valorado con el tipo de cambio de esa fecha, la regla de la curva de la app (`BalanceValuation`,
+            // `panel-balance-chart-contradicts-its-own-figure`). El punto de hoy es `totalBalance`, el saldo vivo.
+            // Solo las filas que entran en un saldo, como el saldo vivo (`LiveBalanceCalculator.entersBalance`): si no,
+            // el punto de hoy —que es ese saldo— y los de antes contarían filas distintas y la curva pintaría un escalón.
+            for tx in filas where tx.entraEnSaldo {
+                let day = calendar.startOfDay(for: tx.fecha)
+                tx.sumarNativo(a: &nativeByDay[day, default: [:]])
+                tx.sumarNativo(a: &totalNative)
+            }
+
+            // Find the earliest transaction date to avoid showing flat line before data exists
+            let earliestTransactionDate = filas.map(\.fecha).min()
+            let daysOfData: Int
+            if let earliest = earliestTransactionDate {
+                // Acotado a 0: si todo el libro es futuro (lo más antiguo es de mañana o después), la cuenta sale
+                // negativa y `0..<días` revienta el proceso. La curva empieza hoy, como con un libro vacío.
+                daysOfData = max(0, calendar.dateComponents([.day], from: earliest, to: Date.now).day ?? 90)
+            } else {
+                daysOfData = 0
+            }
+
+            let dailyDays = min(daysOfData + 1, 90)  // +1 to include the first transaction day
+            let weeklyPeriods = min((daysOfData / 7) + 1, 104)
+            let monthlyPeriods = min((daysOfData / 30) + 1, 120)
+
+            let dailyClosings = WidgetDataCache.dailyTrendClosings(days: dailyDays, calendar: calendar)
+            let weeklyClosings = WidgetDataCache.aggregatedTrendClosings(
+                periods: weeklyPeriods, component: .weekOfYear, calendar: calendar)
+            let monthlyClosings = WidgetDataCache.aggregatedTrendClosings(
+                periods: monthlyPeriods, component: .month, calendar: calendar)
+            closings = [dailyClosings, weeklyClosings, monthlyClosings]
+            valuation = BalanceValuation(
+                currencies: Set(totalNative.keys),
+                to: currencyCode,
+                closingDates: (dailyClosings + weeklyClosings + monthlyClosings).map(\.closing),
+                converter: converter,
+                calendar: calendar
+            )
         }
 
-        // Find the earliest transaction date to avoid showing flat line before data exists
-        let earliestTransactionDate = transactions.map(\.date).min()
-        let daysOfData: Int
-        if let earliest = earliestTransactionDate {
-            // Acotado a 0: si todo el libro es futuro (lo más antiguo es de mañana o después), la cuenta sale negativa
-            // y `0..<días` revienta el proceso. La curva empieza hoy, como con un libro vacío.
-            daysOfData = max(0, calendar.dateComponents([.day], from: earliest, to: Date.now).day ?? 90)
-        } else {
-            daysOfData = 0
-        }
-
-        let dailyDays = min(daysOfData + 1, 90)  // +1 to include the first transaction day
-        let weeklyPeriods = min((daysOfData / 7) + 1, 104)
-        let monthlyPeriods = min((daysOfData / 30) + 1, 120)
-
-        let dailyClosings = dailyTrendClosings(days: dailyDays, calendar: calendar)
-        let weeklyClosings = aggregatedTrendClosings(periods: weeklyPeriods, component: .weekOfYear, calendar: calendar)
-        let monthlyClosings = aggregatedTrendClosings(periods: monthlyPeriods, component: .month, calendar: calendar)
-        let valuation = BalanceValuation(
-            currencies: Set(totalNative.keys),
-            to: currencyCode,
-            closingDates: (dailyClosings + weeklyClosings + monthlyClosings).map(\.closing),
-            converter: converter,
-            calendar: calendar
-        )
-
-        func points(_ closings: [(date: Date, closing: Date)]) -> [WidgetTrendPoint] {
-            closings.map { entry in
-                // El primero es hoy: el saldo vivo tal cual, que es el número que pinta el widget al lado.
-                if entry.closing >= calendar.startOfDay(for: Date.now) {
-                    return WidgetTrendPoint(date: entry.date, balance: totalBalance)
+        /// Calcula puntos hasta agotar el tramo. `true` si ya están las tres curvas.
+        func avanzar() -> Bool {
+            while serie < closings.count {
+                let entradas = closings[serie]
+                let recorrido = self.recorrido ?? RecorridoConReloj(total: entradas.count, cadaCuantos: 4)
+                self.recorrido = recorrido
+                let terminada = recorrido.avanzar { indice in
+                    points[serie].append(point(entradas[indice]))
                 }
-                var native = totalNative
-                for (day, delta) in nativeByDay where day > entry.closing {
-                    for (code, amount) in delta { native[code, default: 0] -= amount }
-                }
-                return WidgetTrendPoint(date: entry.date, balance: valuation.doubleValue(native, at: entry.closing))
-            }.reversed()
+                guard terminada else { return false }
+                self.recorrido = nil
+                serie += 1
+            }
+            return true
         }
 
-        return WidgetTrendData(
-            dailyPoints: points(dailyClosings),
-            weeklyPoints: points(weeklyClosings),
-            monthlyPoints: points(monthlyClosings)
-        )
+        private func point(_ entry: (date: Date, closing: Date)) -> WidgetTrendPoint {
+            // El primero es hoy: el saldo vivo tal cual, que es el número que pinta el widget al lado.
+            if entry.closing >= calendar.startOfDay(for: Date.now) {
+                return WidgetTrendPoint(date: entry.date, balance: totalBalance)
+            }
+            var native = totalNative
+            for (day, delta) in nativeByDay where day > entry.closing {
+                for (code, amount) in delta { native[code, default: 0] -= amount }
+            }
+            return WidgetTrendPoint(date: entry.date, balance: valuation.doubleValue(native, at: entry.closing))
+        }
+
+        var resultado: WidgetTrendData {
+            WidgetTrendData(
+                dailyPoints: points[0].reversed(),
+                weeklyPoints: points[1].reversed(),
+                monthlyPoints: points[2].reversed()
+            )
+        }
     }
 
     /// Los días de la curva diaria, de hoy hacia atrás: cada punto lleva la fecha del día y cierra al final de él.
-    private static func dailyTrendClosings(days: Int, calendar: Calendar) -> [(date: Date, closing: Date)] {
+    fileprivate static func dailyTrendClosings(days: Int, calendar: Calendar) -> [(date: Date, closing: Date)] {
         (0..<days).compactMap { daysAgo in
             guard let date = calendar.date(byAdding: .day, value: -daysAgo, to: Date.now) else { return nil }
             let day = calendar.startOfDay(for: date)
@@ -1279,7 +1473,7 @@ enum WidgetDataCache {
 
     /// Las semanas o meses de la curva, del actual hacia atrás: cada punto lleva la fecha de inicio del periodo y
     /// cierra al final de él (el actual, ahora).
-    private static func aggregatedTrendClosings(
+    fileprivate static func aggregatedTrendClosings(
         periods: Int, component: Calendar.Component, calendar: Calendar
     ) -> [(date: Date, closing: Date)] {
         let today = Date.now
@@ -1392,9 +1586,34 @@ enum WidgetDataCache {
         adjustment: GroupBridgeStatsAdjustment = .none,
         converter: CurrencyConverting = CurrencyConverter.shared
     ) -> WidgetPeriodSummary {
+        let lector = LectorFilasFotoWidget(currencyCode: currencyCode, adjustment: adjustment, converter: converter)
+        let filasSaldo = allTransactionsForBalance.map {
+            LectorFilasFotoWidget(currencyCode: currencyCode, adjustment: adjustment, converter: converter,
+                                  resuelveImportes: false).leer($0)
+        }
+        return buildPeriodSummary(
+            filas: lector.leer(transactions),
+            periodStart: periodStart,
+            periodEnd: periodEnd,
+            currencyCode: currencyCode,
+            filasParaSaldo: filasSaldo,
+            converter: converter
+        )
+    }
+
+    /// El resumen de un período sobre filas ya leídas (`FilaFotoWidget`, lote 7 de eficiencia): el cuerpo de siempre, con
+    /// cada lectura del movimiento cambiada por su campo. La foto lee las filas una vez y las reusa en los ocho períodos.
+    static func buildPeriodSummary(
+        filas: [FilaFotoWidget],
+        periodStart: Date,
+        periodEnd: Date,
+        currencyCode: String,
+        filasParaSaldo: [FilaFotoWidget]? = nil,
+        converter: CurrencyConverting = CurrencyConverter.shared
+    ) -> WidgetPeriodSummary {
         // Filter transactions for the period, excluding balance adjustments
-        let periodTransactions = transactions.filter { tx in
-            tx.date >= periodStart && tx.date <= periodEnd && tx.balanceAdjustmentType == nil
+        let periodTransactions = filas.filter { tx in
+            tx.fecha >= periodStart && tx.fecha <= periodEnd && !tx.esAjusteDeSaldo
         }
 
         // Calculate totals (income-aware): suprime la pata de préstamo derivada y
@@ -1417,18 +1636,16 @@ enum WidgetDataCache {
         var flowsByAccount: [PersistentIdentifier: (name: String, income: Double, expense: Double)] = [:]
 
         for tx in periodTransactions {
-            if adjustment.isSuppressed(tx) { continue }
+            if tx.suprimida { continue }
             // La regla de la app (`CashFlowCalculator.resolvedAmount`): el monto guardado si se
             // guardó en la divisa vigente —y entonces la señal es la del `adjustment`, que en un
             // gasto de grupo cuenta todas las patas—; si no, el nativo reconvertido con la tasa de
-            // su fecha, y la señal es la de esa conversión.
-            let resolved = CashFlowCalculator.resolvedAmount(
-                tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter
-            )
+            // su fecha, y la señal es la de esa conversión. Resuelto una vez, al leer la fila.
+            let resolved = tx.resuelto
             let amount = resolved.value
             let approximate = resolved.approximateMagnitude
             // Con signo, como el Flujo de caja de la app: una devolución en una categoría de gasto resta del gasto.
-            let isIncome = isIncomeTx(tx)
+            let isIncome = tx.esIngreso
             if isIncome {
                 totalIncome += amount
                 incomeApproximateMagnitude += approximate
@@ -1438,10 +1655,10 @@ enum WidgetDataCache {
                 expenseApproximateMagnitude += approximate
                 expenseTotalMagnitude += abs(amount)
             }
-            if let account = tx.account {
-                var flow = flowsByAccount[account.persistentModelID] ?? (account.name, 0, 0)
+            if let account = tx.cuenta, let accountID = tx.cuentaID {
+                var flow = flowsByAccount[accountID] ?? (account.name, 0, 0)
                 if isIncome { flow.income += amount } else { flow.expense -= amount }
-                flowsByAccount[account.persistentModelID] = flow
+                flowsByAccount[accountID] = flow
             }
         }
 
@@ -1473,7 +1690,7 @@ enum WidgetDataCache {
         // distintas no se cancelan entre sí. El denominador, en cambio, es el saldo mismo — ver el
         // comentario del `return`.
         var balanceApproximateMagnitude: Double = 0
-        if let allTx = allTransactionsForBalance {
+        if let allTx = filasParaSaldo {
             var native: [String: Decimal] = [:]
             // Las mismas filas que el saldo vivo y que la curva del widget (`LiveBalanceCalculator.entersBalance`): un
             // movimiento sin cuenta no está en ningún saldo, y contarlo aquí separaba la cifra del último punto de la
@@ -1482,8 +1699,8 @@ enum WidgetDataCache {
             // 2026-10-25) cuenta ese último segundo; uno que cierra en medianoche, no cuenta la medianoche.
             let nextSecond = periodEnd.addingTimeInterval(1)
             let exclusiveEnd = Calendar.current.startOfDay(for: nextSecond) == nextSecond ? nextSecond : periodEnd
-            for tx in allTx where tx.date < exclusiveEnd && LiveBalanceCalculator.entersBalance(tx) {
-                LiveBalanceCalculator.addNative(tx, to: &native)
+            for tx in allTx where tx.fecha < exclusiveEnd && tx.entraEnSaldo {
+                tx.sumarNativo(a: &native)
             }
             let closing = min(periodEnd, Date.now)
             let valuation = BalanceValuation(
@@ -1496,31 +1713,16 @@ enum WidgetDataCache {
 
         // Las categorías del gasto, en neto y todas: su suma es el total del desglose (card znu5). La foto lleva las 20
         // primeras (las tartas grandes) y el total, para que centro, «Otros» y porcentajes se midan contra lo mismo.
-        let categorySlices = categoryExpenseSlices(
-            transactions: periodTransactions, currencyCode: currencyCode, adjustment: adjustment, converter: converter
-        )
+        let categorySlices = categoryExpenseSlices(filas: periodTransactions)
         let expenseBreakdownTotal = WidgetInsightsLogic.breakdownTotal(categorySlices.map(\.amount))
         let topCategories = Self.topCategories(from: categorySlices, breakdownTotal: expenseBreakdownTotal, limit: 20)
 
         // Las subcategorías, con el total de su propio desglose (top 20 para las tartas grandes).
-        let subcategoryBreakdown = subcategoryExpenseBreakdown(
-            transactions: periodTransactions,
-            limit: 20,
-            currencyCode: currencyCode,
-            adjustment: adjustment,
-            converter: converter
-        )
+        let subcategoryBreakdown = subcategoryExpenseBreakdown(filas: periodTransactions, limit: 20)
         let topSubcategories = subcategoryBreakdown.rows
 
         // Build cash flow by day
-        let cashFlowPoints = buildCashFlowByDay(
-            transactions: periodTransactions,
-            periodStart: periodStart,
-            periodEnd: periodEnd,
-            currencyCode: currencyCode,
-            adjustment: adjustment,
-            converter: converter
-        )
+        let cashFlowPoints = buildCashFlowByDay(filas: periodTransactions, periodStart: periodStart, periodEnd: periodEnd)
 
         return WidgetPeriodSummary(
             totalIncome: totalIncome,
@@ -1529,7 +1731,7 @@ enum WidgetDataCache {
             topCategories: topCategories,
             topSubcategories: topSubcategories,
             cashFlowPoints: cashFlowPoints,
-            periodBalance: allTransactionsForBalance != nil ? periodBalance : nil,
+            periodBalance: filasParaSaldo != nil ? periodBalance : nil,
             incomeIsApproximate: ApproximateMarkThreshold.marks(
                 approximate: incomeApproximateMagnitude, total: incomeTotalMagnitude
             ),
@@ -1550,7 +1752,7 @@ enum WidgetDataCache {
             // denominador honesto es lo que el usuario ve. Con `Σ|monto|` la marca no salía casi
             // nunca y fallaba justo en quien más historial tiene: 400 dudosos sobre un saldo de 500
             // dan un 80 %, pero sobre una facturación de 300.000 dan un 0,13 %.
-            periodBalanceIsApproximate: allTransactionsForBalance != nil
+            periodBalanceIsApproximate: filasParaSaldo != nil
                 ? ApproximateMarkThreshold.marks(
                     approximate: balanceApproximateMagnitude, total: periodBalance
                 )
@@ -1573,23 +1775,29 @@ enum WidgetDataCache {
         adjustment: GroupBridgeStatsAdjustment = .none,
         converter: CurrencyConverting = CurrencyConverter.shared
     ) -> [(category: Category?, amount: Double)] {
+        categoryExpenseSlices(
+            filas: LectorFilasFotoWidget(currencyCode: currencyCode, adjustment: adjustment, converter: converter)
+                .leer(transactions)
+        )
+    }
+
+    /// Lo mismo sobre filas ya leídas (`FilaFotoWidget`).
+    static func categoryExpenseSlices(filas: [FilaFotoWidget]) -> [(category: Category?, amount: Double)] {
         var categories: [String: Category?] = [:]
         var contributions: [(key: String, expense: Double)] = []
 
-        for tx in transactions {
+        for tx in filas {
             // Skip balance adjustments
-            guard tx.balanceAdjustmentType == nil else { continue }
+            guard !tx.esAjusteDeSaldo else { continue }
             // Skip la pata de préstamo derivada (bridge) e income (clasif. por categoría)
-            guard !adjustment.isSuppressed(tx) else { continue }
-            guard !isIncomeTx(tx) else { continue }
-            let category = tx.category
+            guard !tx.suprimida else { continue }
+            guard !tx.esIngreso else { continue }
+            let category = tx.categoria
             // Una clave que ningún nombre de categoría puede tener (el nombre es texto del usuario).
-            let key = category?.name ?? uncategorizedWidgetKey
+            let key = tx.categoriaNombre ?? uncategorizedWidgetKey
             if categories[key] == nil { categories[key] = .some(category) }
             // Con signo, como el total del período: el gasto aporta en positivo y la devolución resta.
-            let value = CashFlowCalculator.resolvedAmount(
-                tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter
-            ).value
+            let value = tx.resuelto.value
             contributions.append((key: key, expense: -value))
         }
 
@@ -1660,28 +1868,36 @@ enum WidgetDataCache {
         adjustment: GroupBridgeStatsAdjustment = .none,
         converter: CurrencyConverting = CurrencyConverter.shared
     ) -> (rows: [WidgetSubcategory], total: Double) {
+        subcategoryExpenseBreakdown(
+            filas: LectorFilasFotoWidget(currencyCode: currencyCode, adjustment: adjustment, converter: converter)
+                .leer(transactions),
+            limit: limit
+        )
+    }
+
+    /// Lo mismo sobre filas ya leídas (`FilaFotoWidget`).
+    static func subcategoryExpenseBreakdown(filas: [FilaFotoWidget], limit: Int) -> (rows: [WidgetSubcategory], total: Double) {
         var subcategories: [String: (subcategory: Subcategory, category: Category)] = [:]
         var contributions: [(key: String, expense: Double)] = []
 
-        for tx in transactions {
+        for tx in filas {
             // Skip balance adjustments
-            guard tx.balanceAdjustmentType == nil else { continue }
+            guard !tx.esAjusteDeSaldo else { continue }
             // Skip la pata de préstamo derivada (bridge) e income (clasif. por categoría)
-            guard !adjustment.isSuppressed(tx) else { continue }
-            guard !isIncomeTx(tx) else { continue }
+            guard !tx.suprimida else { continue }
+            guard !tx.esIngreso else { continue }
             let key: String
-            if let subcategory = tx.subcategory, let category = tx.category {
-                key = "\(category.name)_\(subcategory.name)"
+            if let subcategory = tx.subcategoria, let category = tx.categoria,
+               let subcategoryName = tx.subcategoriaNombre, let categoryName = tx.categoriaNombre {
+                key = "\(categoryName)_\(subcategoryName)"
                 if subcategories[key] == nil { subcategories[key] = (subcategory, category) }
-            } else if let category = tx.category {
+            } else if let categoryName = tx.categoriaNombre {
                 // Sin subcategoría: su resto, por categoría (una clave que ningún nombre puede dar).
-                key = "\u{1}rest_\(category.name)"
+                key = "\u{1}rest_\(categoryName)"
             } else {
                 key = uncategorizedWidgetKey
             }
-            let value = CashFlowCalculator.resolvedAmount(
-                tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter
-            ).value
+            let value = tx.resuelto.value
             contributions.append((key: key, expense: -value))
         }
 
@@ -1710,25 +1926,35 @@ enum WidgetDataCache {
         adjustment: GroupBridgeStatsAdjustment = .none,
         converter: CurrencyConverting = CurrencyConverter.shared
     ) -> [WidgetCashFlowPoint] {
+        buildCashFlowByDay(
+            filas: LectorFilasFotoWidget(currencyCode: currencyCode, adjustment: adjustment, converter: converter)
+                .leer(transactions),
+            periodStart: periodStart,
+            periodEnd: periodEnd
+        )
+    }
+
+    /// Lo mismo sobre filas ya leídas (`FilaFotoWidget`).
+    static func buildCashFlowByDay(
+        filas: [FilaFotoWidget], periodStart: Date, periodEnd: Date
+    ) -> [WidgetCashFlowPoint] {
         let calendar = Calendar.current
 
         // Group transactions by day
         var dailyData: [Date: (income: Double, expense: Double)] = [:]
 
-        for tx in transactions {
+        for tx in filas {
             // Skip balance adjustments
-            guard tx.balanceAdjustmentType == nil else { continue }
+            guard !tx.esAjusteDeSaldo else { continue }
             // Suprime la pata de préstamo derivada (bridge): mata el ingreso fantasma +lent.
-            if adjustment.isSuppressed(tx) { continue }
+            if tx.suprimida { continue }
 
-            let day = calendar.startOfDay(for: tx.date)
-            let rawAmount = CashFlowCalculator.resolvedAmount(
-                tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter
-            ).value
+            let day = calendar.startOfDay(for: tx.fecha)
+            let rawAmount = tx.resuelto.value
 
             var existing = dailyData[day] ?? (income: 0, expense: 0)
             // Con signo, como los totales del período (`buildPeriodSummary`).
-            if isIncomeTx(tx) {
+            if tx.esIngreso {
                 existing.income += rawAmount
             } else {
                 existing.expense -= rawAmount
