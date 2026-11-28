@@ -115,3 +115,4 @@ Subíndice de `MEMORY.md` (2026-11-05). **Memorias de proyecto: congeladas a su 
 - [IA ampliada al 100 %; conector espera a Dan](project_ia_ampliada_100_y_conector_espera_a_dan.md) — 22-nov: medición hasta ~6-dic; mcp.yala-app.pe reservado, despliega Dan.
 - [Uso de línea: A decidida](project_uso_de_linea_espera_decision.md) — 22-nov: línea lista y oculta sin límite; falta el encargo que crea el campo.
 - [Convertir a grupo en cuarentena](project_convertir_a_grupo_en_cuarentena.md) — 25-nov: hasta el 9-dic; arreglo sin ver el fallo; 3 nocturnas verdes → fuera.
+- [Notas de la guía piden despliegues](project_notas_de_la_guia_piden_despliegues.md) — 27-nov: sus «mejorar» en la guía de novedades suelen ser «despleguemos»; sepáralas de bugs e ideas.
