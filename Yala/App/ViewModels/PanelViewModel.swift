@@ -315,6 +315,11 @@ final class PanelViewModel {
     @ObservationIgnored
     private(set) var missedWhileInactive = false
 
+    /// Las marcas del cálculo en curso (lote 4 de eficiencia): las etapas de dentro de la tendencia se apuntan aquí.
+    /// Fuera del `#if DEBUG`: se usan también en Release (dentro del bloque, el archivo de la 2.3 (12) no compilaba).
+    @ObservationIgnored
+    private var marcasEnCurso: MarcasRecalculoPanel?
+
     #if DEBUG
     /// Cuántas veces ha corrido `performCalculation`. Solo para medir: los tests cuentan con él que un
     /// evento produce UN recálculo y no más, y la traza de DEBUG lo imprime con su motivo.
@@ -325,10 +330,6 @@ final class PanelViewModel {
     /// etapa: uno cortado entre etapas cuenta aquí y no allí.
     @ObservationIgnored
     private(set) var debugCalculationsStarted = 0
-
-    /// Las marcas del cálculo en curso (lote 4 de eficiencia): las etapas de dentro de la tendencia se apuntan aquí.
-    @ObservationIgnored
-    private var marcasEnCurso: MarcasRecalculoPanel?
 
     /// Cuántas esperas de 150 ms se han abierto. Una petición que llega con otra esperando se suma a ella y no abre
     /// otra: los tests lo cuentan sin depender del reloj (card h1hy).
