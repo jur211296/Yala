@@ -32,7 +32,7 @@ final class CustomTabBarUITests: XCTestCase {
             "La pestaña Registros personalizada no montó su pantalla (pantalla negra).")
         attach(app, "registros")
 
-        tapTab(app, label: "Grupos")
+        tapTab(app, label: "Compartido")
         XCTAssertTrue(
             app.buttons["groups_global_settings_button"].waitForExistence(timeout: 10),
             "La pestaña Grupos personalizada no montó su pantalla (pantalla negra).")
@@ -72,7 +72,7 @@ final class CustomTabBarUITests: XCTestCase {
 
         customizeBar(app, remove: ["statistics", "planning"], add: ["records", "groups"])
 
-        tapTab(app, label: "Grupos")
+        tapTab(app, label: "Compartido")
         XCTAssertTrue(
             app.buttons["groups_global_settings_button"].waitForExistence(timeout: 10),
             "La pestaña Grupos personalizada no montó su pantalla (pantalla negra).")
@@ -100,7 +100,7 @@ final class CustomTabBarUITests: XCTestCase {
 
         customizeBar(app, remove: ["statistics", "planning"], add: ["groups", "records"])
 
-        tapTab(app, label: "Grupos")
+        tapTab(app, label: "Compartido")
         XCTAssertTrue(
             app.buttons["groups_global_settings_button"].waitForExistence(timeout: 10),
             "La pestaña Grupos personalizada no montó su pantalla (pantalla negra).")
@@ -124,7 +124,7 @@ final class CustomTabBarUITests: XCTestCase {
             "Registros no montó tras la primera personalización.")
 
         customizeBar(app, remove: ["records", "groups"], add: ["groups", "records"])
-        tapTab(app, label: "Grupos")
+        tapTab(app, label: "Compartido")
         XCTAssertTrue(
             app.buttons["groups_global_settings_button"].waitForExistence(timeout: 10),
             "La pestaña Grupos no montó tras la segunda personalización (pantalla negra).")
@@ -173,7 +173,7 @@ final class CustomTabBarUITests: XCTestCase {
         XCTAssertTrue(
             app.descendants(matching: .any)["records_summary_balance"].waitForExistence(timeout: 10),
             "Tras volver de solo grupos, la pestaña Registros personalizada no montó su pantalla (pantalla negra).")
-        tapTab(app, label: "Grupos")
+        tapTab(app, label: "Compartido")
         XCTAssertTrue(
             app.buttons["groups_global_settings_button"].waitForExistence(timeout: 10),
             "Tras volver de solo grupos, la pestaña Grupos personalizada no montó su pantalla (pantalla negra).")

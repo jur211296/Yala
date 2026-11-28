@@ -209,7 +209,9 @@ struct PanelSlicedLoadTests {
         let viewModel = panel(container)
 
         viewModel.reloadAndRecalculate()
-        for _ in 0..<200 where viewModel.transactions.count < size + 712 {
+        // Se espera también a `isReady`: con la carga por tramos (Eficiencia 8) llega después de que estén todos los
+        // movimientos, y en el runner del CI la aserción la leía antes (rojo de `2.3` del 27-nov, verde en el reintento).
+        for _ in 0..<500 where viewModel.transactions.count < size + 712 || !viewModel.isReady {
             try await Task.sleep(for: .milliseconds(20))
         }
         #expect(viewModel.transactions.count == size + 712)

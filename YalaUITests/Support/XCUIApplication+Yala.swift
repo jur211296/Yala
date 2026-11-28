@@ -489,7 +489,8 @@ extension XCUIApplication {
         case planning = "Planificación"
         case records = "Registros"
         case reports = "Reportes"
-        case groups = "Grupos"
+        /// «Compartido» desde el 26-nov-2026 (la pestaña Grupos cambió de nombre; el id `groups` sigue).
+        case groups = "Compartido"
         /// Solo en la barra de pestañas: con barra lateral no existe.
         case more = "Más"
         case search = "Buscar"

@@ -58,14 +58,14 @@ final class AdaptiveNavigationUITests: XCTestCase {
             func sidebarEntry(_ label: String) -> XCUIElement {
                 app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label)).firstMatch
             }
-            for page in ["Panel", "Estadísticas", "Planificación", "Registros", "Reportes", "Grupos"] {
+            for page in ["Panel", "Estadísticas", "Planificación", "Registros", "Reportes", "Compartido"] {
                 XCTAssertTrue(sidebarEntry(page).waitForExistence(timeout: 10), "La barra lateral no enseña «\(page)».")
             }
             XCTAssertFalse(sidebarEntry("Más").exists, "«Más» no debería existir con barra lateral.")
-            sidebarEntry("Grupos").tap()
+            sidebarEntry("Compartido").tap()
             XCTAssertTrue(
-                app.navigationBars["Grupos"].waitForExistence(timeout: 10),
-                "Tocar Grupos en la barra lateral no abrió Grupos.")
+                app.navigationBars["Compartido"].waitForExistence(timeout: 10),
+                "Tocar Compartido en la barra lateral no abrió Compartido.")
         } else {
             XCTAssertTrue(app.compactTabBar.waitForExistence(timeout: 10), "No hay barra de pestañas en iPhone.")
             XCTAssertTrue(app.compactTabBar.buttons["Más"].exists, "La barra de pestañas perdió «Más».")
@@ -425,7 +425,7 @@ final class AdaptiveNavigationUITests: XCTestCase {
     // MARK: - Estrechar la ventana
 
     /// Las seis páginas, en la lateral y en el orden de siempre.
-    private let pages = ["Panel", "Estadísticas", "Planificación", "Registros", "Reportes", "Grupos"]
+    private let pages = ["Panel", "Estadísticas", "Planificación", "Registros", "Reportes", "Compartido"]
 
     /// Toca un chip de Estadísticas. En iPhone los últimos quedan fuera del carril horizontal: se desplaza hasta verlo.
     private func tapStatisticsChip(_ id: String, in app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
@@ -692,7 +692,7 @@ final class AdaptiveNavigationUITests: XCTestCase {
     /// empujado, con su chevron de volver.
     func test_narrowingTheWindow_withAGroupOpen_keepsTheGroupPushed() throws {
         let app = try launchInResizableWindow(seed: "grupos")
-        let groups = sidebarEntry("Grupos", in: app)
+        let groups = sidebarEntry("Compartido", in: app)
         XCTAssertTrue(groups.waitForExistence(timeout: 10), "La barra lateral no enseña Grupos.")
         groups.tap()
         let card = app.descendants(matching: .any).matching(identifier: "group_card").firstMatch
