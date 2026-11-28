@@ -1606,3 +1606,4 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | 2026-11-27-textos-reparto-y-ayuda-distribucion | done | tickets/done/2026-11-27-textos-reparto-y-ayuda-distribucion.md |
 | 2026-11-27-pulido-ui-grupos-vacio-y-esto-lei | done | tickets/done/2026-11-27-pulido-ui-grupos-vacio-y-esto-lei.md |
 | 2026-11-27-arreglos-flujo-tendencias-y-ayuda-distribucion | done | tickets/done/2026-11-27-arreglos-flujo-tendencias-y-ayuda-distribucion.md |
+| 2026-11-27-barrido-qa-2-3-build-12 | done | tickets/done/2026-11-27-barrido-qa-2-3-build-12.md |
