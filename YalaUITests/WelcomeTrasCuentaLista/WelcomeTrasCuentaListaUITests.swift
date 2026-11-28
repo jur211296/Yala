@@ -109,8 +109,9 @@ final class WelcomeTrasCuentaListaUITests: XCTestCase {
         app.buttons["welcome_access_icloud"].tap()
 
         answerTheConversation(app)
-        XCTAssertTrue(app.buttons["panel_account_chip_0"].waitForExistence(timeout: 20),
-                      "No llegó al Panel con la cuenta de gastos.")
+        // Desde el 25-nov-2026 «Solo gastos» no crea la cuenta de gastos: el Panel llega con «Crea tu primera cuenta».
+        XCTAssertTrue(app.buttons["panel_create_first_account"].waitForExistence(timeout: 20),
+                      "No llegó al Panel (sin cuenta, con «Crea tu primera cuenta»).")
         assertLandsInTheAppAndStays(app, "Cuenta nueva con iCloud privado")
     }
 

@@ -56,10 +56,14 @@ final class BulkEditUITests: XCTestCase {
 
     /// Elige las dos primeras filas y espera a que la barra diga «2 seleccionados». Cada fila se toca cuando es
     /// alcanzable: en el CI la primera salía a veces con el punto de impacto en `{-1, -1}` y el toque se perdía.
+    /// Las dos primeras filas que NO son transferencia. Una transferencia no deja cambiar ni la cuenta ni la categoría en
+    /// lote, y la semilla `minimal` mueve «Ahorros USD» con una los días 10 y 25: la noche del día siguiente quedaba entre
+    /// las dos primeras y «Aplicar» salía apagado (rojo de las 23:13 de Lima del 26-nov, 3 de 3; verde de día).
     private func selectFirstTwoRows(_ app: XCUIApplication) {
-        let rows = app.buttons.matching(identifier: "record_row")
-        XCTAssertTrue(rows.element(boundBy: 0).waitForExistence(timeout: 10), "No hay filas de transacción para seleccionar.")
-        XCTAssertGreaterThanOrEqual(rows.count, 2, "El seed no produjo ≥2 transacciones para edición masiva.")
+        let allRows = app.buttons.matching(identifier: "record_row")
+        XCTAssertTrue(allRows.element(boundBy: 0).waitForExistence(timeout: 10), "No hay filas de transacción para seleccionar.")
+        let rows = allRows.matching(NSPredicate(format: "NOT (label CONTAINS[c] %@)", "Transferencia"))
+        XCTAssertGreaterThanOrEqual(rows.count, 2, "El seed no produjo ≥2 transacciones (sin transferencias) para edición masiva.")
         for index in 0..<2 {
             let row = rows.element(boundBy: index)
             bringIntoFreeBand(app, row)

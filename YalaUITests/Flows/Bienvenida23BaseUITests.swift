@@ -36,7 +36,7 @@ final class Bienvenida23BaseUITests: XCTestCase {
 
         let bar = app.tabBars.firstMatch
         XCTAssertTrue(bar.waitForExistence(timeout: 10), "No hay barra de pestañas.")
-        XCTAssertTrue(bar.buttons["Grupos"].exists, "Una instalación nueva lleva Grupos en la barra.")
+        XCTAssertTrue(bar.buttons["Compartido"].exists, "Una instalación nueva lleva Compartido (Grupos) en la barra.")
         XCTAssertTrue(bar.buttons["Registros"].exists, "Una instalación nueva lleva Registros en la barra.")
         XCTAssertFalse(bar.buttons["Estadísticas"].exists, "Estadísticas vive en Más.")
         XCTAssertFalse(bar.buttons["Planificación"].exists, "Planificación vive en Más.")

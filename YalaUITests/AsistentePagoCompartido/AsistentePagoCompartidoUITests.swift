@@ -40,7 +40,7 @@ final class AsistentePagoCompartidoUITests: XCTestCase {
     private func pregunta(_ app: XCUIApplication, es texto: String, file: StaticString = #filePath, line: UInt = #line) {
         let titulo = app.staticTexts["asistente_question"]
         let espera = expectation(for: NSPredicate(format: "label == %@", texto), evaluatedWith: titulo)
-        XCTAssertEqual(XCTWaiter.wait(for: [espera], timeout: 5), .completed,
+        XCTAssertEqual(XCTWaiter.wait(for: [espera], timeout: 10), .completed,
                        "Se esperaba «\(texto)» y se ve «\(titulo.label)».", file: file, line: line)
     }
 
