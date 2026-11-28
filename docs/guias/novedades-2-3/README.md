@@ -1,18 +1,18 @@
-# Guía de novedades 2.3 (TestFlight 2.3 (11))
+# Guía de novedades 2.3 (TestFlight 2.3 (12))
 
-Artifact para que Jürgen recorra como usuario antiguo o nuevo todo lo que cambió de la 2.2 publicada a la 2.3 (11) de
-TestFlight, con lo que todavía no llegó, y deje notas «me gusta / mejorar / bug»: https://claude.ai/artifact/NqVZFcKkUpXLP6p44QFtzJ
-(publicada desde la Max el 26-nov, pública con enlace). Las versiones anteriores quedan en
-https://claude.ai/artifact/G74UBFLDowih9f2Rt5xaoS (hasta la 2.3 (10), cuenta de la Mini) y
-https://claude.ai/artifact/3PhSbBHvWRMX3pohZw5Gty (2.3 (7)); la sesión de la Max solo puede leerlas, por eso la
-build 11 estrena URL. La colección `notas` de la anterior estaba vacía el 26-nov: no se perdió ninguna nota.
+Artifact para que Jürgen recorra como usuario antiguo o nuevo todo lo que cambió de la 2.2 publicada a la 2.3 (12) de
+TestFlight, con lo que todavía no llegó, y deje notas «me gusta / mejorar / bug»: https://claude.ai/artifact/9f7BMc2FVzXqysUL4RXkA8
+(publicada desde la Max el 28-nov, pública con enlace). Las 304 notas que dejó en la guía de la build 11 se copiaron a
+esta por id. Las versiones anteriores quedan en https://claude.ai/artifact/NqVZFcKkUpXLP6p44QFtzJ (2.3 (11), de otra
+cuenta: esta sesión solo podía leerla, por eso la build 12 estrena URL), https://claude.ai/artifact/G74UBFLDowih9f2Rt5xaoS
+(hasta la 2.3 (10)) y https://claude.ai/artifact/3PhSbBHvWRMX3pohZw5Gty (2.3 (7)).
 
 Sus notas se guardan en la base del artifact, colección `notas` (un documento por ítem, con `veredicto`,
 `comentario`, `titulo` y `area`). Una sesión las lee con `ArtifactData list` sobre esa URL.
 
 ## Qué hay aquí
 
-- `inventario.json`: los 401 ítems (sin capturas). Campos: `id` (`<PR>-<n>`, estable entre versiones: las notas se
+- `inventario.json`: los 430 ítems (sin capturas). Campos: `id` (`<PR>-<n>`, estable entre versiones: las notas se
   guardan por id), `pr`, `titulo`, `area`, `seccion` (`nuevo` · `existente` · `ambos` · `fuera`), `tipo`, `ruta`,
   `que_cambio`, `por_que`, `estado` (`listo` · `activable` · `todavia_no` · `retirado` · `fuera`), `activar`, `pro`, `como_probar`,
   `orden` (recorrido del usuario nuevo), `build` (`1` a `8` · `web` · `no`), `nuevo_guia` y `cambio_guia` (qué cambió
@@ -133,3 +133,29 @@ Sus notas se guardan en la base del artifact, colección `notas` (un documento p
 - **Recorridos:** el del usuario nuevo suma 9 pasos de Primeros pasos; el del antiguo, 2 (widget de pagos y nombre del
   presupuesto).
 - **Script:** `actualizar_2026_11_26_build11.py` aplica el delta (ya aplicado; no se repite).
+
+## Actualización del 27-nov-2026 (TestFlight 2.3 (12))
+
+- **Alcance:** los PR mergeados en `2.3` desde el corte de la 2.3 (11) (#1188) hasta el de la 2.3 (12), del #1189 al
+  #1212. 24 PR revisados: 29 ítems nuevos de 18 PR (Compartido con Grupos | Personas en tres lotes, dividir una boleta
+  sin grupo, el pulido de Grupos y de «Esto leí», «Agregar línea» sin duplicados en Flujo de caja, los vídeos de
+  Tutoriales y nueve lotes de rendimiento), 6 cambios sobre ítems existentes (la pestaña «Compartido», «¿Con quién?»
+  en la fila de captura, la «División» real en el éxito de Grupos, «Esto leí» en grande, Flujo de caja y widgets más
+  rápidos) y 6 PR descartados (maquetas, diagnóstico, medición y mantenimiento) con su motivo en
+  `delta_2026_11_27_build12.json`. El barrido de QA de la build 12 (#1213) entró después y suma un ítem más
+  (`1213-1`, la nota de salud sin nombres repetidos): 30 ítems nuevos en total. El PR que puso al día las pruebas
+  de interfaz (#1214) no cambia la app.
+- **Compartido en producción:** según `gateway/RUNBOOK.md` y los PR, la marca de persona (g37_01), el alta de persona
+  con su lugar reservado (g38_01) y el Worker de Grupos v4 están solo en staging (no lo medí). La lista y el detalle de
+  Personas salen de los grupos y funcionan; «Añadir persona», invitarla y «Escribir un nombre» en «¿Con quién?» fallan
+  contra producción hasta el despliegue. Por eso «Añadir persona e invitarla» (`1202-3`) va como `todavia_no` y
+  «¿Con quién?» (`1202-2`) lo avisa en `activar`. La página web de la invitación sale con la próxima versión de la web.
+- **iCloud:** la build 12 no escribe campos nuevos; Producción de `yala` y `yala_dev` coincide con el repo
+  (`cktool export-schema`, 27-nov). La marca de persona vive en el almacén de Grupos, que no usa iCloud.
+- **Capturas:** se conservan las 33 anteriores y se suman 4 del simulador con el código de la build (seed `grupos`):
+  Compartido con sus chips, Personas, el detalle de una persona y el paso de nombres de «Dividir una boleta».
+- **Recorridos:** el del usuario antiguo suma 15 pasos (Compartido y Personas, dividir una boleta, el pulido de Grupos,
+  «Esto leí» en grande, el «?» de las tortas, «Agregar línea» y Tutoriales); el del nuevo, 1 (Compartido sin grupos),
+  y el paso de las pestañas pasa a decir «Panel · Compartido · Registros».
+- **Plantilla:** build 12 en las etiquetas y la cabecera, y una nota sobre Personas en «Antes de empezar».
+- **Script:** `actualizar_2026_11_27_build12.py` aplica el delta (ya aplicado; no se repite).

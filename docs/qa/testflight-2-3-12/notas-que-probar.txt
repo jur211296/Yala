@@ -1,0 +1,23 @@
+Novedades desde la build 2.3 (11):
+• La pestaña Grupos ahora se llama «Compartido» y trae dos chips: Grupos y Personas. En Personas ves lo pendiente con cada persona, sumando todos tus grupos.
+• Toca a una persona para ver sus gastos, saldos y estadísticas, con filtro por grupo, y «Saldar todo» grupo por grupo.
+• Sin grupos, Compartido ya deja apuntar un gasto: primero eliges «¿Con quién?».
+• «Dividir una boleta» sin crear un grupo: toma la foto, escribe los nombres, reparte por igual o por líneas, y manda la imagen o registra tu parte.
+• En un grupo de dos, «¿Cómo se dividió?» va en tarjetas, y el detalle de un gasto abre a media altura con el reparto real.
+• La pantalla de éxito de un gasto de grupo dice el reparto real («Todo de Ana» en vez de «Partes iguales»).
+• «Esto leí» en grande: fondo sólido, tarjetas como los widgets del Panel, y desliza para descartar o eliminar.
+• Grupos y personas sin gastos muestran los botones arriba.
+• Flujo de caja: «Agregar línea» ya no repite una línea de tu plan, y la proyección y los meses se calculan sin trabar la app.
+• Más fluidez: el Panel no se congela al recalcular, volver a Yala desde otra app no la traba, abrir en frío es más rápido y el teléfono se calienta menos con Yala quieta.
+• Yala ya no se cierra si sales a otra app a los pocos segundos.
+• Tutoriales con los vídeos nuevos de la 2.3.
+• El «?» de las tortas de Distribución explica qué pasa al tocar una porción.
+• La nota de salud ya no repite el mismo aviso cuando varias cuentas en negativo se llaman igual.
+
+Todavía no: crear una persona («Añadir persona» o «Escribir un nombre» en «¿Con quién?») e invitarla con su enlace necesita un cambio del servidor que aún no está publicado. En esta build esos dos botones pueden fallar.
+
+Qué probar:
+1. Abre Compartido, cambia entre Grupos y Personas y toca a una persona: revisa sus saldos y prueba «Saldar todo».
+2. Divide una boleta real sin crear grupo, por líneas, y manda la imagen.
+3. Usa Yala unos minutos, sal a otra app y vuelve: no debe trabarse ni cerrarse.
+Si algo falla, envía una captura desde TestFlight.

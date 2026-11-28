@@ -1607,3 +1607,5 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | 2026-11-27-pulido-ui-grupos-vacio-y-esto-lei | done | tickets/done/2026-11-27-pulido-ui-grupos-vacio-y-esto-lei.md |
 | 2026-11-27-arreglos-flujo-tendencias-y-ayuda-distribucion | done | tickets/done/2026-11-27-arreglos-flujo-tendencias-y-ayuda-distribucion.md |
 | 2026-11-27-barrido-qa-2-3-build-12 | done | tickets/done/2026-11-27-barrido-qa-2-3-build-12.md |
+| 2026-11-27-ci-ui-rojo-y-testflight-2-3-build-12 | done | tickets/done/2026-11-27-ci-ui-rojo-y-testflight-2-3-build-12.md |
+| 2026-11-28-budget-at-limit-sonda-lee-un-gasto-10-veces-menor | backlog | tickets/backlog/2026-11-28-budget-at-limit-sonda-lee-un-gasto-10-veces-menor.md |

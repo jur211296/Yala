@@ -16,9 +16,9 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (44 entradas)
+## Índice (46 entradas)
 
-> **No hace falta leer este fichero entero** — son 223 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 228 KB. Localiza la entrada
 > aquí y salta a ella.
 
 - `—` [Sync de Grupos (CKSyncEngine) NO debe arrancar/`save()` sobre el `mainContext` compartido antes](#sync-de-grupos-cksyncengine-no-debe-arrancarsave-sobre-el-maincontext-compartido-antes)
@@ -40,6 +40,8 @@
 - `—` [`accessibilityIdentifier` NO se propaga dentro de un `.alert` de SwiftUI: el botón existe en pantall](#accessibilityidentifier-no-se-propaga-dentro-de-un-alert-de-swiftui-el-botn-existe-en-pantalla-y-el-id-llega-vaco-al-rbol)
 - `—` [`xcodebuild test` REINSTALA la app del simulador: el QA que corres después del gate no mira tu](#xcodebuild-test-reinstala-la-app-del-simulador-el-qa-que-corres-despus-del-gate-no-mira-tu)
 - `—` [El árbol de accesibilidad del simulador se degrada tras muchos ciclos launch/stop y solo lo cura](#el-rbol-de-accesibilidad-del-simulador-se-degrada-tras-muchos-ciclos-launchstop-y-solo-lo-cura)
+- `2026-11-26` [iPhone: `devicectl device process launch` se come los argumentos de la app que empiezan por `-` (202](#iphone-devicectl-device-process-launch-se-come-los-argumentos-de-la-app-que-empiezan-por---2026-11-26)
+- `2026-11-20` [SwiftUI: un reloj por parte rehecho en `onChange` llega tarde al `.task(id:)`, y una pulsación larga](#swiftui-un-reloj-por-parte-rehecho-en-onchange-llega-tarde-al-taskid-y-una-pulsacin-larga-finita-no-avisa-al-soltar-2026-11-20)
 - `2026-11-17` [Qué hizo el espejo de iCloud con un store: se lee del propio SQLite, sin consola (2026-11-17)](#qu-hizo-el-espejo-de-icloud-con-un-store-se-lee-del-propio-sqlite-sin-consola-2026-11-17)
 - `2026-11-16` [Vídeo: una grabación de `simctl io recordVideo` pierde las pantallas quietas al decodificarla de cor](#vdeo-una-grabacin-de-simctl-io-recordvideo-pierde-las-pantallas-quietas-al-decodificarla-de-corrido-2026-11-16)
 - `2026-11-14` [Web: el `list` de Workers KV no ve en el acto lo que se acaba de escribir; una lista que manda cierr](#web-el-list-de-workers-kv-no-ve-en-el-acto-lo-que-se-acaba-de-escribir-una-lista-que-manda-cierres-va-en-un-durable-object-2026-11-14)
@@ -843,3 +845,16 @@ entera no lanzó Yala ni una vez: `devicectl` leyó `-uitest` como su opción `-
 Dev abre el almacén real, no el de pruebas: un argumento que no llega no es un detalle. Para leer los `Logger`
 (`os_log`) de la app por la consola de `devicectl` (`--console`), lánzala con
 `--environment-variables '{"OS_ACTIVITY_DT_MODE":"enable"}'`.
+
+- **XCUITest se queda 60 s por gesto esperando «App animations complete» al subir el teclado en una hoja (conocido, sin causa; 2026-11-27).**
+  Desde el 26-nov sale intermitente en el CI (tandas 2, 3, 4, 6, 8 y 12 del QA de `2.3`) y en local: al tocar un campo
+  de texto dentro de una hoja (Nuevo registro, gasto de grupo, Dividir una boleta), cada gesto siguiente espera 60 s y
+  la prueba agota su tope de 10 min; al repetirla, pasa. **Medido:** a solas pasa siempre; se cuelga después de otras
+  pruebas en el mismo simulador. Durante el cuelgue la app está quieta: hilo principal dormido 10 s en el spindump, ni
+  un píxel cambia en el vídeo, y en las capas de sus ventanas solo animan el cursor de texto y el vidrio del sistema
+  (lldb sobre `animationKeys`). **Descartado:** un bucle de la app, «sin animaciones infinitas fuera de la vista»
+  (revertido en local, el hero se colgó igual), texto con tildes tecleado antes (tandas 1 y 9 lo hacen sin colgarse),
+  TipKit (no se configura bajo `-uitest`) y la imagen del runner (la misma antes y después). **Sin medir:** las ventanas
+  internas del teclado; la corrida que iba a engancharse a ellas no llegó a lanzar la app. Si vuelve a salir, ese es
+  el siguiente paso (`+[UIWindow allWindowsIncludingInternalWindows:onlyVisibleWindows:]` en el cuelgue), y no se
+  persigue en el código de la pantalla.
